@@ -13,7 +13,7 @@ lctlib = Lctlib()
 
 from time import perf_counter
 
-reader = LctlibReader(filepath= "lctlib_example.txt")
+reader = LctlibReader(filepath="lctlib_example.txt")
 lctlib = reader.parse()
 
 t1 = perf_counter()
