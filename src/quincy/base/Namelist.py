@@ -43,7 +43,7 @@ class VEGETATION_CTL:
 class PHENOLOGY_CTL:
     def __init__(self):
         # LAI at the site, used to set pheno:lai_max
-        self.lai_site_specific=3.0
+        self.lai_max=3.0
 
 class DIST_FIRE_CTL:
     def __init__(self):

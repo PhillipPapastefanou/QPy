@@ -1,11 +1,11 @@
 import pandas as pd
 import xarray as xr
 import numpy as np
-from src.cal_parsing.julian_arithmetics import JulianDate
-from src.cal_parsing.julian_arithmetics import JulianCalendarParse
+from src.postprocessing.cal_parsing.julian_arithmetics import JulianDate
+from src.postprocessing.cal_parsing.julian_arithmetics import JulianCalendarParse
 from time import perf_counter
-from src.lib.QNC_defintions import Output_Time_Res
-from src.lib.QNC_defintions import Second_dim_type
+from src.postprocessing.QNC_defintions import Output_Time_Res
+from src.postprocessing.QNC_defintions import Second_dim_type
 from enum import Enum
 
 

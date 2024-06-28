@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 3.4)
-project(jcalendar)
+cmake_minimum_required(VERSION 3.12)
+project("jcalendar")
 
 find_package(pybind11 CONFIG REQUIRED)
 message(STATUS "Found pybind11 v${pybind11_VERSION}: ${pybind11_INCLUDE_DIRS}")

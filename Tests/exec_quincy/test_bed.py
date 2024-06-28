@@ -26,7 +26,7 @@ tb_sim.namelist.soil_biogeochemistry_ctl.flag_sb_prescribe_po4 = True
 tb_sim.namelist.soil_biogeochemistry_ctl.sb_adsorp_scheme      = SbAdsorbScheme.ECA_PART
 
 # Change lctlib parameters
-tb_sim.lctlib[PftQuincy.TeBS].g1_medlyn = 25.0
+tb_sim.lctlib[PftQuincy.BED].g1_medlyn = 25.0
 
 tb_sim.set_up(folder = output_folder)
 

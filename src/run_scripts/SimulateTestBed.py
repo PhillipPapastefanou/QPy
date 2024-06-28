@@ -16,9 +16,8 @@ class TestBedSim:
         self.namelist =  nlm_reader.parse()
         self.nlm_devinfo.parse(self.namelist)
 
-        lctlib_reader = LctlibReader(f"{quincy_root_path}/data/lctlib_quincy_nlct8.def")
+        lctlib_reader = LctlibReader(f"{quincy_root_path}/data/lctlib_quincy_nlct14.def")
         self.lctlib = lctlib_reader.parse()
-
         self.climate_forcing = EnvironmentalInput()
 
 

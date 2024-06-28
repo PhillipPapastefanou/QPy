@@ -27,9 +27,9 @@ else:
     print(output)
 
 
-from src.lib.QNC_obs_model_comparer import Obs_Model_Var_List
-from src.lib.QNC_obs_model_comparer import QNC_Obs_Model_Variable_Pair
-from src.lib.QNC_obs_model_comparer import QNC_Variable
+from src.lib.QNC_obs_model_comparer  import Obs_Model_Var_List
+from src.lib.QNC_obs_model_comparer  import QNC_Obs_Model_Variable_Pair
+from src.lib.QNC_obs_model_comparer  import QNC_Variable
 from src.lib.QNC_fluxnet_diagnostics import QNC_Fluxnet_Diagnostics
 
 

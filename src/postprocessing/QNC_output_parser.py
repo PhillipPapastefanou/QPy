@@ -1,8 +1,8 @@
 from enum import Enum
 import os
 from pathlib import Path
-from src.lib.QNC_defintions import *
-from src.lib.QNC_basic_Information_parser import Basic_information_parser
+from src.postprocessing.QNC_defintions import *
+from src.postprocessing.QNC_basic_Information_parser import Basic_information_parser
 
 class Output:
     def __init__(self, identifier, simulation_type):
@@ -97,6 +97,11 @@ class QNC_output_parser:
                 for identifier in identifier_list:
                     if identifier in file:
                         parts = file.split('_')
+
+                        if parts[0] == 'Q':
+                            parts = parts[1:]
+                            parts[0] = 'Q_' + parts[0]
+
                         # Obtain category
                         cat = parts[0]
 

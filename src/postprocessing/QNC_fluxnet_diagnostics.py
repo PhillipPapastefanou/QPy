@@ -1,8 +1,8 @@
-from src.lib.QNC_obs_reader import QNC_obs_reader
-from src.lib.QNC_obs_model_comparer import Obs_Model_Var_List
-from src.lib.QNC_obs_model_comparer import QNC_Obs_Model_Variable_Pair
-from src.lib.QNC_output_parser import QNC_output_parser
-from src.lib.QNC_ncdf_reader import QNC_ncdf_reader
+from src.postprocessing.QNC_obs_reader import QNC_obs_reader
+from src.postprocessing.QNC_obs_model_comparer import Obs_Model_Var_List
+from src.postprocessing.QNC_obs_model_comparer import QNC_Obs_Model_Variable_Pair
+from src.postprocessing.QNC_output_parser import QNC_output_parser
+from src.postprocessing.QNC_ncdf_reader import QNC_ncdf_reader
 
 
 import pandas as pd
@@ -199,6 +199,7 @@ class QNC_Fluxnet_Diagnostics:
 
 
     def avg_timerange(self, df, freq):
+
         dfs= df.groupby(pd.Grouper(freq=freq)).mean().reset_index()
         return dfs
 

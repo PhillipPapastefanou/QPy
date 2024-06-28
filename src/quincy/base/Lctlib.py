@@ -15,7 +15,7 @@ class Lctlib:
 
     def set_row(self, variable , values):
         if len(values) == len(PftQuincy):
-            var_type = type(getattr(self.data[PftQuincy.TeBE], variable))
+            var_type = type(getattr(self.data[PftQuincy.BED], variable))
             i = 0
             for pft in PftQuincy:
 

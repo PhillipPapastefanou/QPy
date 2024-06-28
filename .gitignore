@@ -1,3 +1,8 @@
 __pycache__/
 .idea/
 .DS_Store
+src/weather_generator/build
+src/postprocessing/cal_parsing/build
+forcing
+app/*
+!app/run_model_user_interface.py

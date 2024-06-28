@@ -25,7 +25,7 @@ class LctlibWriter:
         self.lines.append(f"# {str}")
     def iadd_lctlib(self, instance):
 
-        first_pft = instance[PftQuincy.TeBE]
+        first_pft = instance[PftQuincy.BEM]
 
         for var_str in vars(first_pft):
 

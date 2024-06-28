@@ -1,14 +1,20 @@
 from enum import Enum
 
 class PftQuincy(Enum):
-    TrBE = 1 # broad leaved evergreen (rainforest)
-    TeBE = 2 # broad leaved evergreen (xeric forest)
-    TrBR = 3 # broad leaved deciduous (rain green)
-    TeBS = 4 # broad leaved deciduous (summer green) & BBS: ?
-    BNE  = 5 # needle-leaved evergreen & TeNE: ?
-    BNS  = 6 #  needle-leaved deciduous
-    TeH  = 7 # C3 grass & TeC: C3 crop ?
-    TrH  = 8 # C4 grass & TrC: C4 crop ?
+    BEM = 1 # moist broadleaved evergreen
+    BED = 2 # dry broadleaved evergreen
+    BDR = 3 # rain green broadleaved deciduous
+    BDS = 4 # summer green broadleaved deciduous
+    NE  = 5 # needle-leaved evergreen & TeNE: ?
+    NS  = 6 #  needle-leaved deciduous
+    TeH  = 7 # C3 grass
+    TrH  = 8 # C4 grass
+    TeP  = 9 # C3 pasture
+    TrP  = 10 # C4 pasture
+    TeC  = 11 # C3 crop
+    TrC  = 12 # C4 crop
+    BSO  = 13 # bare soil
+    UAR  = 14 # urban area
 
 class PftListItem:
     def __init__(self):

@@ -28,12 +28,16 @@ else:
 
 
 from src.postprocessing.QNC_std_output_factory import OutputFormat
-from src.lib.QNC_std_output_factory import QNC_std_output_factory
-
+from src.postprocessing.QNC_std_output_factory import QNC_std_output_factory
 
 #exp_path = '/Users/pp/data/Simulations/QUINCY/exp_t_spinup/DE-Hai/'
 #exp_path = '/Users/pp/data/Simulations/QUINCY/land_std_nc_ts/'
 exp_path = '/Users/pp/data/Simulations/QUINCY/test_bed_static/'
+exp_path = '/Users/pp/data/Simulations/A09_QUINCY_Hydraulics/tests/online/'
+exp_path = '/Users/pp/data/Simulations/A09_QUINCY_Hydraulics/tests/online_low_huber/'
+exp_path = '/Users/pp/data/Simulations/A09_QUINCY_Hydraulics/tests/online_low_kappac/'
+exp_path = '/Users/pp/data/Simulations/A09_QUINCY_Hydraulics/tests/online_early_closure/'
+#exp_path = '/Users/pp/data/Simulations/A09_QUINCY_Hydraulics/tests/diag/'
 #exp_path = '/Users/pp/data/Simulations/QUINCY/site_level_static/DE-Hai/'
 #exp_path = '/Users/pp/data/Simulations/QUINCY/U80/DE-Hai/'
 #exp_path = '/Users/pp/data/Simulations/QUINCY/U81/DE-Hai/'
@@ -41,7 +45,7 @@ exp_path = '/Users/pp/data/Simulations/QUINCY/test_bed_static/'
 
 target_categories = []
 
-target_categories = ['ASSIMI', 'SPQ']
+target_categories = ['Q_ASSIMI', 'SPQ', 'PHYD']
 
 format = OutputFormat.Single
 
