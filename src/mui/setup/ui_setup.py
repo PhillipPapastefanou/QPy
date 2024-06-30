@@ -50,6 +50,10 @@ class UI_Setup(QtWidgets.QMainWindow, Ui_MainWindow):
         self.ui_settings = ui_settings
         self.setup_parser = SetupParser(ui_settings)
 
+
+        if not self.ui_settings.successfull_setup:
+            self.setup_parser.look_for_compilers()
+
         self.setup_parser.sig_add_text.connect(self.append_text)
         self.setup_parser.sig_qpy_path.connect(self.set_qpy_path)
         self.setup_parser.sig_generator_bin.connect(self.set_weather_generator_binary_path)
@@ -62,10 +66,10 @@ class UI_Setup(QtWidgets.QMainWindow, Ui_MainWindow):
         self.ui.label_cmake_found.setPixmap(self.pix_checked)  if self.setup_parser.cmake_version else self.ui.label_cmake_found.setPixmap(self.pix_removed)
         self.ui.lineEdit_path_cpp.setText(self.setup_parser.cpp_compiler_path)
         self.ui.lineEdit_cpp_version.setText(self.setup_parser.cpp_compiler_version)
-        self.ui.label_cpp_found.setPixmap(self.pix_checked)  if self.setup_parser.cmake_version else self.ui.label_cpp_found.setPixmap(self.pix_removed)
+        self.ui.label_cpp_found.setPixmap(self.pix_checked)  if self.setup_parser.cpp_found else self.ui.label_cpp_found.setPixmap(self.pix_removed)
         self.ui.lineEdit_path_fortran.setText(self.setup_parser.fortran_compiler_path)
         self.ui.lineEdit_fortran_version.setText(self.setup_parser.fortran_compiler_version)
-        self.ui.label_fortran_found.setPixmap(self.pix_checked)  if self.setup_parser.cmake_version else self.ui.label_fortran_found.setPixmap(self.pix_removed)
+        self.ui.label_fortran_found.setPixmap(self.pix_checked)  if self.setup_parser.fortran_found else self.ui.label_fortran_found.setPixmap(self.pix_removed)
 
 
         self.ui.lineEdit_weather_gen_binary.setText(self.ui_settings.forcing_generator_binary_path)

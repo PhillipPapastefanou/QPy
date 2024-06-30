@@ -14,6 +14,7 @@ class Ui_Settings(object):
         self.quincy_namelist_path = ""
         self.quincy_lctlib_path = ""
         self.cmake_binary_path = ""
+        self.make_binary_path = ""
 
         # Constants
         self.monthly_forcing_fname = "monthly_forcing.csv"

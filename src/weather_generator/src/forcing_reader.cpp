@@ -5,6 +5,7 @@
 #include "forcing_reader.h"
 #include <numeric>
 #include <string>
+#include <algorithm>
 
 ForcingReader::ForcingReader(std::string filename): reader(filename, true, ','){
 
@@ -47,7 +48,7 @@ std::vector<Yearly_Forcing> ForcingReader::ParseInput() {
             y_forcing.monthly_forcings[m].m_tmax = data[i][tmax_avg_index - 1];
             y_forcing.monthly_forcings[m].m_rain = data[i][rain_avg_index - 1];
             y_forcing.monthly_forcings[m].m_pressure = data[i][pres_avg_index - 1];
-            y_forcing.monthly_forcings[m].m_wetdays = std::round(data[i][wetdays_avg_index - 1]);
+            y_forcing.monthly_forcings[m].m_wetdays = data[i][wetdays_avg_index - 1];
             y_forcing.monthly_forcings[m].m_sph = data[i][sph_avg_index - 1];
             y_forcing.monthly_forcings[m].m_sw_rad = data[i][swdown_avg_index - 1];
             y_forcing.monthly_forcings[m].m_lw_rad_mean = data[i][lwdown_avg_index - 1];

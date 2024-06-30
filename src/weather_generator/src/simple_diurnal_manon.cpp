@@ -3,6 +3,7 @@
 //
 #include <numeric>
 #include <iostream>
+#include <algorithm>
 
 #include "simple_diurnal_manon.h"
 

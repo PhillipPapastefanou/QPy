@@ -5,6 +5,7 @@
 #include "csv_writer.h"
 #include <iostream>
 
+
 CSV_Writer::CSV_Writer(std::string filename, Gridcell gridcell): filename(filename), min_year(gridcell.min_year){
 
 }

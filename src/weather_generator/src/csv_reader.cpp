@@ -5,6 +5,7 @@
 #include <sstream>
 #include <iostream>
 #include <memory>
+#include <algorithm>
 
 
 io::CSV_Reader::CSV_Reader(string filename, bool has_header, char delimiter) {

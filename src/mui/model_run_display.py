@@ -115,11 +115,15 @@ class ModelRunDisplay:
         self.output_df_b = {}
 
         for df_str in ['vegfluxC', 'vegfluxH2O', 'veg_diagnostics', 'vegpoolC']:
-            self.output_dfs[df_str] = pd.read_csv(f"{self.ui_settings.root_ui_directory}/{self.ui_settings.scenario_output_path}/{df_str}_weekly.txt", sep='\s+')
-            n_current_stamps = self.output_dfs[df_str].shape[0]
-            self.output_dfs[df_str]["datetime"] = pd.to_datetime(f"{self.gridcell.min_year}-01-01")
-            self.output_dfs[df_str]["datetime"]  = self.output_dfs[df_str]["datetime"] + pd.to_timedelta(np.arange(0, n_current_stamps) * 7  + 7,unit="D")
-            self.output_dfs[df_str]["year"]  = pd.DatetimeIndex(self.output_dfs[df_str]["datetime"]).year
+
+            try:
+                self.output_dfs[df_str] = pd.read_csv(f"{self.ui_settings.root_ui_directory}/{self.ui_settings.scenario_output_path}/{df_str}_weekly.txt", sep='\s+')
+                n_current_stamps = self.output_dfs[df_str].shape[0]
+                self.output_dfs[df_str]["datetime"] = pd.to_datetime(f"{self.gridcell.min_year}-01-01")
+                self.output_dfs[df_str]["datetime"]  = self.output_dfs[df_str]["datetime"] + pd.to_timedelta(np.arange(0, n_current_stamps) * 7  + 7,unit="D")
+                self.output_dfs[df_str]["year"]  = pd.DatetimeIndex(self.output_dfs[df_str]["datetime"]).year
+            except:
+                return
 
 
         for df_str in ['vegfluxC', 'vegfluxH2O', 'veg_diagnostics','vegpoolC']:

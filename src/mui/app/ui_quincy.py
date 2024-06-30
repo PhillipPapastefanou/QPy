@@ -464,39 +464,44 @@ class ComputationThread(QThread):
 
     # called when the thread starts running
     def run(self):
-        print("Creating directories...")
-        self.qg.create_dirs()
-        print("Exporting monthly forcing...")
-        self.qg.export_monthly_forcing()
-        print("Applying weather generator...")
-        self.qg.generate_subdaily_forcing()
-        print("Generate lctlib file...")
-        self.qg.generate_lctlib()
-        print("Generate namelist file...")
-        self.qg.generate_namelist()
-        print("Starting QUINCY")
-        self.qg.start_quincy_simulation()
-        print("Process ID of subprocess %s" % self.qg.process_q.pid)
 
-        min_progress = 0
-        max_progress = (self.qg.gridcell.max_year - self.qg.gridcell.min_year) * int(365/7)
-        self.progressBarReset.emit(min_progress, max_progress)
+        try:
+            print("Creating directories...")
+            self.qg.create_dirs()
+            print("Exporting monthly forcing...")
+            self.qg.export_monthly_forcing()
+            print("Applying weather generator...")
+            self.qg.generate_subdaily_forcing()
+            print("Generate lctlib file...")
+            self.qg.generate_lctlib()
+            print("Generate namelist file...")
+            self.qg.generate_namelist()
+            print("Starting QUINCY")
+            self.qg.start_quincy_simulation()
+            print("Process ID of subprocess %s" % self.qg.process_q.pid)
 
-        self.qg.model_run_display.prepare_plots()
+            min_progress = 0
+            max_progress = (self.qg.gridcell.max_year - self.qg.gridcell.min_year) * int(365/7)
+            self.progressBarReset.emit(min_progress, max_progress)
 
-        while self.alive:
-            time.sleep(1.0)
-            progress_steps = self.qg.model_run_display.update_output_plots()
-            self.progressedChanged.emit(progress_steps)
-            poll = self.qg.process_q.poll()
-            if not poll is None:
-                break
+            self.qg.model_run_display.prepare_plots()
 
-        self.finished.emit()
-        print("Finished QUINCY")
+            while self.alive:
+                time.sleep(1.0)
+                progress_steps = self.qg.model_run_display.update_output_plots()
+                self.progressedChanged.emit(progress_steps)
+                poll = self.qg.process_q.poll()
+                if not poll is None:
+                    break
 
-        if not self.alive:
-            print("Thread :: Computation cancelled")
+            self.finished.emit()
+            print("Finished QUINCY")
+
+            if not self.alive:
+                print("Thread :: Computation cancelled")
+                return
+
+        except:
             return
         # emit result to the AppWidget
 
