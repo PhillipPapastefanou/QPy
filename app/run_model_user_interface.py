@@ -8,7 +8,7 @@ from src.mui.setup.ui_setup import UI_Setup
 from src.mui.logging import WriteStream
 from src.mui.logging import LoggingReceiver
 
-from src.mui.setup.setup_parser import SetupParser
+from src.mui.setup.setup_model_interface import SetupParserInterface
 from src.mui.ui_settings import Ui_Settings_Parser
 from src.mui.ui_settings import Ui_Settings
 

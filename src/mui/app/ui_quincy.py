@@ -57,7 +57,7 @@ class UI_Quincy(QtWidgets.QMainWindow, Ui_MainWindow):
         self.canvas_forcing = FigureCanvas(Figure(tight_layout=True))
         self.ui.verticalLayout_forcing_display.addWidget(self.canvas_forcing)
 
-        self.root_path_clim_forcing = os.path.join(self.ui_settings.root_qpy_directory,'forcing','cru_jra_2.4')
+        self.root_path_clim_forcing = os.path.join(self.ui_settings.directory_QPy, 'forcing', 'cru_jra_2.4')
         self.forcing_slicer = ForcingSlicer(root_path=self.root_path_clim_forcing)
         self.forcing_dataset = self.forcing_slicer.forc_dataset
 
@@ -422,7 +422,7 @@ class UI_Quincy(QtWidgets.QMainWindow, Ui_MainWindow):
         #Todo modifiy lctlib file
         shutil.copy(self.ui_settings.quincy_lctlib_path, os.path.join(self.ui_settings.root_ui_directory,self.ui_settings.scenario_output_path))
     def start_quincy_simulation(self):
-        self.process_q = subprocess.Popen(self.ui_settings.quincy_binary_path,
+        self.process_q = subprocess.Popen(self.ui_settings.binary_quincy,
                                           cwd=os.path.join(self.ui_settings.root_ui_directory,self.ui_settings.scenario_output_path))
 
 
@@ -501,7 +501,8 @@ class ComputationThread(QThread):
                 print("Thread :: Computation cancelled")
                 return
 
-        except:
+        except Exception as err:
+            print(f"Unexpected {err=}, {type(err)=}")
             return
         # emit result to the AppWidget
 

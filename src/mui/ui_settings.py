@@ -6,22 +6,31 @@ class Ui_Settings(object):
         #To be parsed
         self.successfull_setup = False
 
-        self.root_qpy_directory =  ""
-        self.forcing_generator_binary_path = ""
+
+        # Libs
+        self.make_binary_path = ""
+        self.cmake_binary_path = ""
+        self.fortran_binary_path = ""
+        self.cpp_binary_path = ""
+        self.python_binary_path = ""
+
+
         self.root_ui_directory= ""
-        self.quincy_root_path = ""
-        self.quincy_binary_path = ""
+        self.directory_QPy = ""
+        self.directory_forcing = ""
+        self.directory_quincy = ""
+
+        self.binary_weather_generator = ""
+        self.binary_quincy = ""
+
         self.quincy_namelist_path = ""
         self.quincy_lctlib_path = ""
-        self.cmake_binary_path = ""
-        self.make_binary_path = ""
 
         # Constants
         self.monthly_forcing_fname = "monthly_forcing.csv"
         self.subdaily_forcing_fname = "subdaily_forcing.csv"
         self.quincy_forcing_fname = "climate.dat"
         self.site_settings_fname = "site_data.csv"
-
         self.misc_input = Misc_Forcing_Settings()
 
 

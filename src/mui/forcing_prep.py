@@ -111,7 +111,7 @@ class ForcingGenerator:
 
     def generate_subdaily_forcing(self, output_path):
 
-        gen_path  = self.ui_settings.forcing_generator_binary_path
+        gen_path  = self.ui_settings.binary_weather_generator
         input_forcing = os.path.join(output_path, self.ui_settings.monthly_forcing_fname)
         input_settings = os.path.join(output_path,self.ui_settings.site_settings_fname)
         output_filname = os.path.join(output_path,self.ui_settings.subdaily_forcing_fname)
