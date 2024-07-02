@@ -17,6 +17,7 @@ CMake
 4. fortran compiler
 5. cmake
 6. quincy branch from [DKRZ](https://gitlab.dkrz.de/quincy-community/quincy-model-developers/qs-development/-/tree/feature/cmake-build):
+7. forcing files from [here](https://drive.google.com/drive/folders/1tAkXBJgkRycm99TdafUiNgu-5fvT0i8r)
 
 ### Mac-os
 The easiest way to install anaconda on Mac is using [homebrew](https://brew.sh/)
