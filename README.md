@@ -40,8 +40,8 @@ A gcc version (including a cpp and a fotran compiler) should be part of the buil
 
 `sudo apt install build-essential`
 
-Finally 
-**sudo apt-get install libssl-dev**
+Finally cmake can be installed using the following commands
+`sudo apt-get install libssl-dev`
 
 
 ### Windows
@@ -77,7 +77,7 @@ Anaconda can be obtained from the web folling this [link]( https://repo.anaconda
 #### python environment
 After installation of anaconda a new python environment
 *QPy* should be created and all required python libraries 
-should be installed. We can do via the following commands:
+should be installed. We can do that via the following commands:
 
 ```
 conda create --name QPy python=3.9
