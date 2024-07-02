@@ -20,9 +20,10 @@ import shutil
 from src.mui.forcing_prep import ForcingSlicer
 from src.mui.forcing_prep import ForcingGenerator
 from src.mui.ui_settings import Ui_Settings
-from src.mui.model_run_display import ModelRunDisplay
+from src.mui.ui_model_run_interface import ModelRunInterface
 from src.mui.var_types import Gridcell
 from src.mui.var_types import ForcingDataset
+from src.mui.var_types import Scenario
 import sys
 
 
@@ -34,7 +35,7 @@ class UI_Quincy(QtWidgets.QMainWindow, Ui_MainWindow):
 
         self.ui_settings = settings
 
-        self.model_run_display = ModelRunDisplay(self.ui)
+        self.model_run_display = ModelRunInterface(self.ui)
         self.model_run_display.setup_ui()
 
         self.splitDockWidget(self.ui.dockWidget_output_1, self.ui.dockWidget_output_2 ,QtCore.Qt.Horizontal)
@@ -47,6 +48,7 @@ class UI_Quincy(QtWidgets.QMainWindow, Ui_MainWindow):
 
         self.gridcell = Gridcell()
         self.forcing_dataset = ForcingDataset()
+        self.scenario = Scenario(self.forcing_dataset)
 
         self.p1 = ccrs.PlateCarree()
         self.p2 = ccrs.PlateCarree()
@@ -66,7 +68,6 @@ class UI_Quincy(QtWidgets.QMainWindow, Ui_MainWindow):
         self.ui.lineEdit_first_year.setText(str(self.forcing_dataset.min_year))
         self.ui.lineEdit_last_year.setText(str(self.forcing_dataset.max_year))
         self.ui.comboBox_forcing_dataset.addItem("CRU_JRA_2.4")
-
 
 
         ax_temp = self.canvas_forcing.figure.add_subplot(111)
@@ -96,9 +97,13 @@ class UI_Quincy(QtWidgets.QMainWindow, Ui_MainWindow):
         self.init_manip()
         self.init_run()
 
-        self.model_run_display.init(self.ui_settings, self.gridcell)
+        self.model_run_display.init(self.ui_settings, self.gridcell, self.scenario)
 
         self.new_line_logger = True
+
+
+        self.ui.lineEdit_nyear_spinup.setText(str(self.scenario.nyear_spinup))
+
 
         #Todo temporary: remove
         self.ui.lineEdit_lon.setText("9.75")
@@ -163,9 +168,9 @@ class UI_Quincy(QtWidgets.QMainWindow, Ui_MainWindow):
         self.ui.lineEdit_temp_change.setText("0 \xb0C")
         self.ui.lineEdit_rain_change.setText("0 mm")
         self.ui.lineEdit_co2_change.setText("0 ppm")
-        self.ui.lineEdit_temp_years.setText("5")
-        self.ui.lineEdit_rain_years.setText("5")
-        self.ui.lineEdit_co2_years.setText("5")
+        self.ui.lineEdit_temp_years.setText("10")
+        self.ui.lineEdit_rain_years.setText("10")
+        self.ui.lineEdit_co2_years.setText("10")
 
     def init_run(self):
         self.ui.pushButton_run_model.clicked.connect(self.run_model)
@@ -349,6 +354,8 @@ class UI_Quincy(QtWidgets.QMainWindow, Ui_MainWindow):
 
             self.draw_temp_plot()
             self.draw_rain_plot()
+
+
     def run_model(self):
 
         if self.df_base.isnull().values.any():
@@ -404,6 +411,9 @@ class UI_Quincy(QtWidgets.QMainWindow, Ui_MainWindow):
     def generate_namelist(self):
         from src.quincy.IO.NamelistReader import NamelistReader
         from src.quincy.IO.NamelistWriter import NamelistWriter
+        from src.quincy.base.NamelistTypes import ForcingMode
+        from src.quincy.base.NamelistTypes import OutputIntervalPool
+        from src.quincy.base.NamelistTypes import OutputIntervalFlux
 
         reader = NamelistReader(self.ui_settings.quincy_namelist_path)
 
@@ -413,6 +423,22 @@ class UI_Quincy(QtWidgets.QMainWindow, Ui_MainWindow):
         namelist.base_ctl.forcing_file_start_yr = self.gridcell.min_year
         namelist.base_ctl.forcing_file_last_yr = self.gridcell.max_year
         namelist.jsb_forcing_ctl.simulation_length_number  = self.gridcell.max_year - self.gridcell.min_year + 1
+
+        #Untested:
+
+        namelist.base_ctl.output_interval_flux_spinup = OutputIntervalFlux.WEEKLY
+        namelist.base_ctl.output_interval_pool_spinup = OutputIntervalPool.WEEKLY
+
+
+        namelist.jsb_forcing_ctl.transient_simulation_start_year = self.scenario.first_year_transient
+        namelist.jsb_forcing_ctl.transient_spinup_start_year = 1981
+        namelist.jsb_forcing_ctl.transient_spinup_end_year = 2002
+        namelist.jsb_forcing_ctl.transient_spinup_years = self.scenario.nyear_spinup
+        namelist.jsb_forcing_ctl.forcing_mode = ForcingMode.TRANSIENT
+
+        #namelist.base_ctl.include_nitrogen = False
+        #namelist.base_ctl.include_nitrogen15 = False
+        #namelist.base_ctl.include_phosphorus = False
 
         writer = NamelistWriter(namelist= namelist)
         writer.export(os.path.join(self.ui_settings.root_ui_directory,self.ui_settings.scenario_output_path,"namelist.slm"))
@@ -468,6 +494,12 @@ class ComputationThread(QThread):
         try:
             print("Creating directories...")
             self.qg.create_dirs()
+            print("Init forcing setup")
+            self.qg.model_run_display.init_quincy_config()
+            min_progress = 0
+            max_progress = self.qg.model_run_display.scenario.nyear_total
+            self.progressBarReset.emit(min_progress, max_progress)
+
             print("Exporting monthly forcing...")
             self.qg.export_monthly_forcing()
             print("Applying weather generator...")
@@ -479,12 +511,6 @@ class ComputationThread(QThread):
             print("Starting QUINCY")
             self.qg.start_quincy_simulation()
             print("Process ID of subprocess %s" % self.qg.process_q.pid)
-
-            min_progress = 0
-            max_progress = (self.qg.gridcell.max_year - self.qg.gridcell.min_year) * int(365/7)
-            self.progressBarReset.emit(min_progress, max_progress)
-
-            self.qg.model_run_display.prepare_plots()
 
             while self.alive:
                 time.sleep(1.0)

@@ -32,17 +32,51 @@ Finally, cmake is also availble via homebrew:
 
 `brew install cmake`
 
-
-
-
 ### Linux
 
 ### Windows
 
+For windows multiple cpp and fortran compilers exist. For simplicity, we recommend installing gcc installed via scoop.
+Therefore, we open a PowerShell terminal and run:
+```
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+Invoke-RestMethod -Uri https://get.scoop.sh | Invoke-Expression
+```
+
+We install all required libraries but anaconda using scoop:
+```
+ scoop install git
+ scoop bucket add main
+ scoop install main/make
+ scoop install main/mingw
+ scoop install main/gcc
+ scoop install main/cmake
+```
+**Note**: The order of commands is strictly mandatory. For now mingw cpp compiler do not work under Windows 10, but 
+the gcc library does work. Furthermore, we need mingw as ot offers a fortran compiler.
+
+Anaconda can be obtained from the web folling this [link]( https://repo.anaconda.com/archive/Anaconda3-2024.06-1-Windows-x86_64.exe).
+We then start the **anaconda powershell** and run the following conda commands:
+```
+conda create --name QPy python=3.9
+conda activate QPy
+conda install -y pandas
+pip install netcdf4
+pip install xarray
+pip install cartopy
+pip install pyqt5-tools
+```
+
+**Note**: This mismatch in installation step compared to the linux/mac builds is caused by the downloaded anaconda binary already containing
+PyQT5 libraries which have to be *carefully* extended with the other needed libaries and a full conda based
+instlallation causes trouble. 
+
 
 ## Installation
 
-### python environment
+### Mac-os
+
+#### python environment
 After installation of anaconda a new python environment
 *QPy* should be created and all required python libraries 
 should be installed. We can do via the following commands:
@@ -61,7 +95,12 @@ conda install -y conda-forge::pyqt
 conda install -y scipy
 conda install -y pyopengl
 ```
+### Windows
+
+
 Note: For now pyopengl is optional and not required for the user interface.
+
+## Configuration
 
 ## 1 QNetCDF
 This deserves more description, I know... 
@@ -70,9 +109,10 @@ It can however be sped up if a cpp compiler is available.
 
 ## 2 QPy-Manip
 This does not require any additional compilers and libraries other than the *QPy* conda environment.
-
 ## 3 Quincy-Pyui
 
 After creating clone this repository and creating the *QPy* conda environment one has to navigate to
 `app` directory via the terminal. In this directory we execute
 `python run_model_user_interface.py` 
+
+

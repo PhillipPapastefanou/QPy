@@ -144,8 +144,8 @@ class BASE_CTL:
         # model output
         self.output_interval_pool = OutputIntervalPool.WEEKLY
         self.output_interval_flux = OutputIntervalFlux.WEEKLY
-        self.output_interval_pool_spinup = "yearly"
-        self.output_interval_flux_spinup = "yearly"
+        self.output_interval_pool_spinup = OutputIntervalPool.YEARLY
+        self.output_interval_flux_spinup = OutputIntervalFlux.YEARLY
         self.output_start_first_day_year = 1
         self.output_end_last_day_year = 30
         #  transient simulations with a fluxnet-type site-set

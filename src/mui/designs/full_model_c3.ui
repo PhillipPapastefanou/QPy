@@ -232,6 +232,9 @@
                </item>
                <item>
                 <widget class="QLineEdit" name="lineEdit_first_year">
+                 <property name="enabled">
+                  <bool>true</bool>
+                 </property>
                  <property name="maximumSize">
                   <size>
                    <width>40</width>
@@ -269,6 +272,9 @@
                </item>
                <item>
                 <widget class="QLineEdit" name="lineEdit_last_year">
+                 <property name="enabled">
+                  <bool>true</bool>
+                 </property>
                  <property name="maximumSize">
                   <size>
                    <width>40</width>
@@ -781,7 +787,7 @@
      <x>0</x>
      <y>0</y>
      <width>1655</width>
-     <height>24</height>
+     <height>22</height>
     </rect>
    </property>
   </widget>
@@ -792,7 +798,7 @@
    </property>
    <property name="minimumSize">
     <size>
-     <width>356</width>
+     <width>470</width>
      <height>60</height>
     </size>
    </property>
@@ -834,6 +840,9 @@
      </item>
      <item>
       <widget class="QPushButton" name="pushButton_stop_model">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
        <property name="sizePolicy">
         <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
          <horstretch>0</horstretch>
@@ -856,6 +865,16 @@
         <string>Stop</string>
        </property>
       </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="label_13">
+       <property name="text">
+        <string>Spinup years:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="lineEdit_nyear_spinup"/>
      </item>
      <item>
       <widget class="QLabel" name="label">
