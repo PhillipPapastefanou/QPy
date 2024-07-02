@@ -95,12 +95,16 @@ class ModelRunInterface:
 
         self.output_df_transient_achange = {}
         self.output_df_transient_bchange = {}
+        self.output_df_spinup = {}
+
+        self.load_spinup_data = False
+        self.have_spinup_data = False
+        self.have_transient_data = False
 
     def change_cb1(self):
         self.selected_vars[0] = self.ui.cB_output_1.currentText()
 
         if self.have_transient_data:
-
             self.lines_trans_b[0].set_xdata(self.output_df_transient_bchange[self.filename_vars[ self.selected_vars[0]]]["datetime"])
             self.lines_trans_b[0].set_ydata(self.output_df_transient_bchange[self.filename_vars[ self.selected_vars[0]]][ self.selected_vars[0]])
 
@@ -112,14 +116,16 @@ class ModelRunInterface:
             self.lines_spinup[0].set_ydata(self.output_df_spinup[self.filename_vars[self.selected_vars[0]]][self.selected_vars[0]])
 
 
-        xmin = np.min(self.output_df_spinup[self.filename_vars[self.selected_vars[0]]]["datetime"])
-        xmax = np.max(self.output_df_spinup[self.filename_vars[self.selected_vars[0]]]["datetime"])
+
 
         self.axis[0].relim()
         self.axis[0].autoscale()
         self.axis[0].set_ylabel(self.selected_vars[0])
 
         if self.have_spinup_data:
+            xmin = np.min(self.output_df_spinup[self.filename_vars[self.selected_vars[0]]]["datetime"])
+            xmax = np.max(self.output_df_spinup[self.filename_vars[self.selected_vars[0]]]["datetime"])
+
             self.axis[0].set_xlim(xmin, xmax)
 
         if self.have_transient_data:
