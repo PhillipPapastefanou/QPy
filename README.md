@@ -32,7 +32,17 @@ Finally, cmake is also availble via homebrew:
 
 `brew install cmake`
 
-### Linux
+### Linux (ubuntu)
+
+You guys typically know how to do it ;) 
+Anaconda can be installed following this [link](https://phoenixnap.com/kb/install-anaconda-ubuntu).
+A gcc version (including a cpp and a fotran compiler) should be part of the build essnetials:
+
+`sudo apt install build-essential`
+
+Finally 
+**sudo apt-get install libssl-dev**
+
 
 ### Windows
 
@@ -56,25 +66,13 @@ We install all required libraries but anaconda using scoop:
 the gcc library does work. Furthermore, we need mingw as ot offers a fortran compiler.
 
 Anaconda can be obtained from the web folling this [link]( https://repo.anaconda.com/archive/Anaconda3-2024.06-1-Windows-x86_64.exe).
-We then start the **anaconda powershell** and run the following conda commands:
-```
-conda create --name QPy python=3.9
-conda activate QPy
-conda install -y pandas
-pip install netcdf4
-pip install xarray
-pip install cartopy
-pip install pyqt5-tools
-```
 
-**Note**: This mismatch in installation step compared to the linux/mac builds is caused by the downloaded anaconda binary already containing
-PyQT5 libraries which have to be *carefully* extended with the other needed libaries and a full conda based
-instlallation causes trouble. 
+
 
 
 ## Installation
 
-### Mac-os
+### Mac-os and Linux
 
 #### python environment
 After installation of anaconda a new python environment
@@ -95,11 +93,23 @@ conda install -y conda-forge::pyqt
 conda install -y scipy
 conda install -y pyopengl
 ```
-### Windows
-
-
 Note: For now pyopengl is optional and not required for the user interface.
 
+### Windows
+We start the **anaconda powershell** and run the following conda commands:
+```
+conda create --name QPy python=3.9
+conda activate QPy
+conda install -y pandas
+pip install netcdf4
+pip install xarray
+pip install cartopy
+pip install pyqt5-tools
+```
+
+**Note**: This mismatch in installation step compared to the linux/mac builds is caused by the downloaded anaconda binary already containing
+PyQT5 libraries which have to be *carefully* extended with the other needed libaries and a full conda based
+instlallation causes trouble. 
 ## Configuration
 
 ## 1 QNetCDF
