@@ -609,9 +609,9 @@ class WindowsParser(BaseParser):
 
             try:
                 make_version = p.stdout.split('\n')
-                lib.path = make_version[0]
+                lib.version = make_version[0]
             except:
-                lib.path =  p.stdout
+                lib.version =  p.stdout
 
     def parse_lib_cmake(self, lib: Library):
         import re
@@ -633,9 +633,9 @@ class WindowsParser(BaseParser):
 
             try:
                 cmake_version = p.stdout.split('\n')
-                lib.path = cmake_version[0]
+                lib.version = cmake_version[0]
             except:
-                lib.path =  p.stdout
+                lib.version =  p.stdout
 
     def parse_lib_cpp(self, lib :Library):
         if self.is_valid(lib.path):
@@ -660,7 +660,7 @@ class WindowsParser(BaseParser):
         if self.is_valid(lib.path):
             return
         lib.name = "gfortran"
-        p = subprocess.run([self.powershell_path, "which gfortran"], capture_output=True, text=True, shell=True)
+        p = subprocess.run([self.powershell_path, "(gcm gfortran).Path"], capture_output=True, text=True, shell=True)
 
         if p.returncode != 0:
             lib.found = False
