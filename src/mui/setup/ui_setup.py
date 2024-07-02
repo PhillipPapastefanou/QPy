@@ -47,6 +47,7 @@ class UI_Setup(QtWidgets.QMainWindow, Ui_MainWindow):
         self.ui.pushButton_Save.clicked.connect(self.save)
         self.setup_interface.sig_add_text.connect(self.append_text)
         self.ui.lineEdit_quincy_directory.textChanged.connect(self.update_quincy_root_path_set)
+        self.ui.lineEdit_forcing_directory.textChanged.connect(self.update_forcing_root_path_set)
 
         self.setup_interface.sig_qpy_path.connect(
             lambda found, path,
@@ -124,6 +125,12 @@ class UI_Setup(QtWidgets.QMainWindow, Ui_MainWindow):
         self.setup_interface_parser.check_directory_quincy()
         self.set_paths_and_bins(self.ui.label_quincy_directory, self.ui.lineEdit_quincy_directory,
                                 self.setup_interface_parser.found_quincy_directory, self.setup_interface_parser.path_quincy_directory)
+
+    def update_forcing_root_path_set(self):
+        self.setup_interface_parser.path_forcing_directory = self.ui.lineEdit_forcing_directory.text()
+        self.setup_interface_parser.check_directory_forcing()
+        self.set_paths_and_bins(self.ui.label_forcing_directory, self.ui.lineEdit_forcing_directory,
+                                self.setup_interface_parser.found_forcing_directory, self.setup_interface_parser.path_forcing_directory)
 
 
     def set_paths_and_bins(self, label, lineEdit, found, path):

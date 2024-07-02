@@ -59,7 +59,8 @@ class UI_Quincy(QtWidgets.QMainWindow, Ui_MainWindow):
         self.canvas_forcing = FigureCanvas(Figure(tight_layout=True))
         self.ui.verticalLayout_forcing_display.addWidget(self.canvas_forcing)
 
-        self.root_path_clim_forcing = os.path.join(self.ui_settings.directory_QPy, 'forcing', 'cru_jra_2.4')
+        #self.root_path_clim_forcing = os.path.join(self.ui_settings.directory_QPy, 'forcing', 'cru_jra_2.4')
+        self.root_path_clim_forcing = os.path.join(self.ui_settings.directory_forcing, 'cru_jra_2.4')
         self.forcing_slicer = ForcingSlicer(root_path=self.root_path_clim_forcing)
         self.forcing_dataset = self.forcing_slicer.forc_dataset
 

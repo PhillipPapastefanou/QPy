@@ -5,7 +5,7 @@ import os
 import sys
 import re
 from enum import Enum
-from src.mui.setup.parser import MacParser
+from src.mui.setup.parser import MacParser, LinuxParser
 from src.mui.setup.parser import BaseParser, OS
 from PyQt5.QtCore import pyqtSlot, pyqtSignal, QThread, QObject
 
@@ -23,6 +23,7 @@ class SetupParserInterface(QObject):
 
         if sys.platform.startswith("linux"):
             self.os = OS.LINUX
+            self.parser = LinuxParser(self.os)
         elif sys.platform == "darwin":
             self.os = OS.MAC
             self.parser = MacParser(self.os)
@@ -37,139 +38,6 @@ class SetupParserInterface(QObject):
         self.parser.parse_lib_fortran(self.parser.lib_fortran)
         self.parser.parse_lib_cpp(self.parser.lib_cpp)
         self.parser.parse_lib_python(self.parser.lib_python)
-
-        # if self.os == OS.LINUX:
-        #     if not os.path.exists(self.ui_settings.cmake_binary_path):
-        #         p = subprocess.run(["which cmake"], capture_output=True, text=True, shell=True)
-        #
-        #         if p.returncode != 0:
-        #             print("Could not find CMake")
-        #             self.cmake_found = False
-        #             self.cmake_version = ""
-        #         else:
-        #             print(f"Found CMake:{p.stdout}")
-        #             self.ui_settings.cmake_binary_path = p.stdout
-        #
-        #             self.cmake_found = True
-        #
-        #             p = subprocess.run(["cmake --version"], capture_output=True, text=True, shell=True)
-        #
-        #             cmake_raw_path = p.stdout.split('\n')
-        #             cmake_raw_path = cmake_raw_path[0]
-        #             cmake_raw_path = cmake_raw_path.split("cmake version")
-        #             self.cmake_version = cmake_raw_path[1]
-        #
-        #     p1 = subprocess.run(["which clang"], capture_output=True, text=True, shell=True)
-        #
-        #     if p1.returncode != 0:
-        #         p2 = subprocess.run(["which gcc"], capture_output=True, text=True, shell=True)
-        #
-        #         if p2.returncode != 0:
-        #             self.cpp_found = False
-        #
-        #         else:
-        #             self.cpp_found = True
-        #             self.cpp_compiler_path = p2.stdout
-        #             p2 = subprocess.run(["gcc --version"], capture_output=True, text=True, shell=True)
-        #             cpp_raw_path = p2.stdout.split('\n')
-        #             self.cpp_compiler_version = cpp_raw_path[0]
-        #     else:
-        #         self.cpp_found = True
-        #         self.cpp_compiler_path = p1.stdout
-        #         p1 = subprocess.run(["clang --version"], capture_output=True, text=True, shell=True)
-        #         cpp_raw_path = p1.stdout.split('\n')
-        #         cpp_raw_path = cpp_raw_path[0]
-        #         cpp_raw_path = cpp_raw_path.split("Apple clang version")
-        #         self.cpp_compiler_version = cpp_raw_path[1]
-        #
-        #
-        #         p1 = subprocess.run(["which gfortran"], capture_output=True, text=True, shell=True)
-        #
-        #         if p1.returncode != 0:
-        #             self.fortran_found = False
-        #
-        #         else:
-        #             self.fortran_found = True
-        #             self.fortran_compiler_path = p1.stdout
-        #             p1 = subprocess.run(["gfortran --version"], capture_output=True, text=True, shell=True)
-        #             cpp_raw_path = p1.stdout.split('\n')
-        #             cpp_raw_path = cpp_raw_path[0]
-        #             cpp_raw_path = cpp_raw_path.split("GNU Fortran ")
-        #             self.fortran_compiler_version = cpp_raw_path[1]
-        #
-        # elif self.os == OS.WINDOWS:
-        #
-        #     self.powershell_path = "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe"
-        #     if not os.path.exists(self.ui_settings.cmake_binary_path):
-        #         p = subprocess.run([self.powershell_path, '(gcm cmake).Path'], shell=True, capture_output=True)
-        #
-        #         if p.returncode != 0:
-        #             print("Could not find CMake")
-        #             self.cmake_found = False
-        #             self.cmake_version = ""
-        #         else:
-        #             print(f"Found CMake:{p.stdout}")
-        #             self.ui_settings.cmake_binary_path = p.stdout.decode()
-        #             self.ui_settings.cmake_binary_path = re.sub('\r', '', self.ui_settings.cmake_binary_path)
-        #             self.ui_settings.cmake_binary_path = re.sub('\n', '', self.ui_settings.cmake_binary_path)
-        #
-        #             self.cmake_found = True
-        #
-        #             p = subprocess.run(["cmake", "--version"], capture_output=True, text=True, shell=True)
-        #
-        #             cmake_raw_path = p.stdout.split('\n')
-        #             self.cmake_version = cmake_raw_path[0]
-        #
-        #     if not os.path.exists(self.ui_settings.make_binary_path):
-        #
-        #
-        #         #p = subprocess.run(['WHERE','cmake'], capture_output=True, shell=True)
-        #         #p = subprocess.run(['WHERE'], capture_output=True, shell=True)
-        #         p = subprocess.run([self.powershell_path, '(gcm make).Path'], shell=True, capture_output=True)
-        #
-        #         if p.returncode != 0:
-        #             print("Could not find Make")
-        #             self.make_found = False
-        #             self.make_version = ""
-        #         else:
-        #             print(f"Found Make:{p.stdout}")
-        #             self.ui_settings.make_binary_path = p.stdout.decode()
-        #             self.ui_settings.make_binary_path = re.sub('\r', '', self.ui_settings.make_binary_path)
-        #             self.ui_settings.make_binary_path = re.sub('\n', '', self.ui_settings.make_binary_path)
-        #
-        #             self.make_found = True
-        #
-        #             p = subprocess.run(["make", "--version"], capture_output=True, text=True, shell=True)
-        #
-        #             make_raw_path = p.stdout.split('\n')
-        #             self.make_version = make_raw_path[0]
-        #
-        #     p1 = subprocess.run([self.powershell_path, '(gcm g++).Path'], capture_output=True, text=True, shell=True)
-        #     if p1.returncode != 0:
-        #         self.cpp_found = False
-        #
-        #     else:
-        #         self.cpp_found = True
-        #         self.cpp_compiler_path = p1.stdout
-        #         p1 = subprocess.run([self.powershell_path, "g++ --version"], capture_output=True, text=True, shell=True)
-        #         cpp_raw_path = p1.stdout.split('\n')
-        #         self.cpp_compiler_version = cpp_raw_path[0]
-        #
-        #     p1 = subprocess.run([self.powershell_path, '(gcm gfortran).Path'], capture_output=True, text=True, shell=True)
-        #
-        #     if p1.returncode != 0:
-        #         self.fortran_found = False
-        #
-        #     else:
-        #         self.fortran_found = True
-        #         self.fortran_compiler_path = p1.stdout
-        #         self.fortran_compiler_path = re.sub('\r', '', self.fortran_compiler_path)
-        #         self.fortran_compiler_path = re.sub('\n', '', self.fortran_compiler_path)
-        #
-        #         p1 = subprocess.run([self.powershell_path, "gfortran --version"], capture_output=True, text=True, shell=True)
-        #         cpp_raw_path = p1.stdout.split('\n')
-        #         self.fortran_compiler_version = cpp_raw_path[0]
-
 
     def build(self):
 
