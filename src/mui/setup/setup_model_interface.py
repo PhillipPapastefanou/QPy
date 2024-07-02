@@ -5,7 +5,7 @@ import os
 import sys
 import re
 from enum import Enum
-from src.mui.setup.parser import MacParser, LinuxParser
+from src.mui.setup.parser import MacParser, LinuxParser, WindowsParser
 from src.mui.setup.parser import BaseParser, OS
 from PyQt5.QtCore import pyqtSlot, pyqtSignal, QThread, QObject
 
@@ -29,6 +29,7 @@ class SetupParserInterface(QObject):
             self.parser = MacParser(self.os)
         elif os.name == "nt":
             self.os = OS.WINDOWS
+            self.parser = WindowsParser(self.os)
 
 
 
@@ -137,7 +138,6 @@ class SetupParserInterface(QObject):
         found = self.check_weather_generator_binary_path(self.ui_settings.binary_weather_generator)
         if found:
             self.sig_generator_bin.emit(self.ui_settings.binary_weather_generator)
-
     def build_quincy(self):
         if not os.path.exists(self.ui_settings.quincy_root_path):
             print(f"Quincy root path not specified or found")

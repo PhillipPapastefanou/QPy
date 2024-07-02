@@ -25,11 +25,10 @@ class UI_Setup(QtWidgets.QMainWindow, Ui_MainWindow):
 
         self.pix_checked =  self.pix_checked.scaled(20, 20)
         self.pix_removed =  self.pix_removed.scaled(20, 20)
+        self.new_line_logger = True
 
         self.setup_interface = SetupParserInterface(ui_settings)
 
-
-        self.new_line_logger = True
 
 
         if not self.ui_settings.successfull_setup:
@@ -76,7 +75,6 @@ class UI_Setup(QtWidgets.QMainWindow, Ui_MainWindow):
         self.setup_interface_parser.lib_quincy.path = self.ui_settings.binary_quincy
         self.setup_interface_parser.lib_weather_gen.path = self.ui_settings.binary_weather_generator
 
-
         self.setup_interface.parser.check_directory_QPy()
         self.setup_interface.parser.check_directory_forcing()
         self.setup_interface.parser.check_directory_quincy()
@@ -94,22 +92,7 @@ class UI_Setup(QtWidgets.QMainWindow, Ui_MainWindow):
         self.set_paths_and_bins(self.ui.label_quincy_binary, self.ui.lineEdit_quincy_binary,
                                 self.setup_interface_parser.lib_quincy.found, self.setup_interface_parser.lib_quincy.path)
 
-        #self.setup_interface.build()
 
-
-        # self.ui.lineEdit_path_cmake.setText(self.ui_settings.cmake_binary_path)
-        # self.ui.lineEdit_cmake_version.setText(self.setup_parser.cmake_version)
-        # self.ui.label_cmake_found.setPixmap(self.pix_checked)  if self.setup_parser.cmake_version else self.ui.label_cmake_found.setPixmap(self.pix_removed)
-        # self.ui.lineEdit_path_cpp.setText(self.setup_parser.cpp_compiler_path)
-        # self.ui.lineEdit_cpp_version.setText(self.setup_parser.cpp_compiler_version)
-        # self.ui.label_cpp_found.setPixmap(self.pix_checked)  if self.setup_parser.cpp_found else self.ui.label_cpp_found.setPixmap(self.pix_removed)
-        # self.ui.lineEdit_path_fortran.setText(self.setup_parser.fortran_compiler_path)
-        # self.ui.lineEdit_fortran_version.setText(self.setup_parser.fortran_compiler_version)
-        # self.ui.label_fortran_found.setPixmap(self.pix_checked)  if self.setup_parser.fortran_found else self.ui.label_fortran_found.setPixmap(self.pix_removed)
-        #
-        #
-        # self.ui.lineEdit_weather_gen_binary.setText(self.ui_settings.forcing_generator_binary_path)
-        # self.ui.lineEdit_QPy_directory.setText(self.ui_settings.root_qpy_directory)
     def set_lib_version_and_image(self, label, line_edit_path, line_edit_version, lib):
         if lib.found:
             line_edit_path.setText(lib.path)
@@ -194,5 +177,3 @@ class UI_Setup(QtWidgets.QMainWindow, Ui_MainWindow):
 
         settings_parser.settings = self.ui_settings
         settings_parser.save()
-
-
