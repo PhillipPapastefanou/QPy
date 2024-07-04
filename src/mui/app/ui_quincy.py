@@ -589,6 +589,7 @@ class ComputationThread(QThread):
                     break
 
             self.finished.emit()
+            self.progressedChanged.emit(self.qg.model_run_display.scenario.nyear_total)
             self.sig_log.emit("Finished QUINCY simulation!", MessageType.SUCCESS.value)
 
             if not self.alive:
