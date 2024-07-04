@@ -11,12 +11,15 @@ from PyQt5.QtCore import pyqtSlot, pyqtSignal, QThread, QObject
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 
+from src.quincy.base.PFTTypes import PftQuincy
+
 
 class UI_ModelRunInterface:
 
     def __init__(self, ui : Ui_MainWindow):
         self.ui = ui
         self.output_variables_str = ['NPP', 'GPP', 'Transpiration', 'Evaporation', 'LAI', 'BetaSoilGS','Total_C', 'HeartWood_C', 'Leaf_C']
+
 
         self.filename_vars = {}
         self.filename_vars['NPP'] = 'vegfluxC'
@@ -101,6 +104,10 @@ class UI_ModelRunInterface:
         self.load_spinup_data = False
         self.have_spinup_data = False
         self.have_transient_data = False
+
+
+        for pft in PftQuincy:
+            self.ui.comboBox_PFT.addItem(pft.name)
 
     def change_cb1(self):
         self.selected_vars[0] = self.ui.cB_output_1.currentText()

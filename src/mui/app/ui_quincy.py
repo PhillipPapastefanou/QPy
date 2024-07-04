@@ -428,8 +428,6 @@ class UI_Quincy(QtWidgets.QMainWindow, Ui_MainWindow):
         namelist.grid_ctl.longitude = self.gridcell.lon_pts
 
 
-        # Working on
-
 
         from src.quincy.base.NamelistTypes import VegBnfScheme
         from src.quincy.base.NamelistTypes import BiomassAllocScheme
@@ -458,8 +456,9 @@ class UI_Quincy(QtWidgets.QMainWindow, Ui_MainWindow):
         namelist.soil_biogeochemistry_ctl.flag_sb_prescribe_po4 = True
 
         # To be parsed
-        namelist.vegetation_ctl.plant_functional_type_id = PftQuincy.TrH.value
-        namelist.vegetation_ctl.plant_functional_type_id = 1
+        namelist.vegetation_ctl.plant_functional_type_id = PftQuincy[self.ui.comboBox_PFT.currentText()].value
+
+        print(namelist.vegetation_ctl.plant_functional_type_id )
 
         namelist.spq_ctl.soil_depth = 9.5
         namelist.spq_ctl.soil_awc_prescribe = 231
@@ -602,12 +601,17 @@ class ComputationThread(QThread):
         # emit result to the AppWidget
 
     def stop(self):
-        # # Send SIGTER (on Linux)
-        self.qg.process_q.terminate()
-        # # Wait for process to terminate
-        returncode = self.qg.process_q.wait()
-        # mark this thread as not alive
-        self.alive = False
-        # wait for it to really finish
-        self.wait()
+
+        if  hasattr(self.qg, 'process_q'):
+
+            # # Send SIGTER (on Linux)
+            self.qg.process_q.terminate()
+            # # Wait for process to terminate
+            returncode = self.qg.process_q.wait()
+            # mark this thread as not alive
+            self.alive = False
+            # wait for it to really finish
+            self.wait()
+
+
 

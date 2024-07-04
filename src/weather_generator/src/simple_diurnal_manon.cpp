@@ -169,6 +169,15 @@ double Simple_Diurnal_Manon_Weather_Generator::calc_day_length(double day_of_yea
     const double a = std::sin(rlat) * sindec;
     const double b = std::cos(rlat) * std::cos(std::asin(sindec));
 
+    double x = a/b;
+
+    if (x < -1.0){
+        return 0;
+    }
+    if (x > 1.0){
+        return 1.0;
+    }
+
     return 12. * (1. + (2. / PI) * std::asin(a / b));
 }
 
@@ -376,8 +385,11 @@ Simple_Diurnal_Manon_Weather_Generator::estimate_diurnal_sw_down(double sw_day, 
 
     std::vector<double> sw_down(48);
     double par_avg = std::accumulate(par_diurnal.begin(), par_diurnal.end(), 0) / 48.0;
-    for (int i = 0; i < 48; ++i) {
-        sw_down[i] = sw_day * par_diurnal[i]/par_avg;
+
+    if(par_avg > 0.0001) {
+        for (int i = 0; i < 48; ++i) {
+            sw_down[i] = sw_day * par_diurnal[i] / par_avg;
+        }
     }
     return sw_down;
 }
@@ -399,9 +411,18 @@ Simple_Diurnal_Manon_Weather_Generator::estimate_diurnal_lw_down(double lw_day_m
     // Rescale lw_down to match mean
     double lw_down_rvg_avg = std::accumulate(lw_down.begin(), lw_down.end(), 0) / 48.0;
 
-    for (int i = 0; i < 48; ++i) {
-        lw_down[i] *= lw_day_mean/lw_down_rvg_avg;
+    if (lw_down_rvg_avg < 0.0001){
+        for (int i = 0; i < 48; ++i) {
+            lw_down[i] = 0.0;
+        }
     }
+    else{
+        for (int i = 0; i < 48; ++i) {
+            lw_down[i] *= lw_day_mean/lw_down_rvg_avg;
+        }
+    }
+
+
 
     return lw_down;
 }

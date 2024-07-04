@@ -787,7 +787,7 @@
      <x>0</x>
      <y>0</y>
      <width>1655</width>
-     <height>22</height>
+     <height>24</height>
     </rect>
    </property>
   </widget>
@@ -798,7 +798,7 @@
    </property>
    <property name="minimumSize">
     <size>
-     <width>470</width>
+     <width>613</width>
      <height>60</height>
     </size>
    </property>
@@ -867,6 +867,16 @@
       </widget>
      </item>
      <item>
+      <widget class="QLabel" name="label_14">
+       <property name="text">
+        <string>PFT:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QComboBox" name="comboBox_PFT"/>
+     </item>
+     <item>
       <widget class="QLabel" name="label_13">
        <property name="text">
         <string>Spinup years:</string>
@@ -874,7 +884,14 @@
       </widget>
      </item>
      <item>
-      <widget class="QLineEdit" name="lineEdit_nyear_spinup"/>
+      <widget class="QLineEdit" name="lineEdit_nyear_spinup">
+       <property name="maximumSize">
+        <size>
+         <width>60</width>
+         <height>16777215</height>
+        </size>
+       </property>
+      </widget>
      </item>
      <item>
       <widget class="QLabel" name="label">

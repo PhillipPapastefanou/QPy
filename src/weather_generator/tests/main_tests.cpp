@@ -15,15 +15,41 @@
 int main(int argc, char* argv[]) {
 
 
-    std::string monthly_input_file = "/Users/pp/Documents/Repos/QPy/app/-60.25_-3.25/monthly_forcing.csv";
-    std::string input_setting_file = "/Users/pp/Documents/Repos/QPy/app/-60.25_-3.25/site_data.csv";
-    std::string  output_file = "/Users/pp/Documents/Repos/QPy/app/-60.25_-3.25/climate_pres.dat";
+//    std::string monthly_input_file = "/Users/pp/Documents/Repos/QPy/app/-60.25_-3.25/monthly_forcing.csv";
+//    std::string input_setting_file = "/Users/pp/Documents/Repos/QPy/app/-60.25_-3.25/site_data.csv";
+//    std::string  output_file = "/Users/pp/Documents/Repos/QPy/app/-60.25_-3.25/climate_pres.dat";
+//
+//    Gridcell gridcell;
+//    gridcell.min_year = 1981;
+//    gridcell.max_year = 2022;
+//    gridcell.lon = -60.25;
+//    gridcell.lat = -3.25;
+
+//    std::string monthly_input_file = "/Users/pp/Documents/Repos/QPy/app/94.75_59.25/monthly_forcing.csv";
+//    std::string input_setting_file = "/Users/pp/Documents/Repos/QPy/app/94.75_59.25/site_data.csv";
+//    std::string  output_file = "/Users/pp/Documents/Repos/QPy/app/94.75_59.25/climate_pres.dat";
+//
+//
+//
+//
+//    Gridcell gridcell;
+//    gridcell.min_year = 1981;
+//    gridcell.max_year = 2022;
+//    gridcell.lon = 94.75;
+//    gridcell.lat = 59.25;
+
+    std::string monthly_input_file = "/Users/pp/Documents/Repos/QPy/app/101.75_72.25/monthly_forcing.csv";
+    std::string input_setting_file = "/Users/pp/Documents/Repos/QPy/app/101.75_72.25/site_data.csv";
+    std::string  output_file = "/Users/pp/Documents/Repos/QPy/app/101.75_72.25/climate_pres.dat";
 
     Gridcell gridcell;
     gridcell.min_year = 1981;
     gridcell.max_year = 2022;
-    gridcell.lon = -60.25;
-    gridcell.lat = -3.25;
+    gridcell.lon = 101.75;
+    gridcell.lat = 72.25;
+
+
+
 
     // Get information to generate forcing for that particular gridcell
     GridcellSettingReader setting_reader(input_setting_file);
@@ -49,7 +75,7 @@ int main(int argc, char* argv[]) {
     double p = 0.0;
     for (int i = 0; i < daily_forcing.size(); ++i) {
 
-        p+= daily_forcing[i].d_rain;
+        p+= daily_forcing[i].d_sw_rad;
     }
     p/= 42.0;
 
@@ -62,9 +88,7 @@ int main(int argc, char* argv[]) {
     double px= 0.0;
     for (int i = 0; i < subdaily_forcings.size(); ++i) {
         for (int j = 0; j < 48; ++j) {
-
-
-            px += subdaily_forcings[i].sd_rain[j];}
+            px += subdaily_forcings[i].sd_sw_rad[j];}
         }
 
     px/= 42.0 * 48.0;
