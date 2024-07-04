@@ -1,10 +1,13 @@
 import os.path
 
-from src.mui.designs.setup_design import Ui_MainWindow
+from src.mui.designs.ui_setup_design import Ui_MainWindow
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import pyqtSlot, pyqtSignal, QThread, QObject
 from src.mui.ui_settings import Ui_Settings
 from src.mui.ui_settings import Ui_Settings_Parser
+from src.mui.logging import MessageType
+from src.mui.logging import MessageFormat
+
 from PyQt5.QtWidgets import QApplication
 from queue import Queue
 from src.mui.setup.setup_model_interface import SetupParserInterface
@@ -44,7 +47,7 @@ class UI_Setup(QtWidgets.QMainWindow, Ui_MainWindow):
 
         self.ui.pushButton_Build.clicked.connect(self.build)
         self.ui.pushButton_Save.clicked.connect(self.save)
-        self.setup_interface.sig_add_text.connect(self.append_text)
+        self.setup_interface.sig_add_log.connect(self.append_message_log)
         self.ui.lineEdit_quincy_directory.textChanged.connect(self.update_quincy_root_path_set)
         self.ui.lineEdit_forcing_directory.textChanged.connect(self.update_forcing_root_path_set)
 
@@ -77,7 +80,7 @@ class UI_Setup(QtWidgets.QMainWindow, Ui_MainWindow):
 
         self.setup_interface.parser.check_directory_QPy()
         self.setup_interface.parser.check_directory_forcing()
-        self.setup_interface.parser.check_directory_quincy()
+        self.setup_interface.parser.check_directory_quincy(self.append_message_log)
         self.setup_interface.parser.check_weather_generator_binary()
         self.setup_interface.parser.check_quincy_binary()
 
@@ -105,7 +108,7 @@ class UI_Setup(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def update_quincy_root_path_set(self):
         self.setup_interface_parser.path_quincy_directory = self.ui.lineEdit_quincy_directory.text()
-        self.setup_interface_parser.check_directory_quincy()
+        self.setup_interface_parser.check_directory_quincy(self.append_message_log)
         self.set_paths_and_bins(self.ui.label_quincy_directory, self.ui.lineEdit_quincy_directory,
                                 self.setup_interface_parser.found_quincy_directory, self.setup_interface_parser.path_quincy_directory)
 
@@ -135,38 +138,55 @@ class UI_Setup(QtWidgets.QMainWindow, Ui_MainWindow):
         self.ui.label_quincy_binary.setPixmap(self.pix_checked)
         self.found_quincy_binary = True
 
-    @pyqtSlot(str)
-    def append_text(self,text):
+    @pyqtSlot(str, int)
+    def append_message_log(self, text, message_type: MessageType):
         self.ui.textBrowser_Logging.moveCursor(QtGui.QTextCursor.End)
+        # if self.new_line_logger:
+        #     date_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        #     text_with_date = f"{date_str} {text}"
+        # else:
+        #     text_with_date = f"{text}"
+        #
+        # if '\n' in text:
+        #     self.new_line_logger = True
+        # else:
+        #     self.new_line_logger = False
 
-        if self.new_line_logger:
-            date_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            text_with_date = f"{date_str} {text}"
-        else:
-            text_with_date = f"{text}"
+        date_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        text_with_date = f"{date_str} {text}"
 
-        if '\n' in text:
-            self.new_line_logger = True
-        else:
-            self.new_line_logger = False
 
-        self.ui.textBrowser_Logging.insertPlainText( text_with_date )
+        if message_type == MessageType.INFO.value:
+            text_with_date = MessageFormat.INFO.format(text_with_date)
+        if message_type == MessageType.WARN.value:
+            text_with_date = MessageFormat.WARN.format(text_with_date)
+        if message_type == MessageType.ERROR.value:
+            text_with_date = MessageFormat.ERROR.format(text_with_date)
+        if message_type == MessageType.SUCCESS.value:
+            text_with_date = MessageFormat.SUCCESS.format(text_with_date)
+
+        self.ui.textBrowser_Logging.append(text_with_date )
+
+
 
 
     def build(self):
-
-        self.thread = BuildingThread(self.setup_interface)
-        self.thread.start()
+        self.ui.pushButton_Build.setEnabled(False)
+        self.setup_thread = BuildingThread(self.setup_interface)
+        self.setup_thread.finished.connect(self.on_setup_finished)
+        self.setup_thread.start()
+    def on_setup_finished(self):
+        self.setup_thread.deleteLater()
+        self.ui.pushButton_Build.setEnabled(True)
 
     def save(self):
         settings_parser = Ui_Settings_Parser()
 
+        self.append_message_log("Saving settings...", MessageType.INFO)
         setup_parser = self.setup_interface_parser
-
         self.ui_settings.directory_QPy = setup_parser.path_QPy_directory
         self.ui_settings.directory_quincy = setup_parser.path_quincy_directory
         self.ui_settings.directory_forcing = setup_parser.path_forcing_directory
-
         self.ui_settings.binary_weather_generator = setup_parser.lib_weather_gen.path
         self.ui_settings.binary_quincy = setup_parser.lib_quincy.path
 
@@ -177,3 +197,4 @@ class UI_Setup(QtWidgets.QMainWindow, Ui_MainWindow):
 
         settings_parser.settings = self.ui_settings
         settings_parser.save()
+        self.append_message_log("Done!", MessageType.SUCCESS)

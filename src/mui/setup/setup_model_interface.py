@@ -8,13 +8,13 @@ from enum import Enum
 from src.mui.setup.parser import MacParser, LinuxParser, WindowsParser
 from src.mui.setup.parser import BaseParser, OS
 from PyQt5.QtCore import pyqtSlot, pyqtSignal, QThread, QObject
-
+from src.mui.setup.ui_setup import MessageType
 
 class SetupParserInterface(QObject):
     sig_qpy_path = pyqtSignal(bool, str)
     sig_forcing_path = pyqtSignal(bool, str)
     sig_quincy_path = pyqtSignal(bool, str)
-    sig_add_text = pyqtSignal(str)
+    sig_add_log = pyqtSignal(str, int )
     sig_generator_bin = pyqtSignal(bool,str)
     sig_quincy_bin = pyqtSignal(bool,str)
     def __init__(self, ui_settings: Ui_Settings, *args, ** kwargs):
@@ -60,12 +60,12 @@ class SetupParserInterface(QObject):
         misc_input_settings.ndep_projection_scenario = ProjectionScenario.RCP126
 
 
-        self.parser.generate_weather_generator(self.sig_add_text)
-        self.parser.build_weather_generator(self.sig_add_text)
+        self.parser.generate_weather_generator(self.sig_add_log)
+        self.parser.build_weather_generator(self.sig_add_log)
         self.sig_generator_bin.emit(self.parser.lib_weather_gen.found, self.parser.lib_weather_gen.path)
 
-        self.parser.generate_quincy(self.sig_add_text)
-        self.parser.build_quincy(self.sig_add_text)
+        self.parser.generate_quincy(self.sig_add_log)
+        self.parser.build_quincy(self.sig_add_log)
         self.sig_quincy_bin.emit(self.parser.lib_quincy.found, self.parser.lib_quincy.path)
 
 
@@ -227,4 +227,5 @@ class BuildingThread(QThread):
 
     def run(self):
         self.parser.build()
+        self.finished.emit()
 

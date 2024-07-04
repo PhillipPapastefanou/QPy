@@ -20,7 +20,6 @@ class Gridcell:
         self.lat_pts = 0.0
         self.min_year = 1981
         self.max_year = 2022
-
 class Scenario:
     def __init__(self, forcing_dataset: ForcingDataset):
         self.forcing_dataset = forcing_dataset

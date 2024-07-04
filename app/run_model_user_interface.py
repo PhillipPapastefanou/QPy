@@ -29,7 +29,7 @@ class Model_Setup_Run_Interface:
 
         self.setup_thread = QThread()
         loggin_receiver = LoggingReceiver(queue)
-        loggin_receiver.mysignal.connect(self.setup_widget.append_text)
+        loggin_receiver.sig_log.connect(self.setup_widget.append_message_log)
         loggin_receiver.moveToThread(self.setup_thread)
         self.setup_thread.started.connect(loggin_receiver.run)
         self.setup_thread.start()
@@ -46,7 +46,7 @@ class Model_Setup_Run_Interface:
 
         thread = QThread()
         loggin_receiver = LoggingReceiver(queue)
-        loggin_receiver.mysignal.connect(self.ui_widget.append_text)
+        loggin_receiver.sig_log.connect(self.ui_widget.append_log)
         loggin_receiver.moveToThread(thread)
         thread.started.connect(loggin_receiver.run)
         thread.start()

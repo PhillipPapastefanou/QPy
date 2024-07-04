@@ -1,6 +1,10 @@
 from src.forcing.misc_forcing_settings import Misc_Forcing_Settings
 from src.forcing.misc_forcing_settings import ProjectionScenario
 import pickle
+from enum import Enum
+
+
+
 class Ui_Settings(object):
     def __init__(self):
         #To be parsed

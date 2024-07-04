@@ -2,6 +2,7 @@ import os
 import sys
 import subprocess
 from enum import Enum
+from src.mui.logging import MessageType
 
 class Library:
     name = ""
@@ -78,24 +79,25 @@ class BaseParser:
     def check_directory_QPy(self):
         self.found_QPy_directory =  self.is_valid(self.path_QPy_directory)
     def check_directory_forcing(self):
-        self.found_forcing_directory = self.is_valid(self.path_forcing_directory)
+        self.found_forcing_directory = self.is_valid(os.path.join(self.path_forcing_directory, "misc"))
     def parse_directory_forcing(self):
-        self.found_forcing_directory = self.is_valid(self.path_forcing_directory)
+        self.check_directory_forcing()
         if not self.found_forcing_directory:
-            self.path_forcing_directory = os.path.join(self.path_QPy_directory, "forcing")
-            self.found_forcing_directory = self.is_valid(self.path_forcing_directory)
-    def check_directory_quincy(self):
+            if self.is_valid(os.path.join(self.path_QPy_directory, "forcing")):
+                self.path_forcing_directory = os.path.join(self.path_QPy_directory, "forcing")
+                self.found_forcing_directory = self.is_valid(self.path_forcing_directory)
+    def check_directory_quincy(self, sig_add_text):
         found_dir= self.is_valid(self.path_quincy_directory)
 
         if found_dir:
             self.found_quincy_directory = self.is_valid(os.path.join(self.path_quincy_directory, "CMakeLists.txt"))
             if self.found_quincy_directory:
-                print(f"Found quincy directory")
+                sig_add_text("Found quincy directory", MessageType.SUCCESS.value)
                 self.quincy_namelist_path = os.path.join(self.path_quincy_directory, 'contrib', 'namelist',
                                                                      'namelist.slm')
                 self.quincy_lctlib_path = os.path.join(self.path_quincy_directory, 'data', 'lctlib_quincy_nlct14.def')
             else:
-                print(f"Could not find CMakeLists.txt in quincy directory. Did you checkout the wrong branch?")
+                sig_add_text(f"Could not find CMakeLists.txt in quincy directory. Did you checkout the wrong branch?", MessageType.ERROR.value)
         else:
             self.found_quincy_directory = False
     def check_quincy_binary(self):
@@ -117,10 +119,8 @@ class BaseParser:
         self.lib_weather_gen.found = self.is_valid(self.lib_weather_gen.path)
     def generate_weather_generator(self, sig_add_text):
         raise NotImplementedError()
-
     def build_weather_generator(self, sig_add_text):
         raise NotImplementedError()
-
     def generate_quincy(self,sig_add_text):
         raise NotImplementedError()
     def build_quincy(self):
@@ -129,7 +129,6 @@ class BaseParser:
 class MacParser(BaseParser):
     def __init__(self, os: OS):
         BaseParser.__init__(self, os)
-
 
     def parse_lib_make(self, lib: Library):
         if self.is_valid(lib.path):
@@ -211,56 +210,42 @@ class MacParser(BaseParser):
     def generate_weather_generator(self, sig_add_text):
         wg_root_dir = os.path.join(self.path_QPy_directory, "src", "weather_generator")
         wg_build_dir = os.path.join(self.path_QPy_directory, "src", "weather_generator", "build")
-        p = subprocess.Popen([f"cmake -B {wg_build_dir} -S {wg_root_dir}"],
-                             stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True)
 
-        while p.poll() is None:
-            while True:
-                output = p.stdout.readline()
-                if output:
-                    sig_add_text.emit(p.stdout.readline())
-                output_err = p.stderr.readline()
-                if output_err:
-                    sig_add_text.emit(p.stderr.readline())
 
-                if (not output_err) & (not output):
-                    break
+        with subprocess.Popen(["cmake", "-B", wg_build_dir, "-S", wg_root_dir],
+                              stdout=subprocess.PIPE, bufsize=1, universal_newlines=True) as p:
+            p.stdout.reconfigure(line_buffering=True)
+            for line in p.stdout:
+                sig_add_text.emit(line, MessageType.INFO.value)
 
+        p.wait()
         if p.returncode != 0:
-            print("Could not generate weather generator build files")
+            sig_add_text.emit("Could not generate weather generator build files", MessageType.ERROR.value)
         else:
-            print("Successfully generated weather generator build files")
+            sig_add_text.emit("Successfully generated weather generator build files", MessageType.SUCCESS.value)
     def build_weather_generator(self, sig_add_text):
 
         wg_build_dir = os.path.join(self.path_QPy_directory, "src", "weather_generator", "build")
         wg_binary = os.path.join(self.path_QPy_directory, "src", "weather_generator", "build", "generator")
-        p = subprocess.Popen([f"make -C {wg_build_dir}"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
-                             shell=True)
 
-        while p.poll() is None:
-            while True:
-                output = p.stdout.readline()
-                if output:
-                    sig_add_text.emit(p.stdout.readline())
-                output_err = p.stderr.readline()
-                if output_err:
-                    sig_add_text.emit(p.stderr.readline())
+        with subprocess.Popen(["make", "-C", wg_build_dir],
+                              stdout=subprocess.PIPE, bufsize=1, universal_newlines=True) as p:
+            p.stdout.reconfigure(line_buffering=True)
+            for line in p.stdout:
+                sig_add_text.emit(line, MessageType.INFO.value)
 
-                if (not output_err) & (not output):
-                    break
-
+        p.wait()
         if p.returncode != 0:
-            print("Could not build weather generator")
+            sig_add_text.emit("Could not build weather generator", MessageType.ERROR.value)
         else:
-            print("Successfully build weather generator")
+            sig_add_text.emit("Successfully build weather generator", MessageType.SUCCESS.value)
             self.lib_weather_gen.path = wg_binary
             self.lib_weather_gen.found = True
-
     def generate_quincy(self, sig_add_text):
 
         if not self.found_quincy_directory:
-            print(f"Quincy root path not specified or found")
-            print(f"Stopping generation")
+            sig_add_text.emit("Quincy root path not specified or found", MessageType.ERROR.value)
+            sig_add_text.emit("Stopping generation", MessageType.ERROR.value)
             return
 
         quincy_root_dir = self.path_quincy_directory
@@ -269,63 +254,45 @@ class MacParser(BaseParser):
         if not os.path.isdir(quincy_root_dir):
             os.makedirs(quincy_root_dir)
 
-        p = subprocess.Popen([f"cmake -B {quincy_build_dir} -S {quincy_root_dir}"],
-                             stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True)
+        with subprocess.Popen(["cmake", "-B", quincy_build_dir, "-S", quincy_root_dir],
+                              stdout=subprocess.PIPE, bufsize=1, universal_newlines=True) as p:
+            p.stdout.reconfigure(line_buffering=True)
+            for line in p.stdout:
+                sig_add_text.emit(line, MessageType.INFO.value)
 
-        while p.poll() is None:
-            while True:
-                output = p.stdout.readline()
-                if output:
-                    sig_add_text.emit(p.stdout.readline())
-                output_err = p.stderr.readline()
-                if output_err:
-                    sig_add_text.emit(p.stderr.readline())
-
-                if (not output_err) & (not output):
-                    break
         p.wait()
-
         if p.returncode != 0:
-            print("Could not generate quincy build files")
+            sig_add_text.emit("Could not generate quincy build files", MessageType.ERROR.value)
         else:
-            print("Successfully generated quincy build files")
+            sig_add_text.emit("Successfully generated quincy build files", MessageType.SUCCESS.value)
 
     def build_quincy(self, sig_add_text):
 
         if not self.found_quincy_directory:
-            print(f"Quincy root path not specified or found")
-            print(f"Stopping generation")
+            sig_add_text.emit("Quincy root path not specified or found", MessageType.ERROR.value)
+            sig_add_text.emit("Stopping generation", MessageType.ERROR.value)
             return
 
         quincy_root_dir = self.path_quincy_directory
         quincy_build_dir = os.path.join(quincy_root_dir,"build_cmake")
+        if not os.path.exists(quincy_build_dir):
+            os.makedirs(quincy_build_dir)
 
-        p = subprocess.Popen([f"make -C {quincy_build_dir}"], stderr=subprocess.PIPE, stdout=subprocess.PIPE, text=True,
-                             shell=True)
-
-        while p.poll() is None:
-            while True:
-                output = p.stdout.readline()
-                if output:
-                    sig_add_text.emit(p.stdout.readline())
-
-                output_err = p.stderr.readline()
-                if output_err:
-                    sig_add_text.emit(p.stderr.readline())
-                    #print(p.stderr.readline())
-                if (not output_err) & (not output):
-                    break
+        with subprocess.Popen(["make", "-C", quincy_build_dir], stdout=subprocess.PIPE, bufsize=1, universal_newlines=True) as p:
+            p.stdout.reconfigure(line_buffering=True)
+            for line in p.stdout:
+                sig_add_text.emit(line, MessageType.INFO.value)
 
         p.wait()
         if p.returncode != 0:
-            print("Could not build quincy")
+            sig_add_text.emit("Could not build quincy", MessageType.ERROR.value)
         else:
-            print("Successfully build quincy")
+            sig_add_text.emit("Successfully build quincy", MessageType.SUCCESS.value)
             quincy_binary  = os.path.join(quincy_build_dir, "quincy_run")
             self.lib_quincy.path = quincy_binary
             self.lib_quincy.found = True
 
-        if self.lib_weather_gen.found & self.lib_quincy.found:
+        if self.lib_weather_gen.found & self.lib_quincy.found & self.found_forcing_directory:
             self.successfull_setup  = True
 
 class LinuxParser(BaseParser):
@@ -416,58 +383,45 @@ class LinuxParser(BaseParser):
     def generate_weather_generator(self, sig_add_text):
         wg_root_dir = os.path.join(self.path_QPy_directory, "src", "weather_generator")
         wg_build_dir = os.path.join(self.path_QPy_directory, "src", "weather_generator", "build")
-        p = subprocess.Popen([f"cmake -B {wg_build_dir} -S {wg_root_dir}"],
-                             stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True)
 
-        while p.poll() is None:
-            while True:
-                output = p.stdout.readline()
-                if output:
-                    sig_add_text.emit(p.stdout.readline())
-                output_err = p.stderr.readline()
-                if output_err:
-                    sig_add_text.emit(p.stderr.readline())
+        with subprocess.Popen(["cmake", "-B", wg_build_dir, "-S", wg_root_dir],
+                              stdout=subprocess.PIPE, bufsize=1, universal_newlines=True) as p:
+            p.stdout.reconfigure(line_buffering=True)
+            for line in p.stdout:
+                sig_add_text.emit(line, MessageType.INFO.value)
 
-                if (not output_err) & (not output):
-                    break
-
+        p.wait()
         if p.returncode != 0:
-            print("Could not generate weather generator build files")
+            sig_add_text.emit("Could not generate weather generator build files", MessageType.ERROR.value)
         else:
-            print("Successfully generated weather generator build files")
+            sig_add_text.emit("Successfully generated weather generator build files", MessageType.SUCCESS.value)
+
+
     def build_weather_generator(self, sig_add_text):
 
         wg_build_dir = os.path.join(self.path_QPy_directory, "src", "weather_generator", "build")
         wg_binary = os.path.join(self.path_QPy_directory, "src", "weather_generator", "build", "generator")
-        p = subprocess.Popen([f"make -C {wg_build_dir}"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
-                             shell=True)
 
-        while p.poll() is None:
-            while True:
-                output = p.stdout.readline()
-                if output:
-                    sig_add_text.emit(p.stdout.readline())
-                output_err = p.stderr.readline()
-                if output_err:
-                    sig_add_text.emit(p.stderr.readline())
+        with subprocess.Popen(["make", "-C", wg_build_dir],
+                              stdout=subprocess.PIPE, bufsize=1, universal_newlines=True) as p:
+            p.stdout.reconfigure(line_buffering=True)
+            for line in p.stdout:
+                sig_add_text.emit(line, MessageType.INFO.value)
 
-                if (not output_err) & (not output):
-                    break
-
+        p.wait()
         if p.returncode != 0:
-            print("Could not build weather generator")
+            sig_add_text.emit("Could not build weather generator", MessageType.ERROR.value)
         else:
-            print("Successfully build weather generator")
+            sig_add_text.emit("Successfully build weather generator", MessageType.SUCCESS.value)
             self.lib_weather_gen.path = wg_binary
             self.lib_weather_gen.found = True
-
 
 
     def generate_quincy(self, sig_add_text):
 
         if not self.found_quincy_directory:
-            print(f"Quincy root path not specified or found")
-            print(f"Stopping generation")
+            sig_add_text.emit("Quincy root path not specified or found", MessageType.ERROR.value)
+            sig_add_text.emit("Stopping generation", MessageType.ERROR.value)
             return
 
         quincy_root_dir = self.path_quincy_directory
@@ -476,63 +430,45 @@ class LinuxParser(BaseParser):
         if not os.path.isdir(quincy_root_dir):
             os.makedirs(quincy_root_dir)
 
-        p = subprocess.Popen([f"cmake -B {quincy_build_dir} -S {quincy_root_dir}"],
-                             stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True)
+        with subprocess.Popen(["cmake", "-B", quincy_build_dir, "-S", quincy_root_dir],
+                              stdout=subprocess.PIPE, bufsize=1, universal_newlines=True) as p:
+            p.stdout.reconfigure(line_buffering=True)
+            for line in p.stdout:
+                sig_add_text.emit(line, MessageType.INFO.value)
 
-        while p.poll() is None:
-            while True:
-                output = p.stdout.readline()
-                if output:
-                    sig_add_text.emit(p.stdout.readline())
-                output_err = p.stderr.readline()
-                if output_err:
-                    sig_add_text.emit(p.stderr.readline())
-
-                if (not output_err) & (not output):
-                    break
         p.wait()
-
         if p.returncode != 0:
-            print("Could not generate quincy build files")
+            sig_add_text.emit("Could not generate quincy build files", MessageType.ERROR.value)
         else:
-            print("Successfully generated quincy build files")
+            sig_add_text.emit("Successfully generated quincy build files", MessageType.SUCCESS.value)
 
     def build_quincy(self, sig_add_text):
 
         if not self.found_quincy_directory:
-            print(f"Quincy root path not specified or found")
-            print(f"Stopping generation")
+            sig_add_text.emit("Quincy root path not specified or found", MessageType.ERROR.value)
+            sig_add_text.emit("Stopping generation", MessageType.ERROR.value)
             return
 
         quincy_root_dir = self.path_quincy_directory
         quincy_build_dir = os.path.join(quincy_root_dir,"build_cmake")
+        if not os.path.exists(quincy_build_dir):
+            os.makedirs(quincy_build_dir)
 
-        p = subprocess.Popen([f"make -C {quincy_build_dir}"], stderr=subprocess.PIPE, stdout=subprocess.PIPE, text=True,
-                             shell=True)
-
-        while p.poll() is None:
-            while True:
-                output = p.stdout.readline()
-                if output:
-                    sig_add_text.emit(p.stdout.readline())
-
-                output_err = p.stderr.readline()
-                if output_err:
-                    sig_add_text.emit(p.stderr.readline())
-                    #print(p.stderr.readline())
-                if (not output_err) & (not output):
-                    break
+        with subprocess.Popen(["make", "-C", quincy_build_dir], stdout=subprocess.PIPE, bufsize=1, universal_newlines=True) as p:
+            p.stdout.reconfigure(line_buffering=True)
+            for line in p.stdout:
+                sig_add_text.emit(line, MessageType.INFO.value)
 
         p.wait()
         if p.returncode != 0:
-            print("Could not build quincy")
+            sig_add_text.emit("Could not build quincy", MessageType.ERROR.value)
         else:
-            print("Successfully build quincy")
+            sig_add_text.emit("Successfully build quincy", MessageType.SUCCESS.value)
             quincy_binary  = os.path.join(quincy_build_dir, "quincy_run")
             self.lib_quincy.path = quincy_binary
             self.lib_quincy.found = True
 
-        if self.lib_weather_gen.found & self.lib_quincy.found:
+        if self.lib_weather_gen.found & self.lib_quincy.found & self.found_forcing_directory:
             self.successfull_setup  = True
 
 class WindowsParser(BaseParser):
@@ -684,9 +620,9 @@ class WindowsParser(BaseParser):
         p = subprocess.run(f"start /wait cmd /c {command}", text=True, shell=True, capture_output=True)
 
         if p.returncode != 0:
-            print("Could not generate weather generator build files")
+            sig_add_text.emit("Could not generate weather generator build files", MessageType.ERROR.value)
         else:
-            print("Successfully generated weather generator build files")
+            sig_add_text.emit("Successfully generated weather generator build files", MessageType.SUCCESS.value)
     def build_weather_generator(self, sig_add_text):
 
         wg_build_dir = os.path.join(self.path_QPy_directory, "src", "weather_generator", "build")
@@ -696,17 +632,17 @@ class WindowsParser(BaseParser):
         p = subprocess.run(f"start /wait cmd /c {command}", text=True, shell=True, capture_output=True)
 
         if p.returncode != 0:
-            print("Could not build weather generator")
+            sig_add_text.emit("Could not build weather generator", MessageType.ERROR.value)
         else:
-            print("Successfully build weather generator")
+            sig_add_text.emit("Successfully build weather generator", MessageType.SUCCESS.value)
             self.lib_weather_gen.path = wg_binary
             self.lib_weather_gen.found = True
 
     def generate_quincy(self, sig_add_text):
 
         if not self.found_quincy_directory:
-            print(f"Quincy root path not specified or found")
-            print(f"Stopping generation")
+            sig_add_text.emit("Quincy root path not specified or found", MessageType.ERROR.value)
+            sig_add_text.emit("Stopping generation", MessageType.ERROR.value)
             return
 
         quincy_root_dir = self.path_quincy_directory
@@ -719,15 +655,15 @@ class WindowsParser(BaseParser):
         p = subprocess.run(f"start /wait cmd /c {command}", text=True, shell=True, capture_output=True)
 
         if p.returncode != 0:
-            print("Could not generate quincy build files")
+            sig_add_text.emit("Could not generate quincy build files", MessageType.ERROR.value)
         else:
-            print("Successfully generated quincy build files")
+            sig_add_text.emit("Successfully generated quincy build files", MessageType.SUCCESS.value)
 
     def build_quincy(self, sig_add_text):
 
         if not self.found_quincy_directory:
-            print(f"Quincy root path not specified or found")
-            print(f"Stopping generation")
+            sig_add_text.emit("Quincy root path not specified or found", MessageType.ERROR.value)
+            sig_add_text.emit("Stopping generation", MessageType.ERROR.value)
             return
 
         quincy_root_dir = self.path_quincy_directory
@@ -737,12 +673,12 @@ class WindowsParser(BaseParser):
                            shell=True, capture_output=True)
 
         if p.returncode != 0:
-            print("Could not build quincy")
+            sig_add_text.emit("Could not build quincy", MessageType.ERROR.value)
         else:
-            print("Successfully build quincy")
-            quincy_binary  = os.path.join(quincy_build_dir, "quincy_run.exe")
+            sig_add_text.emit("Successfully build quincy", MessageType.SUCCESS.value)
+            quincy_binary  = os.path.join(quincy_build_dir, "quincy_run")
             self.lib_quincy.path = quincy_binary
             self.lib_quincy.found = True
 
-        if self.lib_weather_gen.found & self.lib_quincy.found:
+        if self.lib_weather_gen.found & self.lib_quincy.found & self.found_forcing_directory:
             self.successfull_setup  = True

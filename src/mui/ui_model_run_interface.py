@@ -1,17 +1,18 @@
 import os
-
-from src.mui.designs.quincy_ui_desin import Ui_MainWindow
+import pandas as pd
+import numpy as np
+from src.mui.designs.ui_quincy_design import Ui_MainWindow
 from src.mui.ui_settings import Ui_Settings
 from src.mui.var_types import Gridcell
 from src.mui.var_types import Scenario
+from src.mui.logging import MessageType
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import pyqtSlot, pyqtSignal, QThread, QObject
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
-import pandas as pd
-import numpy as np
 
-class ModelRunInterface:
+
+class UI_ModelRunInterface:
 
     def __init__(self, ui : Ui_MainWindow):
         self.ui = ui
@@ -116,8 +117,6 @@ class ModelRunInterface:
             self.lines_spinup[0].set_ydata(self.output_df_spinup[self.filename_vars[self.selected_vars[0]]][self.selected_vars[0]])
 
 
-
-
         self.axis[0].relim()
         self.axis[0].autoscale()
         self.axis[0].set_ylabel(self.selected_vars[0])
@@ -170,7 +169,7 @@ class ModelRunInterface:
             self.have_spinup_data = True
             self.have_transient_data = False
 
-    def update_output_plots(self):
+    def update_output_plots(self, sig_log):
 
         output_res = "weekly"
         mult = self.scenario.time_multiplier
@@ -208,8 +207,9 @@ class ModelRunInterface:
                     # self.output_dfs_spinup[df_str]["datetime"]  = self.output_dfs_spinup[df_str]["datetime"] + pd.to_timedelta(np.arange(0, n_current_stamps) * mult + mult, unit="D")
                     #self.output_dfs_spinup[df_str]["year"]  = pd.DatetimeIndex(self.output_dfs_spinup[df_str]["datetime"]).year
                     self.current_year = int(n_current_stamps * mult / 365.0) + self.scenario.first_year_spinup
+
                 except Exception as err:
-                    print(f"Unexpected {err=}, {type(err)=}")
+                    sig_log.emit(f"Unexpected {err=}, {type(err)=}", MessageType.ERROR)
                     return
             else:
                 try:
@@ -225,17 +225,17 @@ class ModelRunInterface:
                     self.output_dfs_transient[df_str]["datetime"]  = dates
                     self.output_dfs_transient[df_str]["year"] = dates.astype('datetime64[Y]').astype(int) + 1970
                     self.current_year = int(n_current_stamps * mult / 365.0)+ self.scenario.first_year_transient
+
                 except Exception as err:
-                    print(f"Unexpected {err=}, {type(err)=}")
+                    sig_log.emit(f"Unexpected {err=}, {type(err)=}", MessageType.ERROR)
                     return
 
         if self.current_year >= self.scenario.first_year_change:
-            print(f"Simulating manipulation year: {self.current_year}")
+            sig_log.emit(f"Simulating manipulation year: {self.current_year}", MessageType.INFO)
         elif self.current_year >= self.scenario.first_year_transient:
-            print(f"Simulating transient year: {self.current_year}")
+            sig_log.emit(f"Simulating transient year: {self.current_year}", MessageType.INFO)
         else:
-            print(f"Simulating spinup year: {self.current_year}")
-
+            sig_log.emit(f"Simulating spinup year: {self.current_year}", MessageType.INFO)
 
 
         if self.have_spinup_data:

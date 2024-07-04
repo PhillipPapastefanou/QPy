@@ -1,6 +1,8 @@
-from src.mui.designs.quincy_ui_desin import Ui_MainWindow
+from src.mui.designs.ui_quincy_design import Ui_MainWindow
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import pyqtSlot, pyqtSignal, QThread, QObject
+from src.mui.logging import MessageType
+from src.mui.logging import MessageFormat
 
 
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
@@ -20,7 +22,7 @@ import shutil
 from src.mui.forcing_prep import ForcingSlicer
 from src.mui.forcing_prep import ForcingGenerator
 from src.mui.ui_settings import Ui_Settings
-from src.mui.ui_model_run_interface import ModelRunInterface
+from src.mui.ui_model_run_interface import UI_ModelRunInterface
 from src.mui.var_types import Gridcell
 from src.mui.var_types import ForcingDataset
 from src.mui.var_types import Scenario
@@ -35,7 +37,7 @@ class UI_Quincy(QtWidgets.QMainWindow, Ui_MainWindow):
 
         self.ui_settings = settings
 
-        self.model_run_display = ModelRunInterface(self.ui)
+        self.model_run_display = UI_ModelRunInterface(self.ui)
         self.model_run_display.setup_ui()
 
         self.splitDockWidget(self.ui.dockWidget_output_1, self.ui.dockWidget_output_2 ,QtCore.Qt.Horizontal)
@@ -99,10 +101,6 @@ class UI_Quincy(QtWidgets.QMainWindow, Ui_MainWindow):
         self.init_run()
 
         self.model_run_display.init(self.ui_settings, self.gridcell, self.scenario)
-
-        self.new_line_logger = True
-
-
         self.ui.lineEdit_nyear_spinup.setText(str(self.scenario.nyear_spinup))
 
 
@@ -358,21 +356,19 @@ class UI_Quincy(QtWidgets.QMainWindow, Ui_MainWindow):
 
 
     def run_model(self):
-
         if self.df_base.isnull().values.any():
-            print("Nothings terrestrial growing here! Selected different gridcell.")
+            self.append_log("Nothing terrestrial is growing here! Selected different gridcell.", MessageType.WARN.value)
             return
 
         self.ui.pushButton_run_model.setEnabled(False)
         self.ui.pushButton_stop_model.setEnabled(True)
-
-
 
         # Start computation
         self.running_thread = ComputationThread(self)
         self.running_thread.finished.connect(self.on_thread_finished)
         self.running_thread.progressedChanged.connect(self.onCountChanged)
         self.running_thread.progressBarReset.connect(self.resetProgressBar)
+        self.running_thread.sig_log.connect(self.append_log)
         self.running_thread.start()
 
     def stop_model(self):
@@ -415,27 +411,32 @@ class UI_Quincy(QtWidgets.QMainWindow, Ui_MainWindow):
         from src.quincy.base.NamelistTypes import ForcingMode
         from src.quincy.base.NamelistTypes import OutputIntervalPool
         from src.quincy.base.NamelistTypes import OutputIntervalFlux
+        from src.quincy.base.PFTTypes import PftQuincy
 
         reader = NamelistReader(self.ui_settings.quincy_namelist_path)
-
         namelist = reader.parse()
+
+
+        #namelist.vegetation_ctl.plant_functional_type_id =
+        namelist.vegetation_ctl.plant_functional_type_id = PftQuincy.TrH.value
+
+
         namelist.base_ctl.output_start_first_day_year = 1
         namelist.base_ctl.output_end_last_day_year  = self.gridcell.max_year - self.gridcell.min_year + 1
         namelist.base_ctl.forcing_file_start_yr = self.gridcell.min_year
         namelist.base_ctl.forcing_file_last_yr = self.gridcell.max_year
         namelist.jsb_forcing_ctl.simulation_length_number  = self.gridcell.max_year - self.gridcell.min_year + 1
 
-        #Untested:
-
         namelist.base_ctl.output_interval_flux_spinup = OutputIntervalFlux.WEEKLY
         namelist.base_ctl.output_interval_pool_spinup = OutputIntervalPool.WEEKLY
-
 
         namelist.jsb_forcing_ctl.transient_simulation_start_year = self.scenario.first_year_transient
         namelist.jsb_forcing_ctl.transient_spinup_start_year = 1981
         namelist.jsb_forcing_ctl.transient_spinup_end_year = 2002
         namelist.jsb_forcing_ctl.transient_spinup_years = self.scenario.nyear_spinup
         namelist.jsb_forcing_ctl.forcing_mode = ForcingMode.TRANSIENT
+
+
 
         #namelist.base_ctl.include_nitrogen = False
         #namelist.base_ctl.include_nitrogen15 = False
@@ -458,28 +459,34 @@ class UI_Quincy(QtWidgets.QMainWindow, Ui_MainWindow):
     def constrain(self, value, min_b, max_b):
         return max(min(value, max_b), min_b)
 
-    @pyqtSlot(str)
-    def append_text(self,text):
+    @pyqtSlot(str, int)
+    def append_log(self, text, message_type ):
         self.ui.textBrowser_logger.moveCursor(QtGui.QTextCursor.End)
 
-        if self.new_line_logger:
-            date_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            text_with_date = f"{date_str} {text}"
-        else:
-            text_with_date = f"{text}"
+        # Pragmatic solution to not print whitespaces and newlines
+        if len(text) < 2:
+            return
 
-        if '\n' in text:
-            self.new_line_logger = True
-        else:
-            self.new_line_logger = False
+        date_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        text_with_date = f"{date_str} {text}"
 
-        self.ui.textBrowser_logger.insertPlainText( text_with_date )
+        if message_type == MessageType.INFO.value:
+            text_with_date = MessageFormat.INFO.format(text_with_date)
+        if message_type == MessageType.WARN.value:
+            text_with_date = MessageFormat.WARN.format(text_with_date)
+        if message_type == MessageType.ERROR.value:
+            text_with_date = MessageFormat.ERROR.format(text_with_date)
+        if message_type == MessageType.SUCCESS.value:
+            text_with_date = MessageFormat.SUCCESS.format(text_with_date)
+
+        self.ui.textBrowser_logger.append( text_with_date )
 
 
 class ComputationThread(QThread):
 
     # setup a signal, which takes a single object as parameter
     finished = pyqtSignal()
+    sig_log = pyqtSignal(str, int)
     progressedChanged = pyqtSignal(int)
     progressBarReset = pyqtSignal(int, int)
 
@@ -493,43 +500,48 @@ class ComputationThread(QThread):
     def run(self):
 
         try:
-            print("Creating directories...")
+
+            self.sig_log.emit("Creating directories...", MessageType.INFO.value)
             self.qg.create_dirs()
-            print("Init forcing setup")
+
+            self.sig_log.emit("Init forcing setup...", MessageType.INFO.value)
             self.qg.model_run_display.init_quincy_config()
             min_progress = 0
             max_progress = self.qg.model_run_display.scenario.nyear_total
             self.progressBarReset.emit(min_progress, max_progress)
 
-            print("Exporting monthly forcing...")
+            self.sig_log.emit("Exporting monthly forcing...", MessageType.INFO.value)
             self.qg.export_monthly_forcing()
-            print("Applying weather generator...")
+
+            self.sig_log.emit("Applying weather generator...", MessageType.INFO.value)
             self.qg.generate_subdaily_forcing()
-            print("Generate lctlib file...")
+
+            self.sig_log.emit("Generating lctlib file...", MessageType.INFO.value)
             self.qg.generate_lctlib()
-            print("Generate namelist file...")
+
+            self.sig_log.emit("Generating namelist file...", MessageType.INFO.value)
             self.qg.generate_namelist()
-            print("Starting QUINCY")
+
+            self.sig_log.emit("Starting QUINCY...", MessageType.INFO.value)
             self.qg.start_quincy_simulation()
-            print("Process ID of subprocess %s" % self.qg.process_q.pid)
 
             while self.alive:
                 time.sleep(1.0)
-                progress_steps = self.qg.model_run_display.update_output_plots()
+                progress_steps = self.qg.model_run_display.update_output_plots(self.sig_log)
                 self.progressedChanged.emit(progress_steps)
                 poll = self.qg.process_q.poll()
                 if not poll is None:
                     break
 
             self.finished.emit()
-            print("Finished QUINCY")
+            self.sig_log.emit("Finished QUINCY simulation!", MessageType.SUCCESS.value)
 
             if not self.alive:
-                print("Thread :: Computation cancelled")
+                self.sig_log.emit("Thread :: Computation cancelled", MessageType.WARN.value)
                 return
 
         except Exception as err:
-            print(f"Unexpected {err=}, {type(err)=}")
+            self.sig_log.emit(f"Unexpected {err=}, {type(err)=}", MessageType.ERROR.value)
             return
         # emit result to the AppWidget
 
@@ -538,7 +550,6 @@ class ComputationThread(QThread):
         self.qg.process_q.terminate()
         # # Wait for process to terminate
         returncode = self.qg.process_q.wait()
-        print (f"Returncode of subprocess: {returncode}")
         # mark this thread as not alive
         self.alive = False
         # wait for it to really finish
