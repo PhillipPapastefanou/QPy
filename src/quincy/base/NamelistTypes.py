@@ -20,10 +20,12 @@ class CanopyLayerScheme(Enum):
     FAPAR = 0
 class VegBnfScheme(Enum):
     DYNAMIC = 0
+    UNLIMITED = 1
 class VegDynamicsScheme(Enum):
     POPULATION = 0
-class BiomasAllocScheme(Enum):
+class BiomassAllocScheme(Enum):
     FIXED = 0
+    DYNAMIC = 1
 class LeafStoichomScheme(Enum):
     FIXED = 0
 class SbModelScheme(Enum):

@@ -31,7 +31,7 @@ class VEGETATION_CTL:
     def __init__(self):
         self.veg_bnf_scheme             = VegBnfScheme.DYNAMIC
         self.veg_dynamics_scheme        = VegDynamicsScheme.POPULATION
-        self.biomass_alloc_scheme       = BiomasAllocScheme.FIXED
+        self.biomass_alloc_scheme       = BiomassAllocScheme.FIXED
         self.leaf_stoichom_scheme       = LeafStoichomScheme.FIXED
         self.plant_functional_type_id   = 4
         # site specific cohort harvest each x years

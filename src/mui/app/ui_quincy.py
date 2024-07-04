@@ -105,8 +105,8 @@ class UI_Quincy(QtWidgets.QMainWindow, Ui_MainWindow):
 
 
         #Todo temporary: remove
-        self.ui.lineEdit_lon.setText("9.75")
-        self.ui.lineEdit_lat.setText("3.75")
+        self.ui.lineEdit_lon.setText("-60.25")
+        self.ui.lineEdit_lat.setText("-3.25")
         self.text_changed_label_lon()
         self.text_changed_label_lat()
 
@@ -415,27 +415,84 @@ class UI_Quincy(QtWidgets.QMainWindow, Ui_MainWindow):
 
         reader = NamelistReader(self.ui_settings.quincy_namelist_path)
         namelist = reader.parse()
+        # Dynamic changes
 
-
-        #namelist.vegetation_ctl.plant_functional_type_id =
-        namelist.vegetation_ctl.plant_functional_type_id = PftQuincy.TrH.value
-
-
-        namelist.base_ctl.output_start_first_day_year = 1
         namelist.base_ctl.output_end_last_day_year  = self.gridcell.max_year - self.gridcell.min_year + 1
         namelist.base_ctl.forcing_file_start_yr = self.gridcell.min_year
         namelist.base_ctl.forcing_file_last_yr = self.gridcell.max_year
         namelist.jsb_forcing_ctl.simulation_length_number  = self.gridcell.max_year - self.gridcell.min_year + 1
+        namelist.jsb_forcing_ctl.transient_simulation_start_year = self.scenario.first_year_transient
+        namelist.jsb_forcing_ctl.forcing_mode = self.scenario.forcing_mode
+        namelist.jsb_forcing_ctl.transient_spinup_years = self.scenario.nyear_spinup
+        namelist.grid_ctl.latitude = self.gridcell.lat_pts
+        namelist.grid_ctl.longitude = self.gridcell.lon_pts
 
+
+        # Working on
+
+
+        from src.quincy.base.NamelistTypes import VegBnfScheme
+        from src.quincy.base.NamelistTypes import BiomassAllocScheme
+
+        #Static changes from usecase 80:
+        namelist.vegetation_ctl.veg_bnf_scheme = VegBnfScheme.UNLIMITED
+        namelist.vegetation_ctl.biomass_alloc_scheme = BiomassAllocScheme.DYNAMIC
+
+        namelist.assimilation_ctl.flag_t_jmax_acclimation = True
+        namelist.assimilation_ctl.flag_t_resp_acclimation = True
+
+        namelist.phenology_ctl.lai_max = 6.0
+        namelist.spq_ctl.nsoil_energy = 15
+        namelist.spq_ctl.nsoil_water = 15
+
+        from src.quincy.base.NamelistTypes import SbModelScheme
+        from src.quincy.base.NamelistTypes import SbNlossScheme
+        from src.quincy.base.NamelistTypes import SbBnfScheme
+        from src.quincy.base.NamelistTypes import SbAdsorbScheme
+
+        namelist.soil_biogeochemistry_ctl.sb_model_scheme = SbModelScheme.SIMPLE_1D
+        namelist.soil_biogeochemistry_ctl.sb_nloss_scheme = SbNlossScheme.DYNAMIC
+        namelist.soil_biogeochemistry_ctl.sb_bnf_scheme = SbBnfScheme.DYNAMIC
+
+        namelist.soil_biogeochemistry_ctl.sb_adsorp_scheme = SbAdsorbScheme.ECA_FULL
+        namelist.soil_biogeochemistry_ctl.flag_sb_prescribe_po4 = True
+
+        # To be parsed
+        namelist.vegetation_ctl.plant_functional_type_id = PftQuincy.TrH.value
+        namelist.vegetation_ctl.plant_functional_type_id = 1
+
+        namelist.spq_ctl.soil_depth = 9.5
+        namelist.spq_ctl.soil_awc_prescribe = 231
+        namelist.spq_ctl.soil_sand = 0.33
+        namelist.spq_ctl.soil_silt = 0.34
+        namelist.spq_ctl.soil_clay = 0.33
+        namelist.spq_ctl.bulk_density = 1300.285
+
+        namelist.soil_biogeochemistry_ctl.usda_taxonomy_class = 57
+        namelist.soil_biogeochemistry_ctl.nwrb_taxonomy_class = 44
+        namelist.soil_biogeochemistry_ctl.soil_ph = 6.5
+        namelist.soil_biogeochemistry_ctl.soil_p_labile = 62.209
+        namelist.soil_biogeochemistry_ctl.soil_p_slow = 30.4341
+        namelist.soil_biogeochemistry_ctl.soil_p_occluded = 124.4217
+        namelist.soil_biogeochemistry_ctl.soil_p_primary = 271.834
+        namelist.soil_biogeochemistry_ctl.qmax_org_fine_particle = 3.666
+
+
+        namelist.jsb_forcing_ctl.n_deposition_scheme = "dynamic"
+        namelist.jsb_forcing_ctl.p_deposition_scheme = "dynamic"
+
+        namelist.jsb_forcing_ctl.flag_read_dC13 = True
+        namelist.jsb_forcing_ctl.flag_read_DC14 = True
+
+
+
+
+        #Static changes
+        namelist.jsb_forcing_ctl.transient_spinup_start_year = self.gridcell.min_year
+        namelist.jsb_forcing_ctl.transient_spinup_end_year = 2002
         namelist.base_ctl.output_interval_flux_spinup = OutputIntervalFlux.WEEKLY
         namelist.base_ctl.output_interval_pool_spinup = OutputIntervalPool.WEEKLY
-
-        namelist.jsb_forcing_ctl.transient_simulation_start_year = self.scenario.first_year_transient
-        namelist.jsb_forcing_ctl.transient_spinup_start_year = 1981
-        namelist.jsb_forcing_ctl.transient_spinup_end_year = 2002
-        namelist.jsb_forcing_ctl.transient_spinup_years = self.scenario.nyear_spinup
-        namelist.jsb_forcing_ctl.forcing_mode = ForcingMode.TRANSIENT
-
+        namelist.base_ctl.output_start_first_day_year = 1
 
 
         #namelist.base_ctl.include_nitrogen = False
@@ -500,7 +557,6 @@ class ComputationThread(QThread):
     def run(self):
 
         try:
-
             self.sig_log.emit("Creating directories...", MessageType.INFO.value)
             self.qg.create_dirs()
 

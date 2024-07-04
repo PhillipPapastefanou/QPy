@@ -239,7 +239,7 @@ std::vector<double> Simple_Diurnal_Manon_Weather_Generator::disaggregate_rainfal
         rain[hour_index] = rain_day;
     }
 
-    else if(rain_day > 48){
+    else if(rain_day > 200){
 
         for (int i = 0; i < 48; ++i) {
             rain[i] = rain_day/48.0;
@@ -255,6 +255,10 @@ std::vector<double> Simple_Diurnal_Manon_Weather_Generator::disaggregate_rainfal
             int hour_index = uniform48(generator);
             rain[hour_index] += rate;
         }
+    }
+
+    for (int i = 0; i < 48; ++i) {
+        rain[i] *= 48.0;
     }
 
     return rain;

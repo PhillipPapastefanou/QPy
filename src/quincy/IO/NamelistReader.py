@@ -94,8 +94,8 @@ class NamelistReader:
                         self.iparse_enum(ctl_class, VegBnfScheme, name, value)
                     elif var_type == VegDynamicsScheme:
                         self.iparse_enum(ctl_class, VegDynamicsScheme, name, value)
-                    elif var_type == BiomasAllocScheme:
-                        self.iparse_enum(ctl_class, BiomasAllocScheme, name, value)
+                    elif var_type == BiomassAllocScheme:
+                        self.iparse_enum(ctl_class, BiomassAllocScheme, name, value)
                     elif var_type == LeafStoichomScheme:
                         self.iparse_enum(ctl_class, LeafStoichomScheme, name, value)
 
