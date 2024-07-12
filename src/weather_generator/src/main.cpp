@@ -19,9 +19,8 @@ int main(int argc, char* argv[]) {
     std::string input_setting_file;
     std::string output_file;
 
-
-    if ( argc != 4) {
-        std::cout<<"(1)input forcing, (2) input setting file, and (3) outputfile must be specified" << std::endl;
+    if (argc != 4) {
+        std::cout<<"(1) input forcing, (2) input setting file, and (3) outputfile must be specified." << std::endl;
         return 99;
     }
     else {

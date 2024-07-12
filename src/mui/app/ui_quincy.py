@@ -387,10 +387,28 @@ class UI_Quincy(QtWidgets.QMainWindow, Ui_MainWindow):
         self.ui_settings.scenario_output_path = f"{self.gridcell.lon_pts}_{self.gridcell.lat_pts}"
         os.makedirs(self.ui_settings.scenario_output_path, exist_ok=True)
     def export_monthly_forcing(self):
+
+        self.is_identical_forcing = False
+        self.has_already_monthly_forcing = False
+
+        monthly_forcing_path = os.path.join(self.ui_settings.scenario_output_path,"monthly_forcing.csv")
+        if os.path.exists(monthly_forcing_path):
+            self.df_old = pd.read_csv(monthly_forcing_path, index_col = False)
+            self.df_old.set_index('datetime', inplace=True)
+            self.has_already_monthly_forcing = True
+        else:
+            self.is_identical_forcing = False
+            self.has_already_monthly_forcing = False
+
         df_other = self.forcing_slicer.get_other_forcing(self.gridcell.lon_pts, self.gridcell.lat_pts)
         df_other['tmp'] = self.df_manip['tmp']
         df_other['pre'] = self.df_manip['pre']
-        df_other.to_csv(os.path.join(self.ui_settings.scenario_output_path,"monthly_forcing.csv"))
+
+        if self.has_already_monthly_forcing:
+            if np.all(np.isclose(df_other.to_numpy(), self.df_old.to_numpy(), atol=1e-03)):
+                self.is_identical_forcing = True
+                return
+        df_other.to_csv(monthly_forcing_path)
 
         df_site_data = pd.DataFrame()
         df_site_data['lon'] = [self.gridcell.lon_pts]
@@ -400,9 +418,10 @@ class UI_Quincy(QtWidgets.QMainWindow, Ui_MainWindow):
         df_site_data.to_csv(os.path.join(self.ui_settings.scenario_output_path,"site_data.csv"), index=False)
 
     def generate_subdaily_forcing(self):
-        generator = ForcingGenerator(settings=self.ui_settings)
-        generator.generate_subdaily_forcing(os.path.join(self.ui_settings.root_ui_directory,self.ui_settings.scenario_output_path))
-        generator.generate_additional_quincy_forcing(self.gridcell.lon_pts, self.gridcell.lat_pts, self.ui_settings.scenario_output_path)
+        if not self.is_identical_forcing:
+            generator = ForcingGenerator(settings=self.ui_settings)
+            generator.generate_subdaily_forcing(os.path.join(self.ui_settings.root_ui_directory,self.ui_settings.scenario_output_path))
+            generator.generate_additional_quincy_forcing(self.gridcell.lon_pts, self.gridcell.lat_pts, self.ui_settings.scenario_output_path)
 
 
     def generate_namelist(self):
@@ -569,7 +588,10 @@ class ComputationThread(QThread):
             self.qg.export_monthly_forcing()
 
             self.sig_log.emit("Applying weather generator...", MessageType.INFO.value)
-            self.qg.generate_subdaily_forcing()
+            if not self.qg.is_identical_forcing:
+                self.qg.generate_subdaily_forcing()
+            else:
+                self.sig_log.emit("No changes in forcing setup...Skipping!", MessageType.INFO.value)
 
             self.sig_log.emit("Generating lctlib file...", MessageType.INFO.value)
             self.qg.generate_lctlib()

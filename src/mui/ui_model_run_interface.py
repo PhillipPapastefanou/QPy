@@ -1,6 +1,7 @@
 import os
 import pandas as pd
 import numpy as np
+from datetime import datetime
 from src.mui.designs.ui_quincy_design import Ui_MainWindow
 from src.mui.ui_settings import Ui_Settings
 from src.mui.var_types import Gridcell
@@ -187,8 +188,6 @@ class UI_ModelRunInterface:
         for df_str in ['vegfluxC', 'vegfluxH2O', 'veg_diagnostics', 'vegpoolC']:
             if self.have_spinup_data & self.load_spinup_data:
                 try:
-
-
                     self.output_dfs_spinup[df_str] = pd.read_csv(f"{self.ui_settings.root_ui_directory}/{self.ui_settings.scenario_output_path}/{df_str}_spinup_{output_res}.txt", sep='\s+')
                     n_current_stamps = self.output_dfs_spinup[df_str].shape[0]
 
@@ -197,8 +196,10 @@ class UI_ModelRunInterface:
                                                                                                              n_current_stamps,
                                                                                                              dtype='timedelta64[D]')
                     self.output_dfs_spinup[df_str]["datetime"]  = dates
-
                     self.output_dfs_spinup[df_str]["year"]  = dates.astype('datetime64[Y]').astype(int) + 1970
+                    self.output_dfs_spinup[df_str]["month"]  = dates.astype('datetime64[M]').astype(int) % 12 + 1
+                    self.output_dfs_spinup[df_str]["week"]  = dates.astype('datetime64[W]').astype(int) % 53 + 1
+
                     # for i in range(0, n_current_stamps):
                     #     self.output_dfs_spinup[df_str].loci] = d0 + np.timedelta64(int(i * mult + mult),'D')
 
@@ -249,6 +250,18 @@ class UI_ModelRunInterface:
             for df_str in ['vegfluxC', 'vegfluxH2O', 'veg_diagnostics','vegpoolC']:
                 self.output_df_spinup[df_str] = self.output_dfs_spinup[df_str]
 
+                #self.output_df_spinup[df_str] = self.output_df_spinup[df_str].drop(['datetime'], axis=1).groupby(by=["year"]).mean().reset_index()
+                #self.output_df_spinup[df_str]['datetime'] = [np.datetime64(datetime(self.output_df_spinup[df_str]['year'][i], 1, 1)) for i in range(self.output_df_spinup[df_str].shape[0])]
+
+
+
+                self.output_df_spinup[df_str] = self.output_df_spinup[df_str].drop(['datetime'], axis=1).groupby(
+                    by=["week"]).mean().reset_index()
+                self.output_df_spinup[df_str]['datetime'] = [np.datetime64(datetime(self.output_df_spinup[df_str]['week'][i], 1, 1)) for i in range(self.output_df_spinup[df_str].shape[0])]
+
+
+
+
         if self.have_transient_data:
             for df_str in ['vegfluxC', 'vegfluxH2O', 'veg_diagnostics','vegpoolC']:
                 index_a = self.output_dfs_transient[df_str]["year"] >= self.scenario.first_year_change
@@ -259,6 +272,11 @@ class UI_ModelRunInterface:
         for i in range(len(self.selected_vars)):
             var = self.selected_vars[i]
             if self.have_spinup_data:
+                #Todo make it average
+                dates = self.output_df_spinup[self.filename_vars[var]]["datetime"]
+
+                
+
                 self.lines_spinup[i].set_xdata(self.output_df_spinup[self.filename_vars[var]]["datetime"])
                 self.lines_spinup[i].set_ydata(self.output_df_spinup[self.filename_vars[var]][var])
 
