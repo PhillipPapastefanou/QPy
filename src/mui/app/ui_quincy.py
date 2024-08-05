@@ -481,7 +481,7 @@ class UI_Quincy(QtWidgets.QMainWindow, Ui_MainWindow):
 
         namelist.spq_ctl.soil_depth = 9.5
         namelist.spq_ctl.soil_awc_prescribe = 231
-        namelist.spq_ctl.soil_sand = 0.33
+        namelist.spq_ctl.soil_sand = 0.35
         namelist.spq_ctl.soil_silt = 0.34
         namelist.spq_ctl.soil_clay = 0.33
         namelist.spq_ctl.bulk_density = 1300.285
@@ -503,15 +503,12 @@ class UI_Quincy(QtWidgets.QMainWindow, Ui_MainWindow):
         namelist.jsb_forcing_ctl.flag_read_DC14 = True
 
 
-
-
         #Static changes
         namelist.jsb_forcing_ctl.transient_spinup_start_year = self.gridcell.min_year
         namelist.jsb_forcing_ctl.transient_spinup_end_year = 2002
         namelist.base_ctl.output_interval_flux_spinup = OutputIntervalFlux.WEEKLY
         namelist.base_ctl.output_interval_pool_spinup = OutputIntervalPool.WEEKLY
         namelist.base_ctl.output_start_first_day_year = 1
-
 
         #namelist.base_ctl.include_nitrogen = False
         #namelist.base_ctl.include_nitrogen15 = False
@@ -527,7 +524,6 @@ class UI_Quincy(QtWidgets.QMainWindow, Ui_MainWindow):
     def start_quincy_simulation(self):
         self.process_q = subprocess.Popen(self.ui_settings.binary_quincy,
                                           cwd=os.path.join(self.ui_settings.root_ui_directory,self.ui_settings.scenario_output_path))
-
 
     def round_coordinate(self, value, offset, res):
         return np.round((value + offset) * 4.0 * res) / (4.0 * res) - offset

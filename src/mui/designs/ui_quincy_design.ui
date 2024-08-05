@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1512</width>
-    <height>856</height>
+    <width>1621</width>
+    <height>1136</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -786,8 +786,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1512</width>
-     <height>37</height>
+     <width>1621</width>
+     <height>22</height>
     </rect>
    </property>
   </widget>
@@ -954,7 +954,7 @@
         </widget>
        </item>
        <item>
-        <widget class="QComboBox" name="comboBox"/>
+        <widget class="QComboBox" name="cB_res_1"/>
        </item>
        <item>
         <spacer name="horizontalSpacer_9">
@@ -996,7 +996,7 @@
         </widget>
        </item>
        <item>
-        <widget class="QComboBox" name="comboBox_2"/>
+        <widget class="QComboBox" name="cB_res_2"/>
        </item>
        <item>
         <spacer name="horizontalSpacer_10">
@@ -1026,7 +1026,34 @@
    <widget class="QWidget" name="dockWidgetContents_output_mpl_3">
     <layout class="QVBoxLayout" name="verticalLayout_7">
      <item>
-      <widget class="QComboBox" name="cB_output_3"/>
+      <layout class="QHBoxLayout" name="horizontalLayout_13">
+       <item>
+        <widget class="QComboBox" name="cB_output_3"/>
+       </item>
+       <item>
+        <widget class="QLabel" name="label_17">
+         <property name="text">
+          <string>Res:</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QComboBox" name="cB_res_3"/>
+       </item>
+       <item>
+        <spacer name="horizontalSpacer_11">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
      </item>
      <item>
       <layout class="QVBoxLayout" name="mpl_container_3"/>
@@ -1041,7 +1068,34 @@
    <widget class="QWidget" name="dockWidgetContents_4">
     <layout class="QVBoxLayout" name="verticalLayout_9">
      <item>
-      <widget class="QComboBox" name="cB_output_4"/>
+      <layout class="QHBoxLayout" name="horizontalLayout_14">
+       <item>
+        <widget class="QComboBox" name="cB_output_4"/>
+       </item>
+       <item>
+        <widget class="QLabel" name="label_18">
+         <property name="text">
+          <string>Res:</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QComboBox" name="cB_res_4"/>
+       </item>
+       <item>
+        <spacer name="horizontalSpacer_12">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
      </item>
      <item>
       <layout class="QVBoxLayout" name="mpl_container_4"/>

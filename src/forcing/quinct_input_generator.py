@@ -116,7 +116,6 @@ class QuincyInputGenerator:
         df_export = df_export.sort_index()
 
         rt_output_folder = self.settings.root_output_path
-        static_folder = f"{rt_output_folder}/{self.settings.static_forcing_folder_name}"
 
         # Export file acccording to QUINCY standards
         df_export.to_csv(filename, header=True, sep=" ", index=None)

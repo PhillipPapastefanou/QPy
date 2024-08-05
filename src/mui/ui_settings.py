@@ -4,12 +4,18 @@ import pickle
 from enum import Enum
 
 
+class ModelOutputPlottingType(Enum):
+    Weekly = 0
+    Monthly = 1
+    Yearly = 2
+    Weekly_avg = 3
+    Monthly_avg = 4
+
 
 class Ui_Settings(object):
     def __init__(self):
         #To be parsed
         self.successfull_setup = False
-
 
         # Libs
         self.make_binary_path = ""
@@ -17,7 +23,6 @@ class Ui_Settings(object):
         self.fortran_binary_path = ""
         self.cpp_binary_path = ""
         self.python_binary_path = ""
-
 
         self.root_ui_directory= ""
         self.directory_QPy = ""
@@ -37,6 +42,7 @@ class Ui_Settings(object):
         self.site_settings_fname = "site_data.csv"
         self.misc_input = Misc_Forcing_Settings()
 
+        self.list_text_output_cats = ['vegfluxC', 'vegfluxH2O', 'veg_diagnostics', 'vegpoolC']
 
 class Ui_Settings_Parser:
     def __init__(self):
@@ -47,4 +53,3 @@ class Ui_Settings_Parser:
     def save(self):
         with open(self.filename, "wb") as file_:
             pickle.dump(self.settings, file_, -1)
-

@@ -102,10 +102,7 @@ class ForcingSlicer:
         array = np.asarray(array)
         idx = (np.abs(array - value)).argmin()
         return idx
-
-
 class ForcingGenerator:
-
     def __init__(self, settings : Ui_Settings):
         self.ui_settings = settings
 
