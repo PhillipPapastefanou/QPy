@@ -1,8 +1,8 @@
-from src.postprocessing.QNC_obs_reader import QNC_obs_reader
-from src.postprocessing.QNC_obs_model_comparer import Obs_Model_Var_List
-from src.postprocessing.QNC_obs_model_comparer import QNC_Obs_Model_Variable_Pair
-from src.postprocessing.QNC_output_parser import QNC_output_parser
-from src.postprocessing.QNC_ncdf_reader import QNC_ncdf_reader
+from src.postprocessing.obs_reader import QNC_obs_reader
+from src.postprocessing.obs_model_comparer import Obs_Model_Var_List
+from src.postprocessing.obs_model_comparer import QNC_Obs_Model_Variable_Pair
+from src.postprocessing.output_parser import QNC_output_parser
+from src.postprocessing.quincy_output_ncdf_reader import QNC_ncdf_reader
 
 
 import pandas as pd
@@ -12,8 +12,6 @@ import numpy as np
 
 
 class QNC_Fluxnet_Diagnostics:
-
-
     def __init__(self, rt_path, target_variable_list : Obs_Model_Var_List):
         # Fluxnet output should always have this folder structure as it is not static
         parser = QNC_output_parser(rt_path)

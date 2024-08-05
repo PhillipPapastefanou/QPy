@@ -1,10 +1,10 @@
 from enum import Enum
 import os
 from pathlib import Path
-from src.postprocessing.QNC_defintions import *
-from src.postprocessing.QNC_basic_Information_parser import Basic_information_parser
+from src.postprocessing.defintions import *
+from src.postprocessing.basic_Information_parser import Basic_information_parser
 
-class Output:
+class Quincy_Output:
     def __init__(self, identifier, simulation_type):
         self.Identifier = identifier
         self.Simulation_type = simulation_type
@@ -15,7 +15,6 @@ class Output:
         # To be determined during processing
         self.Time_resolution = Output_Time_Res.Invalid
         self.Output_type = Output_type.Invalid
-
 
 class QNC_output_parser:
     def __init__(self, root_path):
@@ -74,13 +73,13 @@ class QNC_output_parser:
         for file in files:
             if '.nc' in file:
                 if self.simulation_type == Simuluation_type.Static:
-                    output = Output(self.static_identifier, Simuluation_type.Static)
+                    output = Quincy_Output(self.static_identifier, Simuluation_type.Static)
                     self.Available_outputs[self.static_identifier] = output
 
                 elif self.simulation_type == Simuluation_type.Transient:
                     for identifier in transient_var_list:
                         if identifier in file:
-                            output = Output(identifier, Simuluation_type.Transient)
+                            output = Quincy_Output(identifier, Simuluation_type.Transient)
                             self.Available_outputs[identifier] = output
                             transient_var_list.remove(identifier)
 

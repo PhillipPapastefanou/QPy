@@ -4,25 +4,20 @@ import numpy as np
 from src.postprocessing.cal_parsing.julian_arithmetics import JulianDate
 from src.postprocessing.cal_parsing.julian_arithmetics import JulianCalendarParse
 from time import perf_counter
-from src.postprocessing.QNC_defintions import Output_Time_Res
-from src.postprocessing.QNC_defintions import Second_dim_type
+from src.postprocessing.defintions import Output_Time_Res
+from src.postprocessing.defintions import Second_dim_type
 from enum import Enum
-
-
 
 
 class QNC_ncdf_reader:
     def __init__(self, output_path, output_cats, output_identifier, output_time_res):
-
         self.output_path = output_path
         self.output_time_res = output_time_res
         self.output_identifier = output_identifier
         self.output_cat_names = output_cats
 
-        self.soil_depths = []
         self.Second_dim =  Second_dim_type.Invalid
-
-
+        self.soil_depths = []
 
     def parse_env_and_variables(self, pandas_time = False):
         self.files = {}
@@ -57,14 +52,11 @@ class QNC_ncdf_reader:
         # Using C version of calendar parsing
         self.dF = jcp.ParseDatesC(time)
 
-        #  Diagnostic to check whether this is still from old ouptut files
+        # Diagnostic to check whether this is still from old ouptut files
         if self.dF['year'].iloc[0] == 0:
             self.dF['year'] += 1900
 
-
-
-
-
+        # Create date string
         self.dF['date'] = self.dF['year'].map(str) + "-" + self.dF['month'].map(self._int2strZ) + '-' + self.dF[
                 'day'].map(
                 self._int2strZ) + ' ' + self.dF['hour'].map(self._int2strZ) + ':' + self.dF['min'].map(
@@ -123,7 +115,7 @@ class QNC_ncdf_reader:
                     elif second_dim == "soil_layer":
                         self.Second_dim = Second_dim_type.Soil_layer
                     else:
-                        "Invaild or unsuppored second dimensionf ncdf output"
+                        "Invaild or unsupported second dimensiof ncdf output"
 
                 elif var == "soil_depth":
                     self.soil_depths = self.files[name][var].data

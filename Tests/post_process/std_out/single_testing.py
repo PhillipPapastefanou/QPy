@@ -27,8 +27,8 @@ else:
     print(output)
 
 
-from src.postprocessing.QNC_std_output_factory import OutputFormat
-from src.postprocessing.QNC_std_output_factory import QNC_std_output_factory
+from src.postprocessing.std_output_factory import OutputFormat
+from src.postprocessing.std_output_factory import QNC_std_output_factory
 
 #exp_path = '/Users/pp/data/Simulations/QUINCY/exp_t_spinup/DE-Hai/'
 #exp_path = '/Users/pp/data/Simulations/QUINCY/land_std_nc_ts/'

@@ -1,7 +1,7 @@
-from src.postprocessing.QNC_ncdf_reader import QNC_ncdf_reader
-from src.postprocessing.QNC_defintions import Output_Time_Res
-from src.postprocessing.QNC_basic_Information_parser import Basic_information_parser
-from src.postprocessing.QNC_defintions import *
+from src.postprocessing.quincy_output_ncdf_reader import QNC_ncdf_reader
+from src.postprocessing.defintions import Output_Time_Res
+from src.postprocessing.basic_Information_parser import Basic_information_parser
+from src.postprocessing.defintions import *
 
 import matplotlib.pyplot as plt
 from time import perf_counter

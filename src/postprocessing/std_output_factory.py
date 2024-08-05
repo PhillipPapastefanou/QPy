@@ -1,10 +1,10 @@
-from src.postprocessing.QNC_output_parser import QNC_output_parser
-from src.postprocessing.QNC_defintions import OutputFormat
-from src.postprocessing.QNC_std_output_plotting import QNC_std_output_plotting
-from src.postprocessing.QNC_obs_model_comparer import Obs_Model_Var_List
-from src.postprocessing.QNC_obs_model_comparer import QNC_Obs_Model_Variable_Pair
-from src.postprocessing.QNC_obs_model_comparer import QNC_Variable
-from src.postprocessing.QNC_fluxnet_diagnostics import QNC_Fluxnet_Diagnostics
+from src.postprocessing.output_parser import QNC_output_parser
+from src.postprocessing.defintions import OutputFormat
+from src.postprocessing.std_output_plotting import QNC_std_output_plotting
+from src.postprocessing.obs_model_comparer import Obs_Model_Var_List
+from src.postprocessing.obs_model_comparer import QNC_Obs_Model_Variable_Pair
+from src.postprocessing.obs_model_comparer import QNC_Variable
+from src.postprocessing.fluxnet_diagnostics import QNC_Fluxnet_Diagnostics
 
 class QNC_std_output_factory:
     def __init__(self, root_path, output_format,
