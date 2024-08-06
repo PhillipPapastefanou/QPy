@@ -1,5 +1,5 @@
 import sys
-rtpath ="/Users/pp/Documents/Repos/QPy"
+rtpath ="/Net/Groups/BSI/work_scratch/ppapastefanou/data/QPy"
 sys.path.append(rtpath)
 
 from copy import deepcopy
@@ -13,7 +13,7 @@ from src.quincy.base.PFTTypes import PftQuincy
 from src.sens.base import Quincy_Setup
 from src.sens.base import Quincy_Multi_Run
 
-rtpath = '/Users/pp/data/quincy_hydraulics_eamon/'
+rtpath = '/Net/Groups/BSI/work_scratch/ppapastefanou/data/quincy_hydraulics_eamon/'
 
 # Classic sensitivity analysis where we are apply differnt Namelist or Lctlib files to ONE climate file
 # The basic forcing path
@@ -32,9 +32,14 @@ namelist_base = nlm_reader.parse()
 lctlib_reader = LctlibReader(lctlib_root_path)
 lctlib_base = lctlib_reader.parse()
 
+
 #Obtain pft_id from namelist
 pft_id = namelist_base.vegetation_ctl.plant_functional_type_id
 pft = list(PftQuincy)[pft_id - 1]
+
+
+# Dummy change to be reset to 500-1000 years
+namelist_base.jsb_forcing_ctl.transient_spinup_years = 1
 
 # Main code to be modified
 # One at a time sensitivity calculation
