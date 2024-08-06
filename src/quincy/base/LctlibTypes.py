@@ -20,6 +20,7 @@ class PsPathway(Enum):
     IC4PHOT                     = 2
 
 class PhenologyType(Enum):
+    NONE                        = 0
     IEVERGREEN                  = 1
     ISUMMERGREEN                = 2
     IRAINGREEN                  = 3

@@ -52,6 +52,11 @@ class Lctlib_Item:
         self.growthform = Growthform.ITREE
         self.ps_pathway = PsPathway.IC3PHOT
         self.phenology_type = PhenologyType.ISUMMERGREEN
+
+        # lai_max: maximum leaf area index (--) only used for CANOPY mode
+        self.lai_max = 0.0
+        # vegetation_height: Vegetation height [m] only used for CANOPY mode
+        self.vegetation_height = 0.0
         # sla: specific leaf area (mm / mgDW)
         # From Kattge et al. 2011, Table 5, converted internally from (mm/mgDW) to (m2/mol C)
         self.sla = 0.0
@@ -213,3 +218,30 @@ class Lctlib_Item:
         # tuned according to Jackson et al. 1996, Oecologia, to reproduce their cummulative root distribution profiles
         # only making use of the contrast sclerophyllic, tree, grass
         self.k_root_dist = 0.0
+        # k_som_fast_init: fast pools SOM init value, empirically calibrated values to equilibrium soil profiles (unitless)
+        self.k_som_fast_init = 0.0
+        # k_som_slow_init: slow pools SOM init value, empirically calibrated values to equilibrium soil profiles (unitless)
+        self.k_som_slow_init = 0.0
+
+        # Plant hydraulics
+
+        # (MPa)
+        self.psi50_xylem = 0.0
+        # (1)
+        self.slope50_xylem = 0.0
+        # (MPa)
+        self.psi50_leaf_close = 0.0
+        # (1)
+        self.slope_leaf_close = 0.0
+        # (mol m-1 s-1 MPa-1)
+        self.k_xylem_sat = 0.0
+        # (1)
+        self.root_area_index = 0.0
+        # (1?)
+        self.eta_stem = 0.0
+        # (-)
+        self.huber_value = 0.0
+        # (mol m-2 MPa-1)
+        self.kappa_leaf = 0.0
+        # (mol m-3 MPa-1)
+        self.kappa_stem = 0.0

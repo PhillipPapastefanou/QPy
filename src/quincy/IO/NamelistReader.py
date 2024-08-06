@@ -81,11 +81,16 @@ class NamelistReader:
                     elif var_type is str:
                         setattr(ctl_class, name, value)
 
+
+
                     # Parsing QUINCY specific enum types
                     elif var_type == CanopyConductanceScheme:
                         self.iparse_enum(ctl_class, CanopyConductanceScheme, name, value)
                     elif var_type == CanopyLayerScheme:
                         self.iparse_enum(ctl_class, CanopyLayerScheme, name, value)
+
+                    elif var_type == GsBetaType:
+                        self.iparse_enum(ctl_class, GsBetaType, name, value)
 
                     elif var_type == DfireModelname:
                         self.iparse_enum(ctl_class, DfireModelname, name, value)

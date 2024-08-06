@@ -66,6 +66,8 @@ class ASSIMILATION_CTL:
         self.canopy_layer_scheme = CanopyLayerScheme.FAPAR
         # calculation of gs_cl following Medlyn [default] or Ball/Berry
         self.canopy_conductance_scheme = CanopyConductanceScheme.MEDLYN
+        # Determines if stomatal conductances should be regulated by the plant or the soil
+        self.gs_beta_type = GsBetaType.PLANT
 
 class PHYD_CTL:
     def __init__(self):
@@ -180,6 +182,12 @@ class BASE_CTL:
         self.include_nitrogen15 = True
         # File (with path) to a file containing a list of selected output variables (only used for NetCDF output)
         self.file_sel_output_variables = "not_set"
+
+        self.flag_slow_sb_pool_spinup_accelerator = True
+        self.slow_sb_pool_spinup_accelerator_frequency = 100
+        self.slow_sb_pool_spinup_accelerator_length = 1000
+        self.slow_sb_pool_spinup_accelerator_start_year = 300
+        self.slow_sb_pool_spinup_accelerator_max_executions = 4
 
 class JSB_FORCING_CTL:
     def __init__(self):
