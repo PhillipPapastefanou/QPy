@@ -12,6 +12,11 @@ from src.quincy.IO.LctlibReader import LctlibReader
 from src.quincy.base.PFTTypes import PftQuincy
 from src.sens.base import Quincy_Setup
 from src.sens.base import Quincy_Multi_Run
+from src.sens.auxil import Subslicer
+from src.sens.auxil import rescale
+from src.sens.auxil import rescale_mean
+
+from scipy.stats import qmc
 
 rtpath = '/Net/Groups/BSI/work_scratch/ppapastefanou/data/quincy_hydraulics_eamon/'
 
@@ -22,7 +27,7 @@ forcing_file = rtpath + 'climate.dat'
 namelist_root_path = rtpath + 'namelist.slm'
 lctlib_root_path = rtpath + 'lctlib_quincy_nlct14.def'
 # Path where to save the setup
-setup_root_path = "oaat_psi50_test"
+setup_root_path = "LH2_test"
 
 # Parse base namelist path
 nlm_reader = NamelistReader(namelist_root_path)
@@ -37,40 +42,49 @@ lctlib_base = lctlib_reader.parse()
 pft_id = namelist_base.vegetation_ctl.plant_functional_type_id
 pft = list(PftQuincy)[pft_id - 1]
 
-
 # Dummy change to be reset to 500-1000 years
 namelist_base.jsb_forcing_ctl.transient_spinup_years = 500
 
 # Main code to be modified
-# One at a time sensitivity calculation
-# First we pick a parameter for example psi50_xylem
-# The standard value is -3.0 MPa
-psi50_xylem =  -3.0
+# 2 Parameter latin hypercupe sensitivity calculation
 
-# We define min and max MPa
+# Define the number of runs and variables
+number_of_runs = 10
+number_of_variables = 2
+
+# Create a latin hypercube sample that is distributed between 0-1
+seed   = 123456789
+sampler = qmc.LatinHypercube(d = number_of_variables, seed= seed)
+sample = sampler.random(n = number_of_runs)
+sample = sample.T
+
+# Create a subslicer to make rescaling easier
+slicer = Subslicer(array=sample)
+
+# 1. Parameter psi50_xylem (standard value was around -3.0)
 psi50_xylem_min = -6.0
 psi50_xylem_max = -0.5
 
-# Define the number of steps we want to slice
-nslice = 10
+# 2. Parameter k_xylem_sat (standard value was 5000)
+k_xylem_sat_min = 500
+k_xylem_sat_max = 10000
 
-# Now we can use numpy to create and array
-psi50s = np.linspace(psi50_xylem_min, psi50_xylem_max, num=nslice)
-
-#you could also do it manually:
-#psi50s = np.array([-6.0, -3.0, -2.0, -1.0])
+# Now we rescale parameters
+psi50s = rescale(slicer.get(), min = psi50_xylem_min, max = psi50_xylem_max)
+k_xylem_sats = rescale(slicer.get(), min = k_xylem_sat_min, max = k_xylem_sat_max)
 
 # We create a multi quincy run object
 quincy_multi_run = Quincy_Multi_Run(setup_root_path)
 
 # We loop through the number of slice
-for i in range(0, nslice):
+for i in range(0, number_of_runs):
     # We create a copy of the lctlibfile...
     lctlib = deepcopy(lctlib_base)
 
     #... and change the value of psi50
     # the float conversion in necessary to convert from a numpy numeric type to standard numeric python
     lctlib[pft].psi50_xylem = float(psi50s[i])
+    lctlib[pft].k_xylem_sat = float(k_xylem_sats[i])
 
     #Create one QUINCY setup
     quincy_setup = Quincy_Setup(folder = os.path.join(setup_root_path, str(i)), namelist = namelist_base, lctlib = lctlib, forcing_path=forcing_file)
@@ -84,7 +98,7 @@ quincy_multi_run.generate_files()
 #Important: we need to save the psi50s so that we can later identify which simulation belongs to which file
 df_parameter_setup = pd.DataFrame(psi50s)
 df_parameter_setup.columns = ['psi50_xylem']
-df_parameter_setup['id'] = np.arange(0, nslice)
+df_parameter_setup['id'] = np.arange(0, number_of_runs)
 
 
 df_parameter_setup.to_csv(os.path.join(setup_root_path, "parameters.csv"), index=False)
