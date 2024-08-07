@@ -1,5 +1,5 @@
 import sys
-rtpath ="/Net/Groups/BSI/work_scratch/ppapastefanou/data/QPy"
+rtpath ="/Net/Groups/BSI/work_scratch/ppapastefanou/src/QPy"
 sys.path.append(rtpath)
 
 from copy import deepcopy

@@ -1,5 +1,5 @@
 import sys
-rt_lib_path = "/Net/Groups/BSI/work_scratch/ppapastefanou/data/QPy"
+rt_lib_path = "/Net/Groups/BSI/work_scratch/ppapastefanou/src/QPy"
 setup_path = "oaat_psi50_test"
 quincy_path = "/Net/Groups/BSI/work_scratch/ppapastefanou/src/quincy/x86_64-gfortran/bin/land.x"
 
