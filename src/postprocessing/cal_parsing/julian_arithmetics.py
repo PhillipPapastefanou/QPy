@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
+import datetime
 from enum import Enum
-import jcalendar
 
 
 class TimeUnit(Enum):
@@ -14,7 +14,7 @@ class JulianDate:
         self.month = 1
         self.day = 1
         self.hour = 0
-        self.min = 0
+        self.minute = 0
         self.sec = 0
 
     def to_dict(self):
@@ -23,7 +23,7 @@ class JulianDate:
             'month': self.month,
             'day': self.day,
             'hour': self.hour,
-            'min': self.min,
+            'min': self.minute,
             'sec': self.sec
         }
     def AddSeconds(self, seconds):
@@ -73,7 +73,7 @@ class JulianDate:
         jd.month = new_month
         jd.day = new_day
         jd.hour = new_hours
-        jd.min = new_min
+        jd.minute = new_min
         jd.sec = new_seconds
 
         return jd
@@ -81,13 +81,14 @@ class JulianDate:
         print(seconds_left)
 
 
-class JulianCalendarParse:
+class JulianCalendarParser:
 
-    def __init__(self):
-        x = 0
+    def __init__(self, output_time_res, output_identifier):
+        self.output_time_res = output_time_res
+        self.output_identifier = output_identifier
 
-    def GetStartDateFromNetCDFUnitString(self, string):
-        timeStringData = str.split(string, ' since ')
+    def getStartDateFromNetCDFUnitString(self, date_string):
+        timeStringData = str.split(date_string, ' since ')
         timeTokenStr = timeStringData[0]
 
         if timeTokenStr == 'seconds':
@@ -113,37 +114,135 @@ class JulianCalendarParse:
         ## We have a time without seconds, e.g. 08:45
         if len(clockstring_list) == 2:
             hour = int(clockstring_list[0])
-            min = int(clockstring_list[1])
+            minute = int(clockstring_list[1])
             sec = 0
-        elif(len(clockstring_list)==3):
+        elif(len(clockstring_list) == 3):
             hour = int(clockstring_list[0])
-            min = int(clockstring_list[1])
+            minute = int(clockstring_list[1])
             sec = int(clockstring_list[2])
         else:
             print(f"Unsupported clock time: {clockstring}")
             exit(-1)
+
 
         self.DateOffset = JulianDate()
         self.DateOffset.year = year
         self.DateOffset.month = month
         self.DateOffset.day = day
         self.DateOffset.hour = hour
-        self.DateOffset.min = min
+        self.DateOffset.minute = minute
         self.DateOffset.sec = sec
+        self.DateOffsetString = f"{str(year).zfill(4)}-{str(month).zfill(2)}-{str(day).zfill(2)} {str(hour).zfill(2)}:{str(minute).zfill(2)}:{str(sec).zfill(2)}"
 
-    def ParseDates(self, time_offsets):
 
-        jds = []
-        for time_offset in time_offsets:
-            jds.append(self.DateOffset.AddSeconds(time_offset))
-        return pd.DataFrame.from_records([s.to_dict() for s in jds])
+    def ParseDates(self, time_calendar_string, time_offsets):
 
-    def ParseDatesC(self, times_offsets):
+        self.getStartDateFromNetCDFUnitString(time_calendar_string)
+
+        self.IsDateTimePandas = False
+        self.IsDateTimeNumpy = False
+        self.IsDateTimeInteger = False
+
+        # If we have no time data return empty dataframe
+        if time_offsets.shape[0] == 0:
+            return pd.DataFrame()
+
+        if self.time_unit == TimeUnit.Seconds:
+            dt_offset = datetime.datetime.fromisoformat(self.DateOffsetString)
+            time_deltas = pd.to_timedelta(np.array(time_offsets, dtype='timedelta64[s]'))
+            time_diff_beginning = time_deltas[1]-time_deltas[0]
+
+
+            # Check if we daily or subdaily resolution
+            # Because than we have to take leap years into account and ignore the 29 of feb
+            if time_diff_beginning.days <= 1:
+                time_diffs_all = np.diff(time_deltas)
+                time_series = []
+                current_time = dt_offset
+                time_series.append(current_time)
+                for diff in time_diffs_all:
+                    next_time = current_time + datetime.timedelta(seconds= (diff/np.timedelta64(1, 's') ))
+
+                    if next_time.month == 2 and next_time.day == 29:
+                        next_time = next_time.replace(month=3, day=1)
+
+                    time_series.append(next_time)
+                    current_time = next_time
+                iso_dates = np.array(time_series)
+
+            # For monthly or yearly resolution this does not matter
+            else:
+                iso_dates = dt_offset + time_deltas
+
+
+            # Check if we can use pandas
+            if (iso_dates[0].year > pd.Timestamp.min.year + 1) & (iso_dates[-1].year < pd.Timestamp.max.year - 1):
+                self.IsDateTimePandas = True
+                return pd.DataFrame({'date': pd.to_datetime(iso_dates)})
+
+            # Matplotlib only takes dates between 1 and 9999
+            if iso_dates[0].year > 0:
+                self.IsDateTimeNumpy = True
+                return pd.DataFrame({'date': iso_dates})
+
+            # if you are ouside of that range we will only pass the years as integer array:
+            else:
+                self.IsDateTimeInteger = True
+                years = np.arange(iso_dates[0].year, iso_dates[0].year + time_offsets.shape[0])
+                return pd.DataFrame({'date': years})
+
+
+        else:
+            print("The NetCDF time unit is not in second.")
+            print("This routine currently only supports seconds, e.g. seconds since 1998-01-23")
+            exit(-1)
+
+
+
+
+
+
+
+
+
+
+
+        # DO we even need this
+        # try:
+        #     import jcalendar
+        #     print("Using C accelerated library")
+        #     return self.parseDatesC(time_offsets)
+        # except:
+        #     print("Using the python library")
+        # return self.parseDatesPy(time_offsets)
+
+
+    def parseDatesPy(self, time_offsets):
+
+        str0 = "1500-01-01"
+
+        import datetime
+
+
+        dates = [f"{str(y).zfill(4)}-01-01" for y in range(-10000, 1900)]
+        julian_dates = [Time(d, format='iso', scale='utc') for d in dates]
+        df = pd.DataFrame({'date': julian_dates})
+
+        return df
+
+        # jds = []
+        # for time_offset in time_offsets:
+        #     jds.append(self.DateOffset.AddSeconds(time_offset))
+        # return pd.DataFrame.from_records([s.to_dict() for s in jds])
+
+    def parseDatesC(self, times_offsets):
+
+        import jcalendar
         jdc  = jcalendar.GetJulianDates(self.DateOffset.year,
                                         self.DateOffset.month,
                                         self.DateOffset.day,
                                         self.DateOffset.hour,
-                                        self.DateOffset.min,
+                                        self.DateOffset.minute,
                                         self.DateOffset.sec,
                                         times_offsets)
 
@@ -153,7 +252,7 @@ class JulianCalendarParse:
                       jdc[i].month,
                       jdc[i].day,
                       jdc[i].hour,
-                      jdc[i].min,
+                      jdc[i].minute,
                       jdc[i].sec,
                       jdc[i].day_of_year
                       ]

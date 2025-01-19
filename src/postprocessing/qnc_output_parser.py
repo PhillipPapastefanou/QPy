@@ -1,8 +1,8 @@
 from enum import Enum
 import os
 from pathlib import Path
-from src.postprocessing.QNC_defintions import *
-from src.postprocessing.QNC_basic_Information_parser import Basic_information_parser
+from src.postprocessing.qnc_defintions import *
+from src.postprocessing.qnc_basic_Information_parser import Basic_information_parser
 
 class Output:
     def __init__(self, identifier, simulation_type):
@@ -43,12 +43,11 @@ class QNC_output_parser:
         self.diagnostic_identifier = "unkown"
         self.folder_structure_type = Folder_structure_type.Invalid
 
-    def read(self):
-        self._check_if_transient_or_static_output()
+    def Read(self):
 
-        self._get_diagnostic_identifier()
-
-        self._populate_output_files()
+        self.check_if_transient_or_static_output()
+        self.get_diagnostic_identifier()
+        self.populate_output_files()
 
         self.Basic_info = Basic_information_parser(self.root_path, self.folder_structure_type)
         self.Basic_info.Set_basic_file_names(self.sinfo_file, self.exp_info_file)
@@ -65,7 +64,7 @@ class QNC_output_parser:
 
             self.Available_outputs[identifier].Target_categories = list(set(category_list).intersection(cats))
 
-    def _populate_output_files(self):
+    def populate_output_files(self):
 
         files = os.listdir(self.output_files_path)
         transient_var_list = [self.spinup_identifier, self.scenario_identifier, self.diagnostic_identifier]
@@ -91,7 +90,6 @@ class QNC_output_parser:
         # populate arrays with files
         for file in files:
             if '.nc' in file:
-
                 identifier_list  =  [self.static_identifier, self.spinup_identifier, self.scenario_identifier, self.diagnostic_identifier]
 
                 for identifier in identifier_list:
@@ -107,10 +105,10 @@ class QNC_output_parser:
 
                         # Obtain time resolution
                         time_str = Path(parts[2]).stem
-                        time_res  = self._get_time_res_from_string(time_str)
+                        time_res  = self.get_time_res_from_string(time_str)
 
                         # Convert to identifier enum
-                        identifier_enum = self._get_output_type_from_string(identifier)
+                        identifier_enum = self.get_output_type_from_string(identifier)
 
                         self.Available_outputs[identifier].Files.append(file)
                         self.Available_outputs[identifier].Categories.append(cat)
@@ -121,18 +119,16 @@ class QNC_output_parser:
                         self.Available_outputs[identifier].Time_resolution = time_res
                         self.Available_outputs[identifier].Output_type  = identifier_enum
 
-
-
-
-    def _check_if_transient_or_static_output(self):
+    def check_if_transient_or_static_output(self):
 
         # If the outputs are in the root root_path, we have a static forcing
         files = os.listdir(self.root_path)
 
         # Check if we have the standard quincy output structure
         if "output" in files:
-            files_in_output = os.listdir(self.root_path + '/output')
-            self.output_files_path = self.root_path +'/output'
+            files_in_output = os.listdir(os.path.join(self.root_path ,'output'))
+            self.output_files_path = os.path.join(self.root_path ,'output')
+            self.post_processing_path = os.path.join(self.root_path, 'postprocessing')
             self.folder_structure_type = Folder_structure_type.Standard
 
             for file in files_in_output:
@@ -144,6 +140,7 @@ class QNC_output_parser:
                     if self.scenario_identifier in file:
                         self.simulation_type = Simuluation_type.Transient
                         return
+
                     #in case we only have spinup
                     if self.spinup_identifier in file:
                         self.simulation_type = Simuluation_type.Transient
@@ -152,6 +149,7 @@ class QNC_output_parser:
             if '.nc' in file:
                 self.folder_structure_type = Folder_structure_type.Test_bed
                 self.output_files_path = self.root_path
+                self.post_processing_path = self.root_path
                 self.simulation_type = Simuluation_type.Static
                 return
 
@@ -160,10 +158,7 @@ class QNC_output_parser:
             print(files)
             exit(-1)
 
-
-
-
-    def _get_diagnostic_identifier(self):
+    def get_diagnostic_identifier(self):
         files = os.listdir(self.output_files_path)
         for file in files:
             for potential_identifier in self.diagonstic_identifier_list:
@@ -171,10 +166,10 @@ class QNC_output_parser:
                     self.diagnostic_identifier = potential_identifier
                     return
 
-    def _get_time_res_from_string(self, time_str):
+    def get_time_res_from_string(self, time_str):
         return Output_Time_Res[time_str.capitalize()]
 
-    def _get_output_type_from_string(self, identifier_str):
+    def get_output_type_from_string(self, identifier_str):
         if identifier_str == self.static_identifier:
             return Output_type.Static
         elif identifier_str == self.spinup_identifier:

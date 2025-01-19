@@ -1,7 +1,6 @@
 import pandas as pd
 import numpy as np
-from src.lib.QNC_defintions import *
-
+from src.postprocessing.qnc_defintions import  *
 
 class QNC_diagnostics:
 
@@ -11,7 +10,7 @@ class QNC_diagnostics:
                  basic_info):
         self.output_path = output_path
         self.output_format = output_format
-        self._available_outputs = available_outputs
-        self._basic_info = basic_info
+        self.available_outputs = available_outputs
+        self.basic_info = basic_info
 
 

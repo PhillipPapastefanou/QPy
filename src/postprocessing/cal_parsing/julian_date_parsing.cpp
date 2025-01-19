@@ -9,10 +9,8 @@
 #include <random>
 #include <vector>
 
-
 namespace py = pybind11;
 using std::vector;
-
 
 vector<JulianDate> GetJulianDates(int year, int month, int day, int hour, int min, int sec, vector<long> offsets){
     vector<JulianDate> dates(offsets.size());

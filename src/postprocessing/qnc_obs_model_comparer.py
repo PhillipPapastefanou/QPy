@@ -26,6 +26,7 @@ class QNC_Obs_Model_Variable_Pair:
 
     def Substract_obs_var(self, var):
         self.obs_vars_minus.append(var)
+
     def Update_availability(self, found_model_var, found_obs_var):
         self.model_var.found = found_model_var
         self.obs_var.found = found_obs_var

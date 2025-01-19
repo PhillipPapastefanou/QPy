@@ -1,7 +1,7 @@
-from src.postprocessing.QNC_ncdf_reader import QNC_ncdf_reader
-from src.postprocessing.QNC_defintions import Output_Time_Res
-from src.postprocessing.QNC_basic_Information_parser import Basic_information_parser
-from src.postprocessing.QNC_defintions import *
+from src.postprocessing.qnc_ncdf_reader import QNC_ncdf_reader
+from src.postprocessing.qnc_defintions import Output_Time_Res
+from src.postprocessing.qnc_basic_Information_parser import Basic_information_parser
+from src.postprocessing.qnc_defintions import *
 
 import matplotlib.pyplot as plt
 from time import perf_counter
@@ -17,31 +17,35 @@ from matplotlib.lines import Line2D
 
 class QNC_std_output_plotting:
     def __init__(self, output_path,
+                 post_processing_path,
                  output_format,
                  available_outputs,
                  basic_info):
 
         self.output_path = output_path
         self.output_format = output_format
-        self._available_outputs = available_outputs
-        self._basic_info = basic_info
+        self.post_processing_path = post_processing_path
+        self.Available_outputs = available_outputs
+        self.Basic_info = basic_info
 
 
         # Settings -------------------------
-        self.time_variable_offset = 10;
-        self.cols_per_page = 2
-        self.rows_per_page = 5
+        # How many variables belong to the time could also be 10...
+        self.TIME_VARIABLE_OFFSET = 3;
+
+        self.COLUMNS_PER_PAGE = 2
+        self.ROWS_PER_PAGE = 5
         # End of settings ------------------
 
-        self.max_plots_per_page = self.cols_per_page * self.rows_per_page
+        self.MAX_PLOTS_PER_PAGE = self.COLUMNS_PER_PAGE * self.ROWS_PER_PAGE
 
-    def plot_all_1D(self):
+    def Plot_all_1D(self):
 
         nc_outputs = []
         time_res = Output_Time_Res.Invalid
 
-        for identifier in self._available_outputs:
-            output_file = self._available_outputs[identifier]
+        for identifier in self.Available_outputs:
+            output_file = self.Available_outputs[identifier]
 
             cats = output_file.Target_categories
             sim_type = output_file.Simulation_type
@@ -53,20 +57,18 @@ class QNC_std_output_plotting:
                                         time_res
                                         )
 
-            nc_output.parse_env_and_variables()
-            nc_output.read_all_1D()
-            nc_output.close()
-
+            nc_output.Parse_env_and_variables()
+            nc_output.Read_all_1D()
+            nc_output.Close()
             nc_outputs.append(nc_output)
 
 
         # Ploting routine
         for output_cat_name in nc_output.output_cat_names:
-
             print(f"     Plotting {output_cat_name} variables... ", end='')
             t1_start = perf_counter()
 
-            export_filename = f"{output_cat_name}_all.pdf"
+            export_filename = os.path.join(self.post_processing_path, f"{output_cat_name}_all.pdf")
 
             #if self.output_model_type == 'both':
             #    data_set_spin = qoutput_spin.Datasets_1D[output_cat_name]
@@ -76,12 +78,12 @@ class QNC_std_output_plotting:
             unit_set = nc_outputs[0].Units_1D[output_cat_name]
 
             # Substract time variables from dataset
-            nvars = nvars_total - self.time_variable_offset;
+            nvars = nvars_total - self.TIME_VARIABLE_OFFSET;
 
-            index_start = self.time_variable_offset
+            index_start = self.TIME_VARIABLE_OFFSET
             index_running = index_start
             index_var = 0
-            index_end = index_start + self.max_plots_per_page
+            index_end = index_start + self.MAX_PLOTS_PER_PAGE
 
             pdf = PdfPages(export_filename)
 
@@ -94,12 +96,12 @@ class QNC_std_output_plotting:
                 # On the first page we display header and footer information
                 if first_page:
                     # We have two more rows, one for header one for footer
-                    spec = fig.add_gridspec(self.rows_per_page + 2, self.cols_per_page)
+                    spec = fig.add_gridspec(self.ROWS_PER_PAGE + 2, self.COLUMNS_PER_PAGE)
 
                     # Print header information first
                     ax = fig.add_subplot(spec[0, :])
                     ax.text(x=0.0, y=0.5,
-                            s=f"{self._basic_info.sitename}, {self._basic_info.pft}, {self._basic_info.user}, {self._basic_info.date} ",
+                            s=f"{self.Basic_info.sitename}, {self.Basic_info.pft}, {self.Basic_info.user}, {self.Basic_info.date} ",
                             size=18, transform=ax.transAxes, horizontalalignment='left', verticalalignment='center')
                     ax.text(x=0.0, y=0.25,
                             s=f"Output time resolution: {time_res.name}, displayed time resolution: {time_res.name} ",
@@ -113,18 +115,18 @@ class QNC_std_output_plotting:
                     ax.axis('off')
 
                     # Print footer information
-                    ax = fig.add_subplot(spec[self.rows_per_page + 1, :])
-                    ax.text(x=1.0, y=0.5, s=f"commit: {self._basic_info.commit} -- branch: {self._basic_info.branch} -- "
-                                            f"status: {self._basic_info.status}", size=12, transform=ax.transAxes,
+                    ax = fig.add_subplot(spec[self.ROWS_PER_PAGE + 1, :])
+                    ax.text(x=1.0, y=0.5, s=f"commit: {self.Basic_info.commit} -- branch: {self.Basic_info.branch} -- "
+                                            f"status: {self.Basic_info.status}", size=12, transform=ax.transAxes,
                             horizontalalignment='right', verticalalignment='center')
                     ax.axis('off')
 
                 else:
                     # All other pages do not need to have the extra rows for header and footer
-                    spec = fig.add_gridspec(self.rows_per_page, self.cols_per_page)
+                    spec = fig.add_gridspec(self.ROWS_PER_PAGE, self.COLUMNS_PER_PAGE)
 
-                for r in range(0, self.rows_per_page):
-                    for c in range(0, self.cols_per_page):
+                for r in range(0, self.ROWS_PER_PAGE):
+                    for c in range(0, self.COLUMNS_PER_PAGE):
 
                         if index_var < nvars:
 
@@ -166,18 +168,18 @@ class QNC_std_output_plotting:
                     last_page = True
                     pdf.close()
                 else:
-                    index_start += self.max_plots_per_page
-                    index_end += self.max_plots_per_page
+                    index_start += self.MAX_PLOTS_PER_PAGE
+                    index_end += self.MAX_PLOTS_PER_PAGE
 
             t_stop = perf_counter()
             print(f"Done! ({np.round(t_stop - t1_start, 1)} sec.)")
 
-    def plot_single_1D(self):
+    def Plot_single_1D(self):
 
-        for identifier in self._available_outputs:
+        for identifier in self.Available_outputs:
 
             print(f"Performing 1D {identifier} variables... ")
-            output_file = self._available_outputs[identifier]
+            output_file = self.Available_outputs[identifier]
 
             cats = output_file.Target_categories
             sim_type = output_file.Simulation_type
@@ -189,17 +191,20 @@ class QNC_std_output_plotting:
                                         time_res
                                         )
 
-            nc_output.parse_env_and_variables()
-            nc_output.read_all_1D()
-            nc_output.close()
+
+
+            self.parsing_success = nc_output.Parse_env_and_variables()
+            if not self.parsing_success:
+                return
+            nc_output.Read_all_1D()
+            nc_output.Close()
 
             # Ploting routine
             for output_cat_name in nc_output.output_cat_names:
 
                 print(f"     Plotting {output_cat_name} variables... ", end='')
                 t1_start = perf_counter()
-
-                export_filename = f"{output_cat_name}_{identifier}.pdf"
+                export_filename = os.path.join(self.post_processing_path, f"{output_cat_name}_{identifier}.pdf")
 
                 # if self.output_model_type == 'both':
                 #    data_set_spin = qoutput_spin.Datasets_1D[output_cat_name]
@@ -209,12 +214,12 @@ class QNC_std_output_plotting:
                 unit_set = nc_output.Units_1D[output_cat_name]
 
                 # Substract time variables from dataset
-                nvars = nvars_total - self.time_variable_offset;
+                nvars = nvars_total - self.TIME_VARIABLE_OFFSET;
 
-                index_start = self.time_variable_offset
+                index_start = self.TIME_VARIABLE_OFFSET
                 index_running = index_start
                 index_var = 0
-                index_end = index_start + self.max_plots_per_page
+                index_end = index_start + self.MAX_PLOTS_PER_PAGE
 
                 pdf = PdfPages(export_filename)
 
@@ -227,12 +232,12 @@ class QNC_std_output_plotting:
                     # On the first page we display header and footer information
                     if first_page:
                         # We have two more rows, one for header one for footer
-                        spec = fig.add_gridspec(self.rows_per_page + 2, self.cols_per_page)
+                        spec = fig.add_gridspec(self.ROWS_PER_PAGE + 2, self.COLUMNS_PER_PAGE)
 
                         # Print header information first
                         ax = fig.add_subplot(spec[0, :])
                         ax.text(x=0.0, y=0.5,
-                                s=f"{self._basic_info.sitename}, {self._basic_info.pft}, {self._basic_info.user}, {self._basic_info.date} ",
+                                s=f"{self.Basic_info.sitename}, {self.Basic_info.pft}, {self.Basic_info.user}, {self.Basic_info.date} ",
                                 size=18, transform=ax.transAxes, horizontalalignment='left',
                                 verticalalignment='center')
                         ax.text(x=0.0, y=0.25,
@@ -250,48 +255,38 @@ class QNC_std_output_plotting:
                         ax.axis('off')
 
                         # Print footer information
-                        ax = fig.add_subplot(spec[self.rows_per_page + 1, :])
+                        ax = fig.add_subplot(spec[self.ROWS_PER_PAGE + 1, :])
                         ax.text(x=1.0, y=0.5,
-                                s=f"commit: {self._basic_info.commit} -- branch: {self._basic_info.branch} -- "
-                                  f"status: {self._basic_info.status}", size=12, transform=ax.transAxes,
+                                s=f"commit: {self.Basic_info.commit} -- branch: {self.Basic_info.branch} -- "
+                                  f"status: {self.Basic_info.status}", size=12, transform=ax.transAxes,
                                 horizontalalignment='right', verticalalignment='center')
                         ax.axis('off')
 
                     else:
                         # All other pages do not need to have the extra rows for header and footer
-                        spec = fig.add_gridspec(self.rows_per_page, self.cols_per_page)
+                        spec = fig.add_gridspec(self.ROWS_PER_PAGE, self.COLUMNS_PER_PAGE)
 
-                    for r in range(0, self.rows_per_page):
-                        for c in range(0, self.cols_per_page):
+                    for r in range(0, self.ROWS_PER_PAGE):
+                        for c in range(0, self.COLUMNS_PER_PAGE):
 
                             if index_var < nvars:
-
                                 # On the first page we start with one row later because we
                                 if first_page:
                                     ax = fig.add_subplot(spec[r + 1, c])
                                 else:
                                     ax = fig.add_subplot(spec[r, c])
 
-                                # Get the slice of the data containing only the variable we are interested in
                                 data_set = nc_output.Datasets_1D[output_cat_name]
-                                datetimes = nc_output.times_np_64
-
-                                #data_set = data_set.groupby(
-                                #        pd.Grouper(key='date', freq='1y')).mean().reset_index()
 
                                 slice = data_set.iloc[:, index_running]
-
-                                # Todo Pandas does not support datetime(s), yet. Only datetime(ns) is supported which
-                                # cannot handle time points before 1600 or something...
-                                # Plot the slice of the data y = slice and x = the date string
-                                #ax.plot(data_set['date'], slice, lw=1)
-                                ax.plot(datetimes, slice, lw=1)
-
-
                                 var_name = data_set.columns[index_running]
+
+
+                                ax.plot(data_set['date'], slice, lw=1)
                                 ax.set_title(var_name)
                                 ax.set_ylabel(unit_set[var_name])
                                 ax.set_xlabel(f'time (res: {time_res.name})')
+                                ax.tick_params(labelrotation=45)
 
                                 index_running += 1
                                 index_var += 1
@@ -304,8 +299,8 @@ class QNC_std_output_plotting:
                         last_page = True
                         pdf.close()
                     else:
-                        index_start += self.max_plots_per_page
-                        index_end += self.max_plots_per_page
+                        index_start += self.MAX_PLOTS_PER_PAGE
+                        index_end += self.MAX_PLOTS_PER_PAGE
 
                 t_stop = perf_counter()
                 print(f"Done! ({np.round(t_stop - t1_start, 1)} sec.)")
@@ -313,11 +308,11 @@ class QNC_std_output_plotting:
 
     def plot_2d(self):
 
-        for identifier in self._available_outputs:
+        for identifier in self.Available_outputs:
 
             print(f"Performing 2D {identifier} variables... ")
 
-            output_file = self._available_outputs[identifier]
+            output_file = self.Available_outputs[identifier]
 
             cats = output_file.Target_categories
             sim_type = output_file.Simulation_type
@@ -329,7 +324,7 @@ class QNC_std_output_plotting:
                                         time_res
                                         )
 
-            nc_output.parse_env_and_variables()
+            nc_output.Parse_env_and_variables()
 
             for output_cat_name in nc_output.output_cat_names:
 
@@ -346,12 +341,12 @@ class QNC_std_output_plotting:
                 if nvars == 0:
                     continue
 
-                export_filename = f"{output_cat_name}_{identifier}_2D.pdf"
+                export_filename = os.path.join(self.post_processing_path, f"{output_cat_name}_{identifier}_2D.pdf")
 
-                index_start = self.time_variable_offset
+                index_start = self.TIME_VARIABLE_OFFSET
                 index_running = index_start
                 index_var = 0
-                index_end = index_start + self.max_plots_per_page
+                index_end = index_start + self.MAX_PLOTS_PER_PAGE
 
                 pdf = PdfPages(export_filename)
 
@@ -364,12 +359,12 @@ class QNC_std_output_plotting:
                     # On the first page we display header and footer information
                     if first_page:
                         # We have two more rows, one for header one for footer
-                        spec = fig.add_gridspec(self.rows_per_page + 2, self.cols_per_page)
+                        spec = fig.add_gridspec(self.ROWS_PER_PAGE + 2, self.COLUMNS_PER_PAGE)
 
                         # Print header information first
                         ax = fig.add_subplot(spec[0, :])
                         ax.text(x=0.0, y=0.5,
-                                s=f"{self._basic_info.sitename}, {self._basic_info.pft}, {self._basic_info.user}, {self._basic_info.date} ",
+                                s=f"{self.Basic_info.sitename}, {self.Basic_info.pft}, {self.Basic_info.user}, {self.Basic_info.date} ",
                                 size=18, transform=ax.transAxes, horizontalalignment='left', verticalalignment='center')
                         ax.text(x=0.0, y=0.25,
                                 s=f"Output time resolution: {time_res.name}, displayed time resolution: {time_res.name} ",
@@ -383,18 +378,18 @@ class QNC_std_output_plotting:
                         ax.axis('off')
 
                         # Print footer information
-                        ax = fig.add_subplot(spec[self.rows_per_page + 1, :])
-                        ax.text(x=1.0, y=0.5, s=f"commit: {self._basic_info.commit} -- branch: {self._basic_info.branch} -- "
-                                                f"status: {self._basic_info.status}", size=12, transform=ax.transAxes,
+                        ax = fig.add_subplot(spec[self.ROWS_PER_PAGE + 1, :])
+                        ax.text(x=1.0, y=0.5, s=f"commit: {self.Basic_info.commit} -- branch: {self.Basic_info.branch} -- "
+                                                f"status: {self.Basic_info.status}", size=12, transform=ax.transAxes,
                                 horizontalalignment='right', verticalalignment='center')
                         ax.axis('off')
 
                     else:
                         # All other pages do not need to have the extra rows for header and footer
-                        spec = fig.add_gridspec(self.rows_per_page, self.cols_per_page)
+                        spec = fig.add_gridspec(self.ROWS_PER_PAGE, self.COLUMNS_PER_PAGE)
 
-                    for r in range(0, self.rows_per_page):
-                        for c in range(0, self.cols_per_page):
+                    for r in range(0, self.ROWS_PER_PAGE):
+                        for c in range(0, self.COLUMNS_PER_PAGE):
 
                             if index_var < nvars:
 
@@ -402,7 +397,6 @@ class QNC_std_output_plotting:
 
                                 # Load the 2D data directly
                                 slice = nc_output.read_2D(output_cat_name, var_name)
-                                datetimes = nc_output.times_np_64
 
 
                                 for sub_index in range(0,2):
@@ -412,16 +406,17 @@ class QNC_std_output_plotting:
                                     else:
                                         ax = fig.add_subplot(spec[r, c])
 
-                                    ndim2 = slice.shape[1] - self.time_variable_offset + 1;
+                                    ndim2 = slice.shape[1] - self.TIME_VARIABLE_OFFSET + 1;
 
                                     for dim2 in range(0, ndim2):
                                         # Plot the slice of the data y = slice and x = the date string
                                         #ax.plot(slice['date'], slice[str(dim2)], lw=1)
-                                        ax.plot(datetimes,  slice[str(dim2)], lw=1)
+                                        ax.plot(slice['date'],  slice[str(dim2)], lw=1)
 
                                 ax.set_title(var_name)
                                 ax.set_ylabel(unit_names[var_name])
                                 ax.set_xlabel(f'time (res: {time_res.name})')
+                                ax.tick_params(labelrotation=45)
 
                                 index_running += 1
                                 index_var += 1
@@ -434,19 +429,19 @@ class QNC_std_output_plotting:
                         last_page = True
                         pdf.close()
                     else:
-                        index_start += self.max_plots_per_page
-                        index_end += self.max_plots_per_page
+                        index_start += self.MAX_PLOTS_PER_PAGE
+                        index_end += self.MAX_PLOTS_PER_PAGE
 
                 t_stop = perf_counter()
                 print(f"Done! ({np.round(t_stop - t1_start, 1)} sec.)")
             print(f"Done with performing 2D {identifier} variables.")
 
-            nc_output.close()
+            nc_output.Close()
 
 
-    def plot_2d_split(self):
-        for identifier in self._available_outputs:
-            output_file = self._available_outputs[identifier]
+    def Plot_2d_split(self):
+        for identifier in self.Available_outputs:
+            output_file = self.Available_outputs[identifier]
 
             print(f"Performing 2D {identifier} variables... ")
 
@@ -460,7 +455,7 @@ class QNC_std_output_plotting:
                                         time_res
                                         )
 
-            nc_output.parse_env_and_variables()
+            nc_output.Parse_env_and_variables()
 
             for output_cat_name in nc_output.output_cat_names:
 
@@ -486,12 +481,12 @@ class QNC_std_output_plotting:
                 if nvars == 0:
                     continue
 
-                export_filename = f"{output_cat_name}_{identifier}_2D.pdf"
+                export_filename = os.path.join(self.post_processing_path, f"{output_cat_name}_{identifier}_2D.pdf")
 
-                index_start = self.time_variable_offset
+                index_start = self.TIME_VARIABLE_OFFSET
                 index_running = index_start
                 index_var = 0
-                index_end = index_start + self.max_plots_per_page
+                index_end = index_start + self.MAX_PLOTS_PER_PAGE
 
                 pdf = PdfPages(export_filename)
 
@@ -504,12 +499,12 @@ class QNC_std_output_plotting:
                     # On the first page we display header and footer information
                     if first_page:
                         # We have two more rows, one for header one for footer
-                        spec = fig.add_gridspec(self.rows_per_page + 2, self.cols_per_page)
+                        spec = fig.add_gridspec(self.ROWS_PER_PAGE + 2, self.COLUMNS_PER_PAGE)
 
                         # Print header information first
                         ax = fig.add_subplot(spec[0, :])
                         ax.text(x=0.0, y=0.5,
-                                s=f"{self._basic_info.sitename}, {self._basic_info.pft}, {self._basic_info.user}, {self._basic_info.date} ",
+                                s=f"{self.Basic_info.sitename}, {self.Basic_info.pft}, {self.Basic_info.user}, {self.Basic_info.date} ",
                                 size=18, transform=ax.transAxes, horizontalalignment='left', verticalalignment='center')
                         ax.text(x=0.0, y=0.25,
                                 s=f"Output time resolution: {time_res.name}, displayed time resolution: {time_res.name} ",
@@ -523,9 +518,9 @@ class QNC_std_output_plotting:
                         ax.axis('off')
 
                         # Print footer information
-                        ax = fig.add_subplot(spec[self.rows_per_page + 1, :])
-                        ax.text(x=1.0, y=0.5, s=f"commit: {self._basic_info.commit} -- branch: {self._basic_info.branch} -- "
-                                                f"status: {self._basic_info.status}", size=12, transform=ax.transAxes,
+                        ax = fig.add_subplot(spec[self.ROWS_PER_PAGE + 1, :])
+                        ax.text(x=1.0, y=0.5, s=f"commit: {self.Basic_info.commit} -- branch: {self.Basic_info.branch} -- "
+                                                f"status: {self.Basic_info.status}", size=12, transform=ax.transAxes,
                                 horizontalalignment='right', verticalalignment='center')
                         ax.axis('off')
 
@@ -541,9 +536,9 @@ class QNC_std_output_plotting:
                             ax.add_artist(legend2)
                     else:
                         # All other pages do not need to have the extra rows for header and footer
-                        spec = fig.add_gridspec(self.rows_per_page, self.cols_per_page)
+                        spec = fig.add_gridspec(self.ROWS_PER_PAGE, self.COLUMNS_PER_PAGE)
 
-                    for r in range(0, self.rows_per_page):
+                    for r in range(0, self.ROWS_PER_PAGE):
 
                             if index_var < nvars:
 
@@ -551,7 +546,6 @@ class QNC_std_output_plotting:
 
                                 # Load the 2D data directly
                                 slice = nc_output.read_2D(output_cat_name, var_name)
-                                datetimes = nc_output.times_np_64
 
                                 for sub_index in range(0, 2):
                                     # On the first page we start with one row later because we
@@ -560,14 +554,14 @@ class QNC_std_output_plotting:
                                     else:
                                         ax = fig.add_subplot(spec[r, sub_index])
 
-                                    ndim2 = slice.shape[1] - self.time_variable_offset + 1;
+                                    ndim2 = slice.shape[1] - self.TIME_VARIABLE_OFFSET + 1;
                                     ndim2 /= 2
                                     ndim2 = int(ndim2)
                                     for dim2 in range(ndim2 * sub_index, ndim2*(sub_index+1)):
                                         # Plot the slice of the data y = slice and x = the date string
                                         #ax.plot(slice['date'], slice[str(dim2)], lw=1)
 
-                                        ax.plot(datetimes, slice[str(dim2)], lw=1)
+                                        ax.plot(slice['date'], slice[str(dim2)], lw=1)
 
                                     if nc_output.Second_dims_2D[var_name] == "soil_layer":
                                         title_layer_str = "SL"
@@ -577,6 +571,8 @@ class QNC_std_output_plotting:
                                     ax.set_title(var_name + " " +title_layer_str +"(" + str(ndim2 * sub_index) +"-"+str(ndim2*(sub_index+1))+")")
                                     ax.set_ylabel(unit_names[var_name])
                                     ax.set_xlabel(f'time (res: {time_res.name})')
+
+                                    ax.tick_params(labelrotation=45)
 
                                 index_running += 1
                                 index_var += 1
@@ -589,14 +585,14 @@ class QNC_std_output_plotting:
                         last_page = True
                         pdf.close()
                     else:
-                        index_start += self.max_plots_per_page
-                        index_end += self.max_plots_per_page
+                        index_start += self.MAX_PLOTS_PER_PAGE
+                        index_end += self.MAX_PLOTS_PER_PAGE
 
                 t_stop = perf_counter()
                 print(f"Done! ({np.round(t_stop - t1_start, 1)} sec.)")
             print(f"Done with performing 2D {identifier}.")
 
-            nc_output.close()
+            nc_output.Close()
 
 
 

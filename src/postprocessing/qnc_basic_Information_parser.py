@@ -1,7 +1,8 @@
+import os
 import pandas as pd
 import traceback
 import re
-from src.postprocessing.QNC_defintions import *
+from src.postprocessing.qnc_defintions import *
 
 
 class Basic_information_parser:
@@ -24,7 +25,8 @@ class Basic_information_parser:
             exit(-1)
 
         try:
-            info_f = open(self.root_path + self.postprocess_subdir + self.sinfo_file)
+            info_filename = os.path.join(self.root_path, self.postprocess_subdir, self.sinfo_file)
+            info_f = open(info_filename)
             base_data = info_f.readlines()
             base_data = [line.rstrip('\n') for line in base_data]
 
@@ -50,7 +52,7 @@ class Basic_information_parser:
             exit(-1)
 
         try:
-            sinfo_data = pd.read_csv(self.root_path + self.postprocess_subdir + self.sinfo_file, delim_whitespace=True, nrows=1)
+            sinfo_data = pd.read_csv(os.path.join(self.root_path, self.postprocess_subdir, self.sinfo_file), sep='\s+', nrows=1)
 
             self.commit = sinfo_data['commit'].values.squeeze()
             self.branch = sinfo_data['branch'].values.squeeze()
@@ -60,7 +62,7 @@ class Basic_information_parser:
             traceback.print_exc()
 
         try:
-            exp_info_data = pd.read_csv(self.root_path + self.postprocess_subdir  + self.exp_info_file, delim_whitespace=True)
+            exp_info_data = pd.read_csv(os.path.join(self.root_path, self.postprocess_subdir, self.exp_info_file), sep='\s+')
 
             self.sitename = exp_info_data['sitename'].values.squeeze()
             self.user = exp_info_data['user'].values.squeeze()

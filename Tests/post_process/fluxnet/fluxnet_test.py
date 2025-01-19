@@ -9,8 +9,6 @@ import subprocess
 
 sys.path.append("/Users/pp/Documents/Repos/qn-lib")
 sys.path.append("/Users/pp/Documents/Repos/qn-lib/src/cal_parsing/build")
-print(sys.path)
-
 so_paths = glob.glob('/Users/pp/Documents/Repos/qn-lib/src/cal_parsing/build/*.so')
 
 if len(so_paths) > 0:
@@ -48,13 +46,11 @@ omp.Plus_model_var(QNC_Variable("gpp_avg", "ASSIMI"))
 omp.Plus_obs_var(QNC_Variable("GPP"))
 target_variable_list.Add(omp)
 
-
 omp = QNC_Obs_Model_Variable_Pair(name= "NEE")
 omp.Plus_model_var(QNC_Variable("het_respiration_avg", "SB"))
 omp.Substract_model_var(QNC_Variable("npp_avg", "VEG"))
 omp.Plus_obs_var(QNC_Variable("NEE"))
 target_variable_list.Add(omp)
-
 
 omp = QNC_Obs_Model_Variable_Pair(name= "Ga")
 omp.Plus_model_var(QNC_Variable("ga_avg", "A2L"))
@@ -66,7 +62,6 @@ omp.Substract_model_var(QNC_Variable("qle_avg", "SPQ"))
 omp.Plus_obs_var(QNC_Variable("LE"))
 target_variable_list.Add(omp)
 
-
 omp = QNC_Obs_Model_Variable_Pair(name= "H")
 omp.Substract_model_var(QNC_Variable("qh_avg", "SPQ"))
 omp.Plus_obs_var(QNC_Variable("H"))
@@ -77,12 +72,10 @@ omp.Plus_model_var(QNC_Variable("het_respiration_avg", "SB"))
 omp.Plus_model_var(QNC_Variable("gpp_avg", "ASSIMI"))
 omp.Substract_model_var(QNC_Variable("npp_avg", "VEG"))
 
-
 omp = QNC_Obs_Model_Variable_Pair(name= "PPFD")
 omp.Plus_model_var(QNC_Variable("appfd_avg", "RAD"))
 omp.Plus_obs_var(QNC_Variable("PPFD"))
 target_variable_list.Add(omp)
-
 
 
 fluxnet_diagnostics = QNC_Fluxnet_Diagnostics(rt_path= exp_path, target_variable_list = target_variable_list)
