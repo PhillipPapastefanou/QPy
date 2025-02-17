@@ -5,4 +5,6 @@ src/weather_generator/build
 src/postprocessing/cal_parsing/build
 /forcing/
 app/*
+examples/sens/LH_test
+examples/sens/oaat_psi50_test
 !app/run_model_user_interface.py

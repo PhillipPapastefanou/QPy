@@ -223,6 +223,14 @@ class Lctlib_Item:
         # k_som_slow_init: slow pools SOM init value, empirically calibrated values to equilibrium soil profiles (unitless)
         self.k_som_slow_init = 0.0
 
+
+        # Albedo parameters
+
+        # AlbedoLitterVIS: Albedo of litter in the visible range
+        self.AlbedoLitterVIS = 0.0
+        # AlbedoLitterNIR: Albedo of litter in the near infrared range
+        self.AlbedolitterNIR = 0.0
+
         # Plant hydraulics
 
         # (MPa)

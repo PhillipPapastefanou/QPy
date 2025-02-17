@@ -23,6 +23,10 @@ def Generate_CTL_Categories(ctl_category):
         return BASE_CTL()
     elif ctl_category == NamelistCategories.JSB_FORCING_CTL:
         return JSB_FORCING_CTL()
+    elif ctl_category == NamelistCategories.JSB_RAD_NML:
+        return JSB_RAD_NML()
+    elif ctl_category == NamelistCategories.Q_SH_CTL:
+        return Q_SH_CTL()
     else:
         print(f"Unknown CTL: {ctl_category}")
         return 0
@@ -34,11 +38,11 @@ class VEGETATION_CTL:
         self.biomass_alloc_scheme       = BiomassAllocScheme.FIXED
         self.leaf_stoichom_scheme       = LeafStoichomScheme.FIXED
         self.plant_functional_type_id   = 4
-        # site specific cohort harvest each x years
-        self.cohort_harvest_interval    = 80
         # roots across soil layers: fixed after init or dynamic over time
         self.flag_dynamic_roots         = True
         self.flag_dynroots_h2o_n_limit  = False
+        self.l_use_product_pools        = False
+        self.flag_herbivory             = False
 
 class PHENOLOGY_CTL:
     def __init__(self):
@@ -91,12 +95,19 @@ class SPQ_CTL:
         self.soil_depth    = 5.7
         self.soil_awc_prescribe     = 300.0
         self.soil_theta_prescribe   = 1.0
-        
+        self.elevation = 0.0
         self.soil_sand    = 0.4
         self.soil_silt    = 0.3
         self.soil_clay    = 0.3
         self.bulk_density = 1500.0
 
+class Q_SH_CTL:
+    def __init__(self):
+        self.active                = True
+        self.flag_stand_harvest    = False
+        self.stand_replacing_year  = 1500
+        self.harvest_fraction      = 1.0
+        self.harvest_active_in_qs  = False
 class SOIL_BIOGEOCHEMISTRY_CTL:
     def __init__(self):
         self.sb_model_scheme  = SbModelScheme.SIMPLE_1D
@@ -169,9 +180,6 @@ class BASE_CTL:
         self.set_parameter_values_proportional = False
         # use only the 1st year of climate input [FALSE TRUE]
         self.flag_climate_forcing_one_year = False
-        # site specific stand harvest
-        self.flag_stand_harvest = False
-        self.stand_replacing_year = 1500
         # flag for site-set SPP_1685; soil layer specific texture information for simple_1d and jsm
         self.flag_spp1685 = False
         # element variables (infrastructure) used in bgc_material (carbon is assumed to be always TRUE)
@@ -213,6 +221,16 @@ class JSB_FORCING_CTL:
         self.transient_simulation_start_year = 1901
         self.flag_forcing_co2_const = False
 
+class JSB_RAD_NML:
+    def __init__(self):
+        # Use TRUE for jsbach_lite, FALSE for jsbach_pfts/jsbach_jedi
+        self.use_alb_veg_simple = False
+        #self.use_alb_canopy = False
+        self.use_alb_mineralsoil_const = True
+        self.bc_filename = 'bc_land_phys.nc'
+        self.ic_filename = 'ic_land_soil.nc'
+
+
 class Namelist:
     def __init__(self):
         # Initialise namelist categories with defaults
@@ -223,9 +241,11 @@ class Namelist:
         self.phyd_ctl                  = PHYD_CTL()
         self.radiation_ctl             = RADIATION_CTL()
         self.spq_ctl                   = SPQ_CTL()
+        self.q_sh_ctl                  = Q_SH_CTL()
         self.soil_biogeochemistry_ctl  = SOIL_BIOGEOCHEMISTRY_CTL()
         self.base_ctl                  = BASE_CTL()
         self.jsb_forcing_ctl           = JSB_FORCING_CTL()
         self.grid_ctl                  = GRID_CTL()
+        self.jsb_rad_nml               = JSB_RAD_NML()
 
 

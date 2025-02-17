@@ -11,6 +11,8 @@ class NamelistCategories(Enum):
     SOIL_BIOGEOCHEMISTRY_CTL = 8
     BASE_CTL            = 9
     JSB_FORCING_CTL     = 10
+    Q_SH_CTL            = 11
+    JSB_RAD_NML         = 12
 
 class GsBetaType(Enum):
     PLANT = 0

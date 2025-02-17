@@ -36,6 +36,8 @@ class NamelistReader:
             # beginning of ctl
             if line[0] in '&':
                 ctl_str = line[1:]
+                # Because of inconsistencies in the naming lets make all categories upper in python
+                ctl_str = ctl_str.upper()
                 try:
                     ctl_enum = NamelistCategories[ctl_str]
                 except:
@@ -56,6 +58,9 @@ class NamelistReader:
                 if ctl_class != 0:
                     arr = line.split('=')
                     name = arr[0]
+                    #Remove whitespaces
+                    name = name.strip()
+
                     value = arr[1]
                     #Remove the redundant quotes
                     value = value.strip('\"')
