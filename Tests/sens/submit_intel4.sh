@@ -11,7 +11,7 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks=4
 #SBATCH --partition='work'
-#SBATCH --mem='100G'
+#SBATCH --mem='400G'
 module purge
 module -q load gnu12 R/4.3.2
 module -q load openmpi4 netcdf
@@ -27,4 +27,4 @@ export FI_PROVIDER=tcp
 
 
 
-mpirun -n 4 python run_mpi.py 
+mpirun -n 4 python run_mpi.py

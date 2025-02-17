@@ -18,7 +18,7 @@ from src.sens.auxil import rescale_mean
 
 from scipy.stats import qmc
 
-rtpath = '/Net/Groups/BSI/work_scratch/ppapastefanou/data/quincy_hydraulics_eamon/'
+rtpath = '/Net/Groups/BSI/work_scratch/ppapastefanou/data/quincy_hydraulics_eamon/setup_quincy_base/'
 
 # Classic sensitivity analysis where we are apply differnt Namelist or Lctlib files to ONE climate file
 # The basic forcing path
@@ -27,7 +27,7 @@ forcing_file = rtpath + 'climate.dat'
 namelist_root_path = rtpath + 'namelist.slm'
 lctlib_root_path = rtpath + 'lctlib_quincy_nlct14.def'
 # Path where to save the setup
-setup_root_path = "LH2_test"
+setup_root_path = "LH_test"
 
 # Parse base namelist path
 nlm_reader = NamelistReader(namelist_root_path)
@@ -43,14 +43,18 @@ pft_id = namelist_base.vegetation_ctl.plant_functional_type_id
 pft = list(PftQuincy)[pft_id - 1]
 
 # Dummy change to be reset to 500-1000 years
-namelist_base.jsb_forcing_ctl.transient_spinup_years = 500
+namelist_base.jsb_forcing_ctl.transient_spinup_years = 100
+namelist_base.base_ctl.flag_write_sb_output = False
+
+
 
 # Main code to be modified
 # 2 Parameter latin hypercupe sensitivity calculation
 
 # Define the number of runs and variables
-number_of_runs = 10
-number_of_variables = 2
+number_of_runs = 128
+# If we speicify more variables that we use we do NOT have a problem
+number_of_variables = 3
 
 # Create a latin hypercube sample that is distributed between 0-1
 seed   = 123456789
@@ -61,17 +65,22 @@ sample = sample.T
 # Create a subslicer to make rescaling easier
 slicer = Subslicer(array=sample)
 
-# 1. Parameter psi50_xylem (standard value was around -3.0)
-psi50_xylem_min = -6.0
-psi50_xylem_max = -0.5
+# 1. Parameter k_xylem_sat (standard value was 1000)
+k_xylem_sat_min_log = np.log10(1)
+k_xylem_sat_max_log = np.log10(10000)
 
-# 2. Parameter k_xylem_sat (standard value was 5000)
-k_xylem_sat_min = 500
-k_xylem_sat_max = 10000
+# 2. Parameter kappa_stem (standard value was 2000)
+kappa_stem_min_log = np.log10(1)
+kappa_stem_max_log = np.log10(5000)
+
+# 3. Parameter kappa_leaf (standard value was 1)
+kappa_leaf_min_log = np.log10(0.001)
+kappa_leaf_max_log = np.log10(10)
 
 # Now we rescale parameters
-psi50s = rescale(slicer.get(), min = psi50_xylem_min, max = psi50_xylem_max)
-k_xylem_sats = rescale(slicer.get(), min = k_xylem_sat_min, max = k_xylem_sat_max)
+k_xylem_sats_log = rescale(slicer.get(), min = k_xylem_sat_min_log, max = k_xylem_sat_max_log)
+kappa_stems_log = rescale(slicer.get(), min = kappa_stem_min_log, max = kappa_stem_max_log)
+kappa_leaves_log = rescale(slicer.get(), min = kappa_leaf_min_log, max = kappa_leaf_max_log)
 
 # We create a multi quincy run object
 quincy_multi_run = Quincy_Multi_Run(setup_root_path)
@@ -83,8 +92,9 @@ for i in range(0, number_of_runs):
 
     #... and change the value of psi50
     # the float conversion in necessary to convert from a numpy numeric type to standard numeric python
-    lctlib[pft].psi50_xylem = float(psi50s[i])
-    lctlib[pft].k_xylem_sat = float(k_xylem_sats[i])
+    lctlib[pft].k_xylem_sat = float(10**k_xylem_sats_log[i])
+    lctlib[pft].kappa_stem = float(10**kappa_stems_log[i])
+    lctlib[pft].kappa_leaf = float(10**kappa_leaves_log[i])
 
     #Create one QUINCY setup
     quincy_setup = Quincy_Setup(folder = os.path.join(setup_root_path, str(i)), namelist = namelist_base, lctlib = lctlib, forcing_path=forcing_file)
@@ -96,9 +106,11 @@ for i in range(0, number_of_runs):
 quincy_multi_run.generate_files()
 
 #Important: we need to save the psi50s so that we can later identify which simulation belongs to which file
-df_parameter_setup = pd.DataFrame(psi50s)
-df_parameter_setup.columns = ['psi50_xylem']
+df_parameter_setup = pd.DataFrame(np.round(10**k_xylem_sats_log,3))
+df_parameter_setup.columns = ['k_xylem_sat']
 df_parameter_setup['id'] = np.arange(0, number_of_runs)
+df_parameter_setup['kappa_stem'] = np.round(10**kappa_stems_log,3)
+df_parameter_setup['kappa_leaf'] = np.round(10**kappa_leaves_log,5)
 
 
 df_parameter_setup.to_csv(os.path.join(setup_root_path, "parameters.csv"), index=False)

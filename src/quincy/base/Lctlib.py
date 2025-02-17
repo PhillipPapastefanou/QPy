@@ -245,3 +245,5 @@ class Lctlib_Item:
         self.kappa_leaf = 0.0
         # (mol m-3 MPa-1)
         self.kappa_stem = 0.0
+        # (-)
+        self.alpha_k_soil = 1.0

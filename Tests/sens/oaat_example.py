@@ -13,7 +13,7 @@ from src.quincy.base.PFTTypes import PftQuincy
 from src.sens.base import Quincy_Setup
 from src.sens.base import Quincy_Multi_Run
 
-rtpath = '/Net/Groups/BSI/work_scratch/ppapastefanou/data/quincy_hydraulics_eamon/'
+rtpath = '/Net/Groups/BSI/work_scratch/ppapastefanou/data/quincy_hydraulics_eamon/setup_quincy_base/'
 
 # Classic sensitivity analysis where we are apply differnt Namelist or Lctlib files to ONE climate file
 # The basic forcing path
@@ -52,13 +52,13 @@ psi50_xylem_min = -6.0
 psi50_xylem_max = -0.5
 
 # Define the number of steps we want to slice
-nslice = 10
+nslice = 4
 
 # Now we can use numpy to create and array
-psi50s = np.linspace(psi50_xylem_min, psi50_xylem_max, num=nslice)
+#psi50s = np.linspace(psi50_xylem_min, psi50_xylem_max, num=nslice)
 
 #you could also do it manually:
-#psi50s = np.array([-6.0, -3.0, -2.0, -1.0])
+psi50s = np.array([-6.0, -3.0, -2.0, -1.0])
 
 # We create a multi quincy run object
 quincy_multi_run = Quincy_Multi_Run(setup_root_path)
@@ -71,6 +71,11 @@ for i in range(0, nslice):
     #... and change the value of psi50
     # the float conversion in necessary to convert from a numpy numeric type to standard numeric python
     lctlib[pft].psi50_xylem = float(psi50s[i])
+
+    lctlib[pft].k_xylem_sat = -123456789
+
+    #lctlib[pft].k_xylem_sat = 10.0
+    lctlib[pft].kappa_leaf = 1.0
 
     #Create one QUINCY setup
     quincy_setup = Quincy_Setup(folder = os.path.join(setup_root_path, str(i)), namelist = namelist_base, lctlib = lctlib, forcing_path=forcing_file)
