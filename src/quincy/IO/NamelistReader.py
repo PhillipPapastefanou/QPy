@@ -21,6 +21,11 @@ class NamelistReader:
             # Treat each line individually
             # Remove whitespaces
             line= line.strip()
+            
+            # Ignore lines that are empty
+            if line == '':
+                continue
+            
             # Ignore all lines with a comment and no content at all
             if (len(line) > 0) & (line[0] != '!'):
                 raw_input_lines.append(line)

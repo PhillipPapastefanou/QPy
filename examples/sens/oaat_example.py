@@ -143,4 +143,3 @@ df_parameter_setup['id'] = np.arange(0, nslice)
 
 
 df_parameter_setup.to_csv(os.path.join(setup_root_path, "parameters.csv"), index=False)
-
