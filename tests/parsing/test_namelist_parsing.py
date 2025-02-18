@@ -24,9 +24,5 @@ class Test_Namelist(unittest.TestCase):
                 item = getattr(cat, var_str)
                 self.assertTrue(item.parsed, f"Did not parse {var_str} in {cat_str}")
 
-        
-
-
 if __name__ == "__main__":
     Test_Namelist().test_namelist_reading()
-    #Test_Namelist().test_check_SimPHony_tests_exists()

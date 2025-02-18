@@ -7,5 +7,6 @@ src/postprocessing/cal_parsing/build
 app/*
 examples/sens/LH_test
 examples/sens/oaat_example
+examples/sens/test_bed
 !app/run_model_user_interface.py
 tests/runs/output/

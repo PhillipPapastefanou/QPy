@@ -8,7 +8,6 @@ from copy import deepcopy
 import numpy as np
 import pandas as pd
 
-
 from src.quincy.IO.NamelistReader import NamelistReader
 from src.quincy.IO.LctlibReader import LctlibReader
 from src.quincy.base.PFTTypes import PftQuincy, PftFluxnet, GetQuincyPFTfromFluxnetPFT
@@ -17,17 +16,21 @@ from src.sens.base import Quincy_Multi_Run
 from src.quincy.base.EnvironmentalInputTypes import *
 from src.quincy.base.NamelistTypes import ForcingMode
 from src.quincy.base.EnvironmentalInput import EnvironmentalInputSite
-from examples.sens.default_testbed import ApplyDefaultTestbed
+from src.quincy.run_scripts.default import ApplyDefaultTestbed
 
-
-rtpath = '/Net/Groups/BSI/work_scratch/ppapastefanou/src/quincy'
+if 'QUINCY' in os.environ:        
+    QUINCY_ROOT_PATH = os.environ.get("QUINCY")
+else:
+    print("Environmental variable QUINCY is not defined")
+    print("Please set QUINCY to the directory of your quincy root path")
+    exit(99)
 
 
 # Classic sensitivity analysis where we are apply differnt Namelist or Lctlib files to ONE climate file
 # The basic forcing path
 # We need a base namelist and lctlib which we then modify accordingly
-namelist_root_path = os.path.join(rtpath,'contrib', 'namelist' ,'namelist.slm')
-lctlib_root_path = os.path.join(rtpath,'data', 'lctlib_quincy_nlct14.def')
+namelist_root_path = os.path.join(QUINCY_ROOT_PATH,'contrib', 'namelist' ,'namelist.slm')
+lctlib_root_path = os.path.join(QUINCY_ROOT_PATH,'data', 'lctlib_quincy_nlct14.def')
 # Path where to save the setup
 setup_root_path = os.path.join(THIS_DIR, "oaat_example")
 
@@ -55,7 +58,7 @@ ApplyDefaultTestbed(namelist=namelist_base)
 
 # Dummy change to be reset to 500-1000 years
 #namelist_base.jsb_forcing_ctl.transient_spinup_years = 500
-namelist_base.base_ctl.file_sel_output_variables.value = os.path.join(rtpath, 'data', 'basic_output_variables.txt')
+namelist_base.base_ctl.file_sel_output_variables.value = os.path.join(QUINCY_ROOT_PATH, 'data', 'basic_output_variables.txt')
 
 # Parse base lctlibe path
 lctlib_reader = LctlibReader(lctlib_root_path)
@@ -100,7 +103,10 @@ for i in range(0, nslice):
     lctlib[pft].kappa_leaf = 1.0
 
     #Create one QUINCY setup
-    quincy_setup = Quincy_Setup(folder = os.path.join(setup_root_path, str(i)), namelist = namelist_base, lctlib = lctlib, forcing_path=env_input.forcing_file)
+    quincy_setup = Quincy_Setup(folder = os.path.join(setup_root_path, str(i)), 
+                                namelist = namelist_base,
+                                lctlib = lctlib,
+                                forcing_path=env_input.forcing_file)
 
     # Add to the setup creation
     quincy_multi_run.add_setup(quincy_setup)
@@ -112,6 +118,4 @@ quincy_multi_run.generate_files()
 df_parameter_setup = pd.DataFrame(psi50s)
 df_parameter_setup.columns = ['psi50_xylem']
 df_parameter_setup['id'] = np.arange(0, nslice)
-
-
 df_parameter_setup.to_csv(os.path.join(setup_root_path, "parameters.csv"), index=False)

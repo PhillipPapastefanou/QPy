@@ -18,20 +18,27 @@ from src.sens.base import Quincy_Single_Run
 from src.quincy.base.EnvironmentalInputTypes import *
 from src.quincy.base.NamelistTypes import ForcingMode
 from src.quincy.base.EnvironmentalInput import EnvironmentalInputSite
-from examples.sens.default_testbed import ApplyDefaultTestbed
+from src.quincy.run_scripts.default import ApplyDefaultTestbed
 from time import perf_counter
-
 
 class Test_Test_Bed(unittest.TestCase):
     
-    def init(self):        
-        self.QUINCY_ROOT_PATH = '/Net/Groups/BSI/work_scratch/ppapastefanou/src/quincy'
+    def init(self):
+        if 'QUINCY' in os.environ:        
+            self.QUINCY_ROOT_PATH = os.environ.get("QUINCY")
+        else:
+            print("Environmental variable QUINCY is not defined")
+            print("Please set QUINCY to the directory of your quincy root path")
+            exit(99)
         self.OUTPUT_DIR = 'output'
         self.org_delta = 0.0
         self.qpy_delta = 0.0
         
         
     def test_standard_config(self):
+        
+        self.init()
+        
         # Classic sensitivity analysis where we are apply differnt Namelist or Lctlib files to ONE climate file
         # The basic forcing path
         # We need a base namelist and lctlib which we then modify accordingly
@@ -55,7 +62,7 @@ class Test_Test_Bed(unittest.TestCase):
         env_input = EnvironmentalInputSite(sitelist=sites,
                                         forcing_mode=forcing_mode, 
                                         forcing_dataset=forcing)
-
+        
         # Parse paths of the forcing
         env_input.parse_single_site(namelist=namelist_base)
 

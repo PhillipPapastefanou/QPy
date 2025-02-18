@@ -32,7 +32,11 @@ class EnvironmentalInputSite:
                 self.forcing_mode_short = 's'
             else:
                 self.fn_sitelist = "flux3_all_sites_1901-2017_list.dat"
-                self.forcing_mode_short = 't'        
+                self.forcing_mode_short = 't'
+                
+        else:
+            print(f"Unsupported forcing dataset: {self.forcing_dataset}")
+            exit(99)        
             
 
     # def check(self):
@@ -105,8 +109,7 @@ class EnvironmentalInputSite:
             
         if(df_config_site.shape[0] > 1):
             print(f"Found duplicate entries of {site} in the config file")
-            exit(99)
-    
+            exit(99)    
 
         # Reset the indexes so that we always have the correct location
         df_config_site.reset_index(inplace=True)
@@ -140,20 +143,3 @@ class EnvironmentalInputSite:
         sb.soil_p_occluded.value = df_config_site.loc[0, 'soilP_occluded']
         sb.soil_p_primary.value = df_config_site.loc[0, 'soilP_primary']
         sb.qmax_org_fine_particle.value = df_config_site.loc[0, 'Qmax_org_fp']
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

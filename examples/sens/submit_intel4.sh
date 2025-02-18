@@ -17,6 +17,8 @@ module -q load gnu12 R/4.3.2
 module -q load openmpi4 netcdf
 ml all/Miniconda3
 
+source ~/.bash_profile
+echo "QUINCY path: $QUINCY"
 
 source /User/homes/ppapastefanou/miniconda3/etc/profile.d/conda.sh
 conda activate /Net/Groups/BSI/work_scratch/ppapastefanou/envs/phs

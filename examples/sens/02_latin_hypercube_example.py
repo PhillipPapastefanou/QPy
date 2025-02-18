@@ -1,52 +1,76 @@
 import sys
-rtpath ="/Net/Groups/BSI/work_scratch/ppapastefanou/data/QPy"
-sys.path.append(rtpath)
+import os
 
+THIS_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.join(THIS_DIR, os.pardir, os.pardir))
 from copy import deepcopy
 import numpy as np
 import pandas as pd
-import os
 
 from src.quincy.IO.NamelistReader import NamelistReader
 from src.quincy.IO.LctlibReader import LctlibReader
-from src.quincy.base.PFTTypes import PftQuincy
+from src.quincy.base.PFTTypes import PftQuincy, PftFluxnet, GetQuincyPFTfromFluxnetPFT
 from src.sens.base import Quincy_Setup
 from src.sens.base import Quincy_Multi_Run
+from src.quincy.base.EnvironmentalInputTypes import *
+from src.quincy.base.NamelistTypes import ForcingMode
+from src.quincy.base.EnvironmentalInput import EnvironmentalInputSite
+from src.quincy.run_scripts.default import ApplyDefaultTestbed
+
+if 'QUINCY' in os.environ:        
+    QUINCY_ROOT_PATH = os.environ.get("QUINCY")
+else:
+    print("Environmental variable QUINCY is not defined")
+    print("Please set QUINCY to the directory of your quincy root path")
+    exit(99)
+
 from src.sens.auxil import Subslicer
 from src.sens.auxil import rescale
 from src.sens.auxil import rescale_mean
-
 from scipy.stats import qmc
 
-rtpath = '/Net/Groups/BSI/work_scratch/ppapastefanou/data/quincy_hydraulics_eamon/setup_quincy_base/'
 
 # Classic sensitivity analysis where we are apply differnt Namelist or Lctlib files to ONE climate file
 # The basic forcing path
-forcing_file = rtpath + 'climate.dat'
 # We need a base namelist and lctlib which we then modify accordingly
-namelist_root_path = rtpath + 'namelist.slm'
-lctlib_root_path = rtpath + 'lctlib_quincy_nlct14.def'
+namelist_root_path = os.path.join(QUINCY_ROOT_PATH,'contrib', 'namelist' ,'namelist.slm')
+lctlib_root_path = os.path.join(QUINCY_ROOT_PATH,'data', 'lctlib_quincy_nlct14.def')
 # Path where to save the setup
-setup_root_path = "LH_test"
+setup_root_path = os.path.join(THIS_DIR, "LH_test")
 
 # Parse base namelist path
 nlm_reader = NamelistReader(namelist_root_path)
 namelist_base = nlm_reader.parse()
 
+
+# Fluxnet3 forcing
+forcing = ForcingDataset.FLUXNET3
+# Fluxnet3 sites
+sites = ["DE-Hai"]
+# Use static forcing
+forcing_mode = ForcingMode.STATIC
+
+env_input = EnvironmentalInputSite(sitelist=sites,
+                                   forcing_mode=forcing_mode, 
+                                   forcing_dataset=forcing)
+
+# Parse paths of the forcing
+env_input.parse_single_site(namelist=namelist_base)
+
+# Apply the testbed configuration 
+ApplyDefaultTestbed(namelist=namelist_base)
+
+# Dummy change to be reset to 500-1000 years
+#namelist_base.jsb_forcing_ctl.transient_spinup_years = 500
+namelist_base.base_ctl.file_sel_output_variables.value = os.path.join(QUINCY_ROOT_PATH, 'data', 'basic_output_variables.txt')
+
 # Parse base lctlibe path
 lctlib_reader = LctlibReader(lctlib_root_path)
 lctlib_base = lctlib_reader.parse()
 
-
 #Obtain pft_id from namelist
-pft_id = namelist_base.vegetation_ctl.plant_functional_type_id
+pft_id = namelist_base.vegetation_ctl.plant_functional_type_id.value
 pft = list(PftQuincy)[pft_id - 1]
-
-# Dummy change to be reset to 500-1000 years
-namelist_base.jsb_forcing_ctl.transient_spinup_years = 100
-namelist_base.base_ctl.flag_write_sb_output = False
-
-
 
 # Main code to be modified
 # 2 Parameter latin hypercupe sensitivity calculation
@@ -97,7 +121,10 @@ for i in range(0, number_of_runs):
     lctlib[pft].kappa_leaf = float(10**kappa_leaves_log[i])
 
     #Create one QUINCY setup
-    quincy_setup = Quincy_Setup(folder = os.path.join(setup_root_path, str(i)), namelist = namelist_base, lctlib = lctlib, forcing_path=forcing_file)
+    quincy_setup = Quincy_Setup(folder = os.path.join(setup_root_path, str(i)), 
+                                namelist = namelist_base, 
+                                lctlib = lctlib, 
+                                forcing_path=env_input.forcing_file)
 
     # Add to the setup creation
     quincy_multi_run.add_setup(quincy_setup)
