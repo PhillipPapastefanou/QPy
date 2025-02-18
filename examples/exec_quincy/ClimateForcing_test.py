@@ -1,6 +1,6 @@
-from src.quincy.base.EnvironmentalInput import EnvironmentalInput
+from src.quincy.base.EnvironmentalInput import EnvironmentalInputSite
 
-clim_forcing = EnvironmentalInput()
+clim_forcing = EnvironmentalInputSite()
 
 
 clim_forcing.check()

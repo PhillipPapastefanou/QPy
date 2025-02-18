@@ -45,3 +45,16 @@ class Quincy_Multi_Run:
 
         for setup in self.setups:
             setup.export()
+
+class Quincy_Single_Run:
+    def __init__(self, root_path):
+        self.setup = ""
+        self.root_path = root_path
+    def set_setup(self, setup: Quincy_Setup):
+        self.setup = setup
+    def generate_files(self):
+        if os.path.exists(self.root_path):
+            shutil.rmtree(self.root_path)
+        os.mkdir(self.root_path)
+        self.setup.export()
+

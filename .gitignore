@@ -8,3 +8,4 @@ app/*
 examples/sens/LH_test
 examples/sens/oaat_psi50_test
 !app/run_model_user_interface.py
+tests/runs/output/

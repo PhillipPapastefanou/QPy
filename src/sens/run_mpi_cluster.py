@@ -93,7 +93,6 @@ class ParallelSetup:
             print("Starting simulations...")
             t1 = perf_counter()
 
-
         for i in self.recvbuf:
             p = subprocess.Popen(self.quincy_path,
                              cwd=os.path.join(self.setup_path,

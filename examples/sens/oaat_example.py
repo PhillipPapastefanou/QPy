@@ -1,95 +1,70 @@
 import sys
-rtpath ="/Net/Groups/BSI/work_scratch/ppapastefanou/src/QPy"
-sys.path.append(rtpath)
+import os
 
+
+THIS_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.join(THIS_DIR, os.pardir, os.pardir))
 from copy import deepcopy
 import numpy as np
 import pandas as pd
-import os
+
 
 from src.quincy.IO.NamelistReader import NamelistReader
 from src.quincy.IO.LctlibReader import LctlibReader
-from src.quincy.base.PFTTypes import PftQuincy
+from src.quincy.base.PFTTypes import PftQuincy, PftFluxnet, GetQuincyPFTfromFluxnetPFT
 from src.sens.base import Quincy_Setup
 from src.sens.base import Quincy_Multi_Run
-from src.quincy.base.NamelistTypes import GsBetaType
-from src.quincy.base.NamelistTypes import SbModelScheme
-from src.quincy.base.NamelistTypes import SbNlossScheme
+from src.quincy.base.EnvironmentalInputTypes import *
+from src.quincy.base.NamelistTypes import ForcingMode
+from src.quincy.base.EnvironmentalInput import EnvironmentalInputSite
+from examples.sens.default_testbed import ApplyDefaultTestbed
 
-from src.quincy.base.NamelistTypes import VegBnfScheme
-from src.quincy.base.NamelistTypes import CanopyLayerScheme
-from src.quincy.base.NamelistTypes import CanopyConductanceScheme
-from src.quincy.base.NamelistTypes import BiomassAllocScheme
-from src.quincy.base.NamelistTypes import LeafStoichomScheme
-from src.quincy.base.NamelistTypes import SbAdsorbScheme
 
 rtpath = '/Net/Groups/BSI/work_scratch/ppapastefanou/src/quincy'
 
-# Exemplary forcing file
-forcing_file =  '/Net/Groups/BSI/work_scratch/ppapastefanou/data/quincy_hydraulics_setup/clim/climate.dat'
+
 # Classic sensitivity analysis where we are apply differnt Namelist or Lctlib files to ONE climate file
 # The basic forcing path
 # We need a base namelist and lctlib which we then modify accordingly
 namelist_root_path = os.path.join(rtpath,'contrib', 'namelist' ,'namelist.slm')
 lctlib_root_path = os.path.join(rtpath,'data', 'lctlib_quincy_nlct14.def')
 # Path where to save the setup
-setup_root_path = "oaat_psi50_test"
+setup_root_path = os.path.join(THIS_DIR, "oaat_psi50_test")
 
 # Parse base namelist path
 nlm_reader = NamelistReader(namelist_root_path)
 namelist_base = nlm_reader.parse()
 
+
+# Fluxnet3 forcing
+forcing = ForcingDataset.FLUXNET3
+# Fluxnet3 sites
+sites = ["DE-Hai"]
+# Use static forcing
+forcing_mode = ForcingMode.STATIC
+
+env_input = EnvironmentalInputSite(sitelist=sites,
+                                   forcing_mode=forcing_mode, 
+                                   forcing_dataset=forcing)
+
+# Parse paths of the forcing
+env_input.parse_single_site(namelist=namelist_base)
+
+# Apply the testbed configuration 
+ApplyDefaultTestbed(namelist=namelist_base)
+
 # Parse base lctlibe path
 lctlib_reader = LctlibReader(lctlib_root_path)
 lctlib_base = lctlib_reader.parse()
 
-
 #Obtain pft_id from namelist
-pft_id = namelist_base.vegetation_ctl.plant_functional_type_id
+pft_id = namelist_base.vegetation_ctl.plant_functional_type_id.value
 pft = list(PftQuincy)[pft_id - 1]
 
 
 # Dummy change to be reset to 500-1000 years
 #namelist_base.jsb_forcing_ctl.transient_spinup_years = 500
-namelist_base.base_ctl.file_sel_output_variables = os.path.join(rtpath,'data', 'basic_output_variables.txt')
-namelist_base.phyd_ctl.use_plant_hydraulics = True
-namelist_base.assimilation_ctl.gs_beta_type = GsBetaType.PLANT
-
-namelist_base.soil_biogeochemistry_ctl.sb_model_scheme = SbModelScheme.SIMPLE_1D
-namelist_base.soil_biogeochemistry_ctl.sb_nloss_scheme = SbNlossScheme.DYNAMIC
-namelist_base.soil_biogeochemistry_ctl.flag_sb_prescribe_nh4 = False
-namelist_base.soil_biogeochemistry_ctl.flag_sb_prescribe_no3 = False
-namelist_base.soil_biogeochemistry_ctl.flag_sb_prescribe_po4 = True
-
-namelist_base.vegetation_ctl.veg_bnf_scheme = VegBnfScheme.DYNAMIC
-namelist_base.soil_biogeochemistry_ctl.flag_mycorrhiza = False
-namelist_base.soil_biogeochemistry_ctl.flag_mycorrhiza_org = False
-namelist_base.soil_biogeochemistry_ctl.flag_mycorrhiza_prim = False
-
-namelist_base.assimilation_ctl.flag_t_resp_acclimation  = True
-namelist_base.assimilation_ctl.flag_t_jmax_acclimation  = True
-namelist_base.assimilation_ctl.flag_optimal_Nfraction   = False
-namelist_base.assimilation_ctl.ncanopy                  = 10
-namelist_base.assimilation_ctl.canopy_layer_scheme      = CanopyLayerScheme.FAPAR
-namelist_base.assimilation_ctl.canopy_conductance_scheme= CanopyConductanceScheme.MEDLYN
-
-namelist_base.vegetation_ctl.biomass_alloc_scheme = BiomassAllocScheme.FIXED
-namelist_base.vegetation_ctl.leaf_stoichom_scheme = LeafStoichomScheme.FIXED
-namelist_base.vegetation_ctl.flag_dynamic_roots= True
-namelist_base.vegetation_ctl.flag_dynroots_h2o_n_limit = False
-namelist_base.vegetation_ctl.flag_herbivory = False
-
-namelist_base.spq_ctl.soil_depth = 5.7
-namelist_base.spq_ctl.nsoil_water = 5
-namelist_base.spq_ctl.nsoil_energy = 5
-
-namelist_base.soil_biogeochemistry_ctl.sb_adsorp_scheme = SbAdsorbScheme.ECA_PART
-namelist_base.base_ctl.flag_slow_sb_pool_spinup_accelerator = False
-
-namelist_base.dist_fire_ctl.flag_dfire = False
-namelist_base.base_ctl.forcing_file_start_yr = 1901
-namelist_base.base_ctl.forcing_file_last_yr = 2012
-
+namelist_base.base_ctl.file_sel_output_variables.value = os.path.join(rtpath, 'data', 'basic_output_variables.txt')
 
 
 # Main code to be modified
@@ -122,13 +97,11 @@ for i in range(0, nslice):
     #... and change the value of psi50
     # the float conversion in necessary to convert from a numpy numeric type to standard numeric python
     lctlib[pft].psi50_xylem = float(psi50s[i])
-
     lctlib[pft].k_xylem_sat = 10.0
-
     lctlib[pft].kappa_leaf = 1.0
 
     #Create one QUINCY setup
-    quincy_setup = Quincy_Setup(folder = os.path.join(setup_root_path, str(i)), namelist = namelist_base, lctlib = lctlib, forcing_path=forcing_file)
+    quincy_setup = Quincy_Setup(folder = os.path.join(setup_root_path, str(i)), namelist = namelist_base, lctlib = lctlib, forcing_path=env_input.forcing_file)
 
     # Add to the setup creation
     quincy_multi_run.add_setup(quincy_setup)

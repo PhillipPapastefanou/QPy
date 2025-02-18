@@ -1,4 +1,10 @@
 from enum import Enum
+
+class NamelistItem:
+    def __init__(self, value):
+        self.value = value
+        self.parsed = False
+
 class NamelistCategories(Enum):
     VEGETATION_CTL      = 0
     DIST_FIRE_CTL       = 1
@@ -46,6 +52,7 @@ class SbBnfScheme(Enum):
 class SbAdsorbScheme(Enum):
     ECA_FULL = 0
     ECA_PART = 1
+
 class ForcingMode(Enum):
     STATIC    = 0
     TRANSIENT = 1

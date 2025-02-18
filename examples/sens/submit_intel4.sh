@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH -J GUESS_NCPS
+#SBATCH -J QUINCY_QPY
 #SBATCH --error=%j.err
 #SBATCH --output=%j.log
 #SBATCH -D ./
@@ -22,9 +22,6 @@ source /User/homes/ppapastefanou/miniconda3/etc/profile.d/conda.sh
 conda activate /Net/Groups/BSI/work_scratch/ppapastefanou/envs/phs
 which python
 
-
 export FI_PROVIDER=tcp
-
-
 
 mpirun -n 4 python run_mpi.py

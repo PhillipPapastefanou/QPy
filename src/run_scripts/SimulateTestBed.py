@@ -3,7 +3,7 @@ from src.quincy.IO.NamelistDevinfo import NamelistDevinfo
 from src.quincy.IO.NamelistWriter import NamelistWriter
 from src.quincy.IO.LctlibReader import LctlibReader
 from src.quincy.IO.LctlibWriter import LctlibWriter
-from src.quincy.base.EnvironmentalInput import EnvironmentalInput
+from src.quincy.base.EnvironmentalInput import EnvironmentalInputSite
 import os
 import shutil
 
@@ -18,14 +18,14 @@ class TestBedSim:
 
         lctlib_reader = LctlibReader(f"{quincy_root_path}/data/lctlib_quincy_nlct14.def")
         self.lctlib = lctlib_reader.parse()
-        self.climate_forcing = EnvironmentalInput()
+        self.climate_forcing = EnvironmentalInputSite()
 
 
     def set_up(self, folder):
 
         self.climate_forcing.check()
 
-        self.climate_forcing.parse_sitelist_information(self.namelist)
+        self.climate_forcing.parse(self.namelist)
 
         if len(self.climate_forcing.sitelist) > 1:
             print("Sitelist contains more than one site. This is currently not supported in test_bed mode.")
