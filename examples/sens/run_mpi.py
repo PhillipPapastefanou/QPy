@@ -1,6 +1,6 @@
 import sys
 rt_lib_path = "/Net/Groups/BSI/work_scratch/ppapastefanou/src/QPy"
-setup_path = "oaat_psi50_test"
+setup_path = "oaat_example"
 quincy_path = "/Net/Groups/BSI/work_scratch/ppapastefanou/src/quincy/x86_64-gfortran/bin/land.x"
 
 sys.path.append(rt_lib_path)

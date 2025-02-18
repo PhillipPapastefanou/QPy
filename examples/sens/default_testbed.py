@@ -2,7 +2,7 @@ from src.quincy.base.Namelist import Namelist
 from src.quincy.base.NamelistTypes import *
 
 def ApplyDefaultTestbed(namelist : Namelist):
-    
+        
     namelist.phyd_ctl.use_plant_hydraulics.value = False
     namelist.assimilation_ctl.gs_beta_type.value = GsBetaType.PLANT
 

@@ -6,6 +6,6 @@ src/postprocessing/cal_parsing/build
 /forcing/
 app/*
 examples/sens/LH_test
-examples/sens/oaat_psi50_test
+examples/sens/oaat_example
 !app/run_model_user_interface.py
 tests/runs/output/

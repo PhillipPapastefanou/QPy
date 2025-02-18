@@ -29,7 +29,7 @@ rtpath = '/Net/Groups/BSI/work_scratch/ppapastefanou/src/quincy'
 namelist_root_path = os.path.join(rtpath,'contrib', 'namelist' ,'namelist.slm')
 lctlib_root_path = os.path.join(rtpath,'data', 'lctlib_quincy_nlct14.def')
 # Path where to save the setup
-setup_root_path = os.path.join(THIS_DIR, "oaat_psi50_test")
+setup_root_path = os.path.join(THIS_DIR, "oaat_example")
 
 # Parse base namelist path
 nlm_reader = NamelistReader(namelist_root_path)
@@ -53,6 +53,10 @@ env_input.parse_single_site(namelist=namelist_base)
 # Apply the testbed configuration 
 ApplyDefaultTestbed(namelist=namelist_base)
 
+# Dummy change to be reset to 500-1000 years
+#namelist_base.jsb_forcing_ctl.transient_spinup_years = 500
+namelist_base.base_ctl.file_sel_output_variables.value = os.path.join(rtpath, 'data', 'basic_output_variables.txt')
+
 # Parse base lctlibe path
 lctlib_reader = LctlibReader(lctlib_root_path)
 lctlib_base = lctlib_reader.parse()
@@ -60,11 +64,6 @@ lctlib_base = lctlib_reader.parse()
 #Obtain pft_id from namelist
 pft_id = namelist_base.vegetation_ctl.plant_functional_type_id.value
 pft = list(PftQuincy)[pft_id - 1]
-
-
-# Dummy change to be reset to 500-1000 years
-#namelist_base.jsb_forcing_ctl.transient_spinup_years = 500
-namelist_base.base_ctl.file_sel_output_variables.value = os.path.join(rtpath, 'data', 'basic_output_variables.txt')
 
 
 # Main code to be modified
