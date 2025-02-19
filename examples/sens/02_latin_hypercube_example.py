@@ -1,5 +1,6 @@
 import sys
 import os
+import shutil
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(THIS_DIR, os.pardir, os.pardir))
@@ -16,6 +17,7 @@ from src.quincy.base.EnvironmentalInputTypes import *
 from src.quincy.base.NamelistTypes import ForcingMode
 from src.quincy.base.EnvironmentalInput import EnvironmentalInputSite
 from src.quincy.run_scripts.default import ApplyDefaultTestbed
+from src.quincy.run_scripts.submit import GenerateSlurmScript
 
 if 'QUINCY' in os.environ:        
     QUINCY_ROOT_PATH = os.environ.get("QUINCY")
@@ -72,7 +74,11 @@ lctlib_base = lctlib_reader.parse()
 pft_id = namelist_base.vegetation_ctl.plant_functional_type_id.value
 pft = list(PftQuincy)[pft_id - 1]
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 # Main code to be modified
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+
+
 # 2 Parameter latin hypercupe sensitivity calculation
 
 # Define the number of runs and variables
@@ -142,3 +148,19 @@ df_parameter_setup['kappa_leaf'] = np.round(10**kappa_leaves_log,5)
 
 df_parameter_setup.to_csv(os.path.join(setup_root_path, "parameters.csv"), index=False)
 
+
+
+NTASKS  = 4
+
+GenerateSlurmScript(path = setup_root_path, ntasks=NTASKS)
+
+shutil.copyfile(os.path.join(THIS_DIR, os.pardir, os.pardir,'src', 'quincy', 'run_scripts', 'run_mpi.py'), 
+                             os.path.join(setup_root_path, 'run_mpi.py'))
+
+import time
+time.sleep(1.0)
+
+import subprocess
+scriptpath = os.path.join(setup_root_path, 'submit.sh')
+p = subprocess.Popen(f'/usr/bin/sbatch {scriptpath}', shell=True, cwd=setup_root_path)       
+stdout, stderr = p.communicate()

@@ -64,6 +64,7 @@ ApplyDefaultTestbed(namelist=namelist_base)
 namelist_base.base_ctl.file_sel_output_variables.value = os.path.join(QUINCY_ROOT_PATH,
                                                                         'data', 
                                                                         'basic_output_variables.txt')
+
 # Parse base lctlibe path
 lctlib_reader = LctlibReader(lctlib_root_path)
 lctlib_base = lctlib_reader.parse()
