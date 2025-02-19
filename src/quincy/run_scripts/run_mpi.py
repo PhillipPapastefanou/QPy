@@ -2,7 +2,7 @@ import sys
 import os
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(os.path.join(THIS_DIR, os.pardir, os.pardir))
+sys.path.append(os.path.join(THIS_DIR, os.pardir, os.pardir, os.pardir))
 
 if 'QUINCY' in os.environ:        
     QUINCY_ROOT_PATH = os.environ.get("QUINCY")
@@ -15,7 +15,7 @@ else:
 
 QUINCY_BIN = os.path.join(QUINCY_ROOT_PATH, "x86_64-gfortran", "bin", "land.x")   
 
-setup_path = "LH_test"
+setup_path = os.getcwd()
 
 from mpi4py import MPI
 from src.sens.run_mpi_cluster import ParallelSetup
