@@ -13,7 +13,7 @@ def GenerateSlurmScript(ntasks, path):
 #SBATCH --nodes=1
 #SBATCH --ntasks={ntasks}
 #SBATCH --partition='work'
-#SBATCH --mem='400G'
+#SBATCH --mem='64G'
 module purge
 module -q load gnu12 R/4.3.2
 module -q load openmpi4 netcdf

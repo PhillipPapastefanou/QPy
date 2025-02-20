@@ -96,7 +96,7 @@ class EnvironmentalInputSite:
         
         namelists = {}
         forcing_files = {}
-        for site in sitelist:
+        for site in self.sitelist:
             namelist_new = deepcopy(namelist)
             namelist_new, forcing_file = self.parse_single_site(site, namelist_new)
             namelists[site] = namelist_new

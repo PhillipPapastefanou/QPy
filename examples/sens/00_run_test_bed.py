@@ -28,7 +28,8 @@ else:
     print("Please set QUINCY to the directory of your quincy root path")
     exit(99)
     
-OUTPUT_DIR = 'test_bed'
+OUTPUT_DIR = 'output/test_bed'
+
 
 # Classic sensitivity analysis where we are apply differnt Namelist or Lctlib files to ONE climate file
 # The basic forcing path
@@ -54,7 +55,7 @@ env_input = EnvironmentalInputSite(forcing_mode=forcing_mode,
                                 forcing_dataset=forcing)
 
 # Parse paths of the forcing
-env_input.parse_single_site(namelist=namelist_base, site=site)
+namelist_base, forcing_file = env_input.parse_single_site(namelist=namelist_base, site=site)
 
 # Apply the testbed configuration 
 ApplyDefaultTestbed(namelist=namelist_base)        
@@ -74,7 +75,7 @@ quincy_single_run_config = Quincy_Single_Run(setup_root_path)
 #Create one QUINCY setup
 quincy_setup = Quincy_Setup(folder = setup_root_path,
                             namelist = namelist_base, 
-                            lctlib = lctlib_base, forcing_path=env_input.forcing_file)
+                            lctlib = lctlib_base, forcing_path=forcing_file)
 # Export setup
 quincy_single_run_config.set_setup(quincy_setup)
 quincy_single_run_config.generate_files()

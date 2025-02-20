@@ -1,0 +1,215 @@
+!!    QUINCY terrestrial biosphere model with coupled carbon, nitrogen, and phosphorus cycles
+!!    Copyright (C) 2019 Max Planck Institute for Biogeochemistry (MPI-BGC), Jena, Germany 
+!!    Contributors: Caldararu S., Engel J., Kern M., Pallandt M., Schnur R., Thum T., Yu L., Zaehle S.
+!!
+!!    This file is part of the QUINCY model.
+!!    The QUINCY model is free software: you can redistribute it and/or modify
+!!    it under the terms of the GNU General Public License version 3,
+!!    as published by the Free Software Foundation.
+!!
+!!    The QUINCY model is distributed in the hope that it will be useful,
+!!    but WITHOUT ANY WARRANTY; without even the implied warranty of
+!!    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+!!    GNU General Public License for more details.
+!!
+!!    You should have received a copy of the GNU General Public License
+!!    along with the QUINCY model.  If not, see <https://www.gnu.org/licenses/>.
+!!
+!! NOTE: please list each namelist parameter only once (and not in comments), because preprocessing uses grep with them
+!!
+&DIST_FIRE_CTL
+  ! flags for the disturbance fire process
+  flag_dfire=.FALSE.
+  dfire_modelname="spitfire"
+  ! average human population density in the grid cell [individuals km-2]
+  density_human_population=10.0
+  ! avrg number of all lightnings [ha-1 d-1]
+  lightning_frequency=5
+/
+&VEGETATION_CTL
+  ! vegetation process
+  ! options
+  veg_bnf_scheme="unlimited"
+  veg_dynamics_scheme="population"
+  biomass_alloc_scheme="dynamic"
+  leaf_stoichom_scheme="fixed"
+  plant_functional_type_id=4
+  ! roots across soil layers: fixed after init or dynamic over time
+  flag_dynamic_roots=.TRUE.
+  flag_dynroots_h2o_n_limit=.FALSE.
+  ! if product pools are to be used when harvesting (Note: with ascii output prod pools and their decay are not written out)
+  l_use_product_pools=.FALSE.
+  ! various flags
+  flag_herbivory=.FALSE.
+/
+&ASSIMILATION_CTL
+  ! options for the assimilation and vegetation-growth
+  ! flags
+  flag_optimal_Nfraction=.FALSE.
+  flag_t_resp_acclimation=.TRUE.
+  flag_t_jmax_acclimation=.TRUE.
+  ! number of canopy layers [int value, may default to 20]
+  ncanopy=10
+  ! canopy layer depth calculation [standard = 0.5, fapar]
+  canopy_layer_scheme="fapar"
+  ! calculation of gs_cl following Medlyn [default] or Ball/Berry
+  canopy_conductance_scheme="medlyn"
+  ! Stomatal opening reduction type from "plant" or "soil" 
+  gs_beta_type="soil"
+/
+&PHENOLOGY_CTL
+  ! LAI at the site, used for CANOPY model mode only
+  lai_max=6.1
+/
+&PHYD_CTL
+  ! Using plant hydraulics
+  use_plant_hydraulics=.TRUE.
+/
+&GRID_CTL
+  latitude=51.0793
+  longitude=10.452
+/
+&SPQ_CTL
+  ! flags for the soil process
+  flag_snow=.FALSE.
+  ! spq process options
+  !  number of soil layers [default is 5] [energy==water]
+  nsoil_energy=15
+  nsoil_water=15
+  soil_depth=9.5
+  soil_awc_prescribe=277
+  soil_theta_prescribe=1.0
+  elevation=0.0
+  ! soil properties (sand & silt is read from forcing, clay is calculated)
+  soil_sand=0.04
+  soil_silt=0.516
+  soil_clay=0.444
+  bulk_density=1382.57142857143
+/
+&Q_SH_CTL
+  active=.TRUE.
+  ! site specific stand harvest (Note: with the ascii output the harvest litter flux is not written out)
+  harvest_active_in_qs=.FALSE.
+  flag_stand_harvest=.FALSE.
+  stand_replacing_year=1869
+  harvest_fraction=1.0
+/
+&SOIL_BIOGEOCHEMISTRY_CTL
+  ! the soil biogeochemistry process
+  ! options
+  sb_model_scheme="simple_1d"
+  sb_nloss_scheme="dynamic"
+  sb_bnf_scheme="unlimited"
+  sb_adsorp_scheme="eca_part"
+  ! N & P flags
+  flag_sb_prescribe_nh4=.FALSE.
+  flag_sb_prescribe_no3=.FALSE.
+  flag_sb_prescribe_po4=.TRUE.
+  ! mycorrhiza flags
+  flag_mycorrhiza=.FALSE.
+  flag_mycorrhiza_org=.FALSE.
+  flag_mycorrhiza_prim=.FALSE.
+  ! JSM flags
+  flag_sb_jsm_transport=.FALSE.
+  flag_sb_jsm_litter_input=.FALSE.
+  flag_sb_jsm_OM_sorption=.FALSE.
+  ! soil flags
+  flag_sb_double_langmuir=.FALSE.
+  ! parameter values
+  usda_taxonomy_class=87
+  nwrb_taxonomy_class=27
+  soil_ph=6.4
+  soil_p_depth=0.5
+  soil_p_labile=15.6047
+  soil_p_slow=13.0387
+  soil_p_occluded=130.8787
+  soil_p_primary=81.9548
+  qmax_org_fine_particle=6.5537
+/
+&BASE_CTL
+  ! basic model config
+  dtime_step_length_sec=1800.0
+  ! QUINCY model: land plant soil canopy test_canopy test_radiation
+  quincy_model_name="land"
+  ! git repository commit
+  git_branch="feature/plant-hydraulics-physics"
+  git_commit_SHA="7356c950"
+  code_has_changed_since_SHA=.TRUE.
+  ! author
+  simulation_run_by="ppapastefanou"
+  ! first and last year of forcing data available from the forcing file
+  forcing_file_start_yr=1901
+  forcing_file_last_yr=2006
+  ! model output
+  output_interval_pool="weekly"
+  output_interval_flux="weekly"
+  output_interval_pool_spinup="yearly"
+  output_interval_flux_spinup="yearly"
+  output_start_first_day_year=1
+  output_end_last_day_year=106
+  ! transient simulations with a fluxnet-type site-set
+  ! timestep-output for last full forcing period of the transient simulation after spinup, with a fluxnet-type site-set
+  fluxnet_type_transient_timestep_output=.TRUE.
+  ! years with static forcing available (site specific)
+  fluxnet_static_forc_start_yr=2000
+  fluxnet_static_forc_last_yr=2006
+  ! site-set specific simulation, e.g., transient with EucFACE
+  sim_siteset_specific="none"
+  ! flags
+  ! generate forcing file for the standalone soil model (veg%litterfall pool plus rate modifiers) per timestep [FALSE TRUE]
+  flag_generate_soil_forcing_stat=.FALSE.
+  flag_generate_soil_forcing_trans=.FALSE.
+  ! write sb/veg output - only possible for netcdf output [FALSE TRUE]
+  flag_write_sb_output=.TRUE.
+  flag_write_veg_output=.TRUE.
+  ! set parameter values from file [FALSE TRUE] and use absolute (new) values or make proportional changes
+  set_parameter_values_from_file=.FALSE.
+  set_parameter_values_proportional=.FALSE.
+  ! use only the 1st year of climate input [FALSE TRUE]
+  flag_climate_forcing_one_year=.FALSE.
+  ! flag for site-set SPP_1685; soil layer specific texture information for simple_1d and jsm
+  flag_spp1685=.FALSE.
+  ! element variables (infrastructure) used in bgc_material (carbon is assumed to be always TRUE)
+  include_nitrogen=.TRUE.
+  include_phosphorus=.TRUE.
+  include_carbon13=.TRUE.
+  include_carbon14=.TRUE.
+  include_nitrogen15=.TRUE.
+  flag_slow_sb_pool_spinup_accelerator=.TRUE.
+  slow_sb_pool_spinup_accelerator_frequency=100
+  slow_sb_pool_spinup_accelerator_length=1000
+  slow_sb_pool_spinup_accelerator_start_year=300
+  slow_sb_pool_spinup_accelerator_max_executions=4
+  ! File (with path) to a file containing a list of selected output variables (only used for NetCDF output)
+  file_sel_output_variables="not_set"
+/
+&JSB_FORCING_CTL
+  ! mo_qs_forcing
+  ! options
+  n_deposition_scheme="dynamic"
+  p_deposition_scheme="dynamic"
+  forcing_mode="transient"
+  ! use daily or timestep forcing; in case of daily forcing the weather generator is used
+  is_daily_forcing=.FALSE.
+  ! flags
+  flag_read_dC13=.TRUE.
+  flag_read_DC14=.TRUE.
+  ! simulation length 
+  ! units: y years, w weeks, d days
+  simulation_length_unit="y"
+  ! integer values
+  simulation_length_number=106
+  ! options for transient forcing mode (as compared to static)
+  transient_spinup_start_year=1901
+  transient_spinup_end_year=1930
+  transient_spinup_years=1000
+  transient_simulation_start_year=1901
+  flag_forcing_co2_const=.FALSE.
+/
+&jsb_rad_nml
+  use_alb_veg_simple        = .FALSE.             ! Use TRUE for jsbach_lite, FALSE for jsbach_pfts/jsbach_jedi
+  !use_alb_canopy            = .FALSE.             ! Use FALSE for jsbach_jedi, comment out otherwise
+  use_alb_mineralsoil_const = .TRUE.              ! if FALSE values for albedo of the mineral soil are taken from bc_land_phys.nc file
+  bc_filename               = 'bc_land_phys.nc'
+  ic_filename               = 'ic_land_soil.nc'  
+/

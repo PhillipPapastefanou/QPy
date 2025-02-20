@@ -56,7 +56,7 @@ class ParallelSetup:
 
         for i in range(0, self.size):
             df_i = df.iloc[ri: ri + self.n_array_per_process[i]]
-            df_i.to_csv(os.path.join(self.setup_path,f"parameters.csv.{i}"))
+            df_i.to_csv(os.path.join(self.setup_path,f"parameters.csv.{i}"), index = False)
             self.displ[i] = ri
             ri += self.n_array_per_process[i]
 
@@ -84,7 +84,11 @@ class ParallelSetup:
 
         # Print the chunk that was received by this process
         print("Process {} received chunk with size ".format(self.rank, self.n_sims_per_process))
-        print(f"Chunk: {self.recvbuf}")
+        
+        # Read the filename containing the folder ids
+        self.df_sel = pd.read_csv(os.path.join(self.setup_path,f"parameters.csv.{self.rank}"))
+        
+        print(f"Chunk: {self.df_sel['fid']}")
 
         self.comm.Barrier()
 
@@ -93,10 +97,10 @@ class ParallelSetup:
             print("Starting simulations...")
             t1 = perf_counter()
 
-        for i in self.recvbuf:
+        for fid in self.df_sel['fid']:
             p = subprocess.Popen(self.quincy_path,
                              cwd=os.path.join(self.setup_path,
-                                              str(i)))
+                                              str(fid)))
             p.communicate()
 
         self.comm.Barrier()

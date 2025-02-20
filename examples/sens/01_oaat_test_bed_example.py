@@ -30,13 +30,13 @@ else:
 # Fluxnet3 forcing
 forcing = ForcingDataset.FLUXNET3
 # Fluxnet3 sites
-sites = ["DE-Hai"]
+site = "DE-Hai"
 # Use static forcing
 forcing_mode = ForcingMode.STATIC
 # Number of cpu cores to be used
 NTASKS  = 4
 # Path where all the simulation data will be saved
-RUN_DIRECTORY = "oaat_example"
+RUN_DIRECTORY = "output/oaat_test_bed_example"
 
 
 # Classic sensitivity analysis where we are apply differnt Namelist or Lctlib files to ONE climate file
@@ -52,12 +52,12 @@ namelist_base = nlm_reader.parse()
 # Path where to save the setup
 setup_root_path = os.path.join(THIS_DIR, RUN_DIRECTORY)
 
-env_input = EnvironmentalInputSite(sitelist=sites,
+env_input = EnvironmentalInputSite(
                                    forcing_mode=forcing_mode, 
                                    forcing_dataset=forcing)
 
 # Parse paths of the forcing
-env_input.parse_single_site(namelist=namelist_base)
+namelist_base, forcing_file = env_input.parse_single_site(namelist=namelist_base, site = site)
 
 # Apply the testbed configuration 
 ApplyDefaultTestbed(namelist=namelist_base)
@@ -113,7 +113,7 @@ for i in range(0, nslice):
     quincy_setup = Quincy_Setup(folder = os.path.join(setup_root_path, str(i)), 
                                 namelist = namelist_base,
                                 lctlib = lctlib,
-                                forcing_path=env_input.forcing_file)
+                                forcing_path = forcing_file)
 
     # Add to the setup creation
     quincy_multi_run.add_setup(quincy_setup)
@@ -125,9 +125,8 @@ quincy_multi_run.generate_files()
 df_parameter_setup = pd.DataFrame(psi50s)
 df_parameter_setup.columns = ['psi50_xylem']
 df_parameter_setup['id'] = np.arange(0, nslice)
+df_parameter_setup['fid'] = np.arange(0, nslice)
 df_parameter_setup.to_csv(os.path.join(setup_root_path, "parameters.csv"), index=False)
-
-
 
 
 GenerateSlurmScript(path = setup_root_path, ntasks=NTASKS)

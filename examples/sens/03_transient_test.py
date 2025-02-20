@@ -10,13 +10,14 @@ import pandas as pd
 
 from src.quincy.IO.NamelistReader import NamelistReader
 from src.quincy.IO.LctlibReader import LctlibReader
-from src.quincy.base.PFTTypes import PftQuincy, PftFluxnet, GetQuincyPFTfromFluxnetPFT
+from src.quincy.base.PFTTypes import PftQuincy, PftFluxnet
 from src.sens.base import Quincy_Setup
 from src.sens.base import Quincy_Multi_Run
 from src.quincy.base.EnvironmentalInputTypes import *
 from src.quincy.base.NamelistTypes import ForcingMode
 from src.quincy.base.EnvironmentalInput import EnvironmentalInputSite
-from src.quincy.run_scripts.default import ApplyDefaultTestbed
+
+from src.quincy.run_scripts.default import ApplyDefaultSiteLevel
 from src.quincy.run_scripts.submit import GenerateSlurmScript
 
 if 'QUINCY' in os.environ:        
@@ -26,25 +27,17 @@ else:
     print("Please set QUINCY to the directory of your quincy root path")
     exit(99)
 
-from src.sens.auxil import Subslicer
-from src.sens.auxil import rescale
-from src.sens.auxil import rescale_mean
-from scipy.stats import qmc
-
-
 # Fluxnet3 forcing
 forcing = ForcingDataset.FLUXNET3
 # Fluxnet3 sites
 site = "DE-Hai"
 # Use static forcing
-forcing_mode = ForcingMode.STATIC
+forcing_mode = ForcingMode.TRANSIENT
 # Number of cpu cores to be used
 NTASKS  = 4
 # Path where all the simulation data will be saved
-RUN_DIRECTORY = "output/LH_test_bed_example"
+RUN_DIRECTORY = "output/transient_test"
 
-# Path where to save the setup
-setup_root_path = os.path.join(THIS_DIR, RUN_DIRECTORY)
 
 # Classic sensitivity analysis where we are apply differnt Namelist or Lctlib files to ONE climate file
 # The basic forcing path
@@ -56,6 +49,9 @@ lctlib_root_path = os.path.join(QUINCY_ROOT_PATH,'data', 'lctlib_quincy_nlct14.d
 nlm_reader = NamelistReader(namelist_root_path)
 namelist_base = nlm_reader.parse()
 
+# Path where to save the setup
+setup_root_path = os.path.join(THIS_DIR, RUN_DIRECTORY)
+
 env_input = EnvironmentalInputSite(
                                    forcing_mode=forcing_mode, 
                                    forcing_dataset=forcing)
@@ -64,11 +60,20 @@ env_input = EnvironmentalInputSite(
 namelist_base, forcing_file = env_input.parse_single_site(namelist=namelist_base, site = site)
 
 # Apply the testbed configuration 
-ApplyDefaultTestbed(namelist=namelist_base)
+ApplyDefaultSiteLevel(namelist=namelist_base)
 
 # Dummy change to be reset to 500-1000 years
 #namelist_base.jsb_forcing_ctl.transient_spinup_years = 500
 namelist_base.base_ctl.file_sel_output_variables.value = os.path.join(QUINCY_ROOT_PATH, 'data', 'basic_output_variables.txt')
+
+
+namelist_base.base_ctl.output_end_last_day_year.value = 4
+namelist_base.base_ctl.output_start_first_day_year.value = 1
+namelist_base.jsb_forcing_ctl.transient_simulation_start_year.value = 1901
+namelist_base.jsb_forcing_ctl.transient_spinup_start_year.value = 1901
+namelist_base.jsb_forcing_ctl.transient_spinup_end_year.value = 1930
+namelist_base.jsb_forcing_ctl.transient_spinup_years.value = 2
+namelist_base.jsb_forcing_ctl.simulation_length_number.value = 4
 
 # Parse base lctlibe path
 lctlib_reader = LctlibReader(lctlib_root_path)
@@ -82,59 +87,42 @@ pft = list(PftQuincy)[pft_id - 1]
 # Main code to be modified
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
+# One at a time sensitivity calculation
+# First we pick a parameter for example psi50_xylem
+# The standard value is -3.0 MPa
+psi50_xylem =  -3.0
 
-# 2 Parameter latin hypercupe sensitivity calculation
+# We define min and max MPa
+psi50_xylem_min = -6.0
+psi50_xylem_max = -0.5
 
-# Define the number of runs and variables
-number_of_runs = 128
-# If we speicify more variables that we use we do NOT have a problem
-number_of_variables = 3
+# Define the number of steps we want to slice
+nslice = 4
+# Now we can use numpy to create and array
+psi50s = np.linspace(psi50_xylem_min, psi50_xylem_max, num=nslice)
 
-# Create a latin hypercube sample that is distributed between 0-1
-seed   = 123456789
-sampler = qmc.LatinHypercube(d = number_of_variables, seed= seed)
-sample = sampler.random(n = number_of_runs)
-sample = sample.T
-
-# Create a subslicer to make rescaling easier
-slicer = Subslicer(array=sample)
-
-# 1. Parameter k_xylem_sat (standard value was 1000)
-k_xylem_sat_min_log = np.log10(1)
-k_xylem_sat_max_log = np.log10(10000)
-
-# 2. Parameter kappa_stem (standard value was 2000)
-kappa_stem_min_log = np.log10(1)
-kappa_stem_max_log = np.log10(5000)
-
-# 3. Parameter kappa_leaf (standard value was 1)
-kappa_leaf_min_log = np.log10(0.001)
-kappa_leaf_max_log = np.log10(10)
-
-# Now we rescale parameters
-k_xylem_sats_log = rescale(slicer.get(), min = k_xylem_sat_min_log, max = k_xylem_sat_max_log)
-kappa_stems_log = rescale(slicer.get(), min = kappa_stem_min_log, max = kappa_stem_max_log)
-kappa_leaves_log = rescale(slicer.get(), min = kappa_leaf_min_log, max = kappa_leaf_max_log)
+#you could also do it manually:
+#psi50s = np.array([-6.0, -3.0, -2.0, -1.0])
 
 # We create a multi quincy run object
 quincy_multi_run = Quincy_Multi_Run(setup_root_path)
 
 # We loop through the number of slice
-for i in range(0, number_of_runs):
+for i in range(0, nslice):
     # We create a copy of the lctlibfile...
     lctlib = deepcopy(lctlib_base)
 
     #... and change the value of psi50
     # the float conversion in necessary to convert from a numpy numeric type to standard numeric python
-    lctlib[pft].k_xylem_sat = float(10**k_xylem_sats_log[i])
-    lctlib[pft].kappa_stem = float(10**kappa_stems_log[i])
-    lctlib[pft].kappa_leaf = float(10**kappa_leaves_log[i])
+    lctlib[pft].psi50_xylem = float(psi50s[i])
+    # lctlib[pft].k_xylem_sat = 10.0
+    # lctlib[pft].kappa_leaf = 1.0
 
     #Create one QUINCY setup
     quincy_setup = Quincy_Setup(folder = os.path.join(setup_root_path, str(i)), 
-                                namelist = namelist_base, 
-                                lctlib = lctlib, 
-                                forcing_path= forcing_file)
+                                namelist = namelist_base,
+                                lctlib = lctlib,
+                                forcing_path = forcing_file)
 
     # Add to the setup creation
     quincy_multi_run.add_setup(quincy_setup)
@@ -143,19 +131,12 @@ for i in range(0, number_of_runs):
 quincy_multi_run.generate_files()
 
 #Important: we need to save the psi50s so that we can later identify which simulation belongs to which file
-df_parameter_setup = pd.DataFrame(np.round(10**k_xylem_sats_log,3))
-df_parameter_setup.columns = ['k_xylem_sat']
+df_parameter_setup = pd.DataFrame(psi50s)
+df_parameter_setup.columns = ['psi50_xylem']
 df_parameter_setup['id'] = np.arange(0, nslice)
 df_parameter_setup['fid'] = np.arange(0, nslice)
-df_parameter_setup['kappa_stem'] = np.round(10**kappa_stems_log,3)
-df_parameter_setup['kappa_leaf'] = np.round(10**kappa_leaves_log,5)
-
-
 df_parameter_setup.to_csv(os.path.join(setup_root_path, "parameters.csv"), index=False)
 
-
-
-NTASKS  = 4
 
 GenerateSlurmScript(path = setup_root_path, ntasks=NTASKS)
 
