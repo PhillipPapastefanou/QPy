@@ -40,8 +40,10 @@ class BiomassAllocScheme(Enum):
     DYNAMIC = 1
 class LeafStoichomScheme(Enum):
     FIXED = 0
+    DYNAMIC = 1
 class SbModelScheme(Enum):
     SIMPLE_1D = 0
+    JSM = 1
 class SbNlossScheme(Enum):
     FIXED = 0
     DYNAMIC = 1

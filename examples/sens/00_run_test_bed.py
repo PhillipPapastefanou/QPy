@@ -46,16 +46,15 @@ namelist_base = nlm_reader.parse()
 # Fluxnet3 forcing
 forcing = ForcingDataset.FLUXNET3
 # Fluxnet3 sites
-sites = ["DE-Hai"]
+site = "DE-Hai"
 # Use static forcing
 forcing_mode = ForcingMode.STATIC
 
-env_input = EnvironmentalInputSite(sitelist=sites,
-                                forcing_mode=forcing_mode, 
+env_input = EnvironmentalInputSite(forcing_mode=forcing_mode, 
                                 forcing_dataset=forcing)
 
 # Parse paths of the forcing
-env_input.parse_single_site(namelist=namelist_base)
+env_input.parse_single_site(namelist=namelist_base, site=site)
 
 # Apply the testbed configuration 
 ApplyDefaultTestbed(namelist=namelist_base)        

@@ -233,17 +233,16 @@ class Namelist:
     def __init__(self):
         # Initialise namelist categories with defaults
         self.dist_fire_ctl             = DIST_FIRE_CTL()
+        self.vegetation_ctl            = VEGETATION_CTL()
         self.assimilation_ctl          = ASSIMILATION_CTL()
         self.phenology_ctl             = PHENOLOGY_CTL()
-        self.vegetation_ctl            = VEGETATION_CTL()
         self.phyd_ctl                  = PHYD_CTL()
-        self.radiation_ctl             = RADIATION_CTL()
+        self.grid_ctl                  = GRID_CTL()
         self.spq_ctl                   = SPQ_CTL()
         self.q_sh_ctl                  = Q_SH_CTL()
         self.soil_biogeochemistry_ctl  = SOIL_BIOGEOCHEMISTRY_CTL()
         self.base_ctl                  = BASE_CTL()
         self.jsb_forcing_ctl           = JSB_FORCING_CTL()
-        self.grid_ctl                  = GRID_CTL()
         self.jsb_rad_nml               = JSB_RAD_NML()
 
 

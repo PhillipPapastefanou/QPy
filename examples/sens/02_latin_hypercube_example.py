@@ -32,27 +32,31 @@ from src.sens.auxil import rescale_mean
 from scipy.stats import qmc
 
 
+# Fluxnet3 forcing
+forcing = ForcingDataset.FLUXNET3
+# Fluxnet3 sites
+site = "DE-Hai"
+# Use static forcing
+forcing_mode = ForcingMode.STATIC
+# Number of cpu cores to be used
+NTASKS  = 4
+# Path where all the simulation data will be saved
+RUN_DIRECTORY = "oaat_example"
+
+# Path where to save the setup
+setup_root_path = os.path.join(THIS_DIR, RUN_DIRECTORY)
+
 # Classic sensitivity analysis where we are apply differnt Namelist or Lctlib files to ONE climate file
 # The basic forcing path
 # We need a base namelist and lctlib which we then modify accordingly
 namelist_root_path = os.path.join(QUINCY_ROOT_PATH,'contrib', 'namelist' ,'namelist.slm')
 lctlib_root_path = os.path.join(QUINCY_ROOT_PATH,'data', 'lctlib_quincy_nlct14.def')
-# Path where to save the setup
-setup_root_path = os.path.join(THIS_DIR, "LH_test")
 
 # Parse base namelist path
 nlm_reader = NamelistReader(namelist_root_path)
 namelist_base = nlm_reader.parse()
 
-
-# Fluxnet3 forcing
-forcing = ForcingDataset.FLUXNET3
-# Fluxnet3 sites
-sites = ["DE-Hai"]
-# Use static forcing
-forcing_mode = ForcingMode.STATIC
-
-env_input = EnvironmentalInputSite(sitelist=sites,
+env_input = EnvironmentalInputSite(
                                    forcing_mode=forcing_mode, 
                                    forcing_dataset=forcing)
 

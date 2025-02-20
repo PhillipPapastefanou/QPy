@@ -6,6 +6,7 @@ import subprocess
 import multiprocessing
 import xarray as xr
 import numpy as np
+import pandas as pd
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(THIS_DIR, os.pardir, os.pardir))
@@ -14,15 +15,14 @@ from src.quincy.IO.NamelistReader import NamelistReader
 from src.quincy.IO.LctlibReader import LctlibReader
 from src.quincy.base import Namelist
 from src.sens.base import Quincy_Setup
-from src.sens.base import Quincy_Single_Run
+from src.sens.base import Quincy_Multi_Run
 from src.quincy.base.EnvironmentalInputTypes import *
 from src.quincy.base.NamelistTypes import ForcingMode
 from src.quincy.base.EnvironmentalInput import EnvironmentalInputSite
-from src.quincy.run_scripts.default import ApplyDefaultTestbed
+from src.quincy.run_scripts.default import ApplyDefaultSiteLevel
 from time import perf_counter
 
-class Test_Test_Bed(unittest.TestCase):
-    
+class Test_U30(unittest.TestCase):    
     def init(self):
         if 'QUINCY' in os.environ:        
             self.QUINCY_ROOT_PATH = os.environ.get("QUINCY")
@@ -30,9 +30,12 @@ class Test_Test_Bed(unittest.TestCase):
             print("Environmental variable QUINCY is not defined")
             print("Please set QUINCY to the directory of your quincy root path")
             exit(99)
-        self.OUTPUT_DIR = 'output'
+            
+        self.OUTPUT_DIR = 'output_u30'
         self.org_delta = 0.0
         self.qpy_delta = 0.0
+        # CruNCEP test sites
+        self.sites = ["ESP_01", "FIN_01", "HAI_01", "PUE_01", "US2_01"]
         
         
     def test_standard_config(self):
@@ -52,44 +55,58 @@ class Test_Test_Bed(unittest.TestCase):
         namelist_base = nlm_reader.parse()
 
 
-        # Fluxnet3 forcing
-        forcing = ForcingDataset.FLUXNET3
-        # Fluxnet3 sites
-        site = "DE-Hai"
+        # CruNCEP forcing
+        forcing = ForcingDataset.CRUNCEP
         # Use static forcing
-        forcing_mode = ForcingMode.STATIC
+        forcing_mode = ForcingMode.TRANSIENT
 
         env_input = EnvironmentalInputSite(
                                         forcing_mode=forcing_mode, 
                                         forcing_dataset=forcing)
         
-        # Parse paths of the forcing
-        namelist_base, forcing_file = env_input.parse_single_site(namelist=namelist_base, site=site)
-
         # Apply the testbed configuration 
-        ApplyDefaultTestbed(namelist=namelist_base)        
+        ApplyDefaultSiteLevel(namelist=namelist_base)        
         
         # Apply the standard selected output variables    
         namelist_base.base_ctl.file_sel_output_variables.value = os.path.join(self.QUINCY_ROOT_PATH,
                                                                               'data', 
                                                                               'basic_output_variables.txt')
-
+        
+        namelist_base.base_ctl.output_end_last_day_year.value = 4
+        namelist_base.base_ctl.output_start_first_day_year.value = 1
+        namelist_base.jsb_forcing_ctl.transient_simulation_start_year.value = 1901
+        namelist_base.jsb_forcing_ctl.transient_spinup_start_year.value = 1901
+        namelist_base.jsb_forcing_ctl.transient_spinup_end_year.value = 1930
+        namelist_base.jsb_forcing_ctl.transient_spinup_years.value = 2
+        namelist_base.jsb_forcing_ctl.simulation_length_number.value = 4
+        
+        
+        # Parse paths of the forcing
+        namelist_dicts, forcing_dicts = env_input.parse_multi_sites(namelist=namelist_base,
+                                    sitelist= self.sites,
+                                    site_list_type=SimulationSiteType.CUSTOM)        
+        
+        
         # Parse base lctlibe path
         lctlib_reader = LctlibReader(lctlib_root_path)
         lctlib_base = lctlib_reader.parse()
         
+        quincy_multi_run = Quincy_Multi_Run(setup_root_path)
+                
+        for site in self.sites:        
+            #Create one QUINCY setup
+            quincy_setup = Quincy_Setup(folder = os.path.join(setup_root_path, site), 
+                                        namelist = namelist_dicts[site],
+                                        lctlib = lctlib_base,
+                                        forcing_path= forcing_dicts[site])
+            
+            # Add to the setup creation
+            quincy_multi_run.add_setup(quincy_setup)
         
-        # We create a single quincy setup
-        quincy_single_run_config = Quincy_Single_Run(setup_root_path)
+        # Generate quincy setups
+        quincy_multi_run.generate_files()
+        
 
-        #Create one QUINCY setup
-        quincy_setup = Quincy_Setup(folder = setup_root_path,
-                                    namelist = namelist_base, 
-                                    lctlib = lctlib_base, forcing_path=forcing_file)
-        # Export setup
-        quincy_single_run_config.set_setup(quincy_setup)
-        quincy_single_run_config.generate_files()
-        
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
         # Quincy run scripts
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -97,14 +114,17 @@ class Test_Test_Bed(unittest.TestCase):
         processes = []
         results_queue = multiprocessing.Queue() 
     
-        p1 = multiprocessing.Process(target= self.irun_org_quincy_test_bed, args = (self.QUINCY_ROOT_PATH, results_queue, self.org_delta))
-        p2 = multiprocessing.Process(target= self.irun_QPY_test_bed, args = (self.QUINCY_ROOT_PATH, setup_root_path, results_queue, self.qpy_delta))
+        # p1 = multiprocessing.Process(target= self.irun_org_quincy_test_bed, args = (self.QUINCY_ROOT_PATH, results_queue, self.org_delta))
+        # p1.start()
+        # p1.join()
         
-        processes.append(p1)
-        processes.append(p2)
+        for site in self.sites:        
+            p = multiprocessing.Process(target= self.irun_QPY_test_bed, args = (self.QUINCY_ROOT_PATH, os.path.join(setup_root_path, site), results_queue, self.qpy_delta))
+            processes.append(p)
         
-        p1.start()
-        p2.start()
+        # p1.start()
+        for p in processes:  
+            p.start() 
         
         # Wait for all processes to finish and collect results
         for p in processes:  
@@ -133,11 +153,13 @@ class Test_Test_Bed(unittest.TestCase):
     def irun_org_quincy_test_bed(self, QUINCY_ROOT_PATH, q, org_delta):
         
         t1 = perf_counter()
-        quincy_testbed_script_path = os.path.join(QUINCY_ROOT_PATH,"contrib", "test_bed", "run_quincy_testbed.sh")
+        quincy_u30_script_path = os.path.join(QUINCY_ROOT_PATH,"contrib", "site_level", "prepare_sim_quincy.sh")
         
-        p = subprocess.Popen(quincy_testbed_script_path)
-        
+        p = subprocess.Popen([quincy_u30_script_path, "-u", "30"])
+
         stdout, stderr = p.communicate()
+       
+                
         returncode = p.returncode
         
         try:
@@ -148,6 +170,9 @@ class Test_Test_Bed(unittest.TestCase):
                 q.put((False, None, stderr))
         except Exception as e:
             q.put((False, None, str(e)))
+            
+            
+            
             
         t2 = perf_counter()
         org_delta = t2 - t1
@@ -178,28 +203,32 @@ class Test_Test_Bed(unittest.TestCase):
         
     def compare_outputs(self):
         
+        ref_path = '/Net/Groups/BSI/work/quincy/model/reference_runs/cruncepv7_subset_u30_31/20250220_develop_342ef5f8/exp_30_progress_options_short_transient_cruncep_ssm_342ef5f8/'
+        
+        if not os.path.exists(ref_path):
+            print("Could not find usecase 30 ref output")
+            print("Stopping comparison")
+            exit(99)
+        
         print("Comparing Vegetation output...")
         
-        ds_org = xr.open_dataset(os.path.join(self.QUINCY_ROOT_PATH, "contrib", "test_bed", "land", "VEG_static_timestep.nc"), decode_times=True)
-        
-        org_time = ds_org['time'][:]
-        org_veg_c = ds_org['total_veg_c'][:]
-        
-        ds_new = xr.open_dataset(os.path.join(THIS_DIR, self.OUTPUT_DIR, "VEG_static_timestep.nc"), decode_times=True)
-        new_time = ds_new['time'][:]
-        new_veg_c = ds_new['total_veg_c'][:]
-        
-        self.assertEqual(org_time[0], new_time[0], "First time point does not match")
-        
-        self.assertEqual(org_time[-1], new_time[-1], "Last time point does not match")
-        
-        min_diff = np.min(new_veg_c[:] - org_veg_c[:])  
-        
-        self.assertAlmostEqual(min_diff, 0.0, 16)  
-        
-        self.assertGreater(0.1, min_diff)
-        
-        ds_org.close()
+        for site in self.sites:
+            print(f"Testing {site}: ")
+            df_org = pd.read_csv(os.path.join(ref_path, site , "output", "vegpoolC_daily.txt"), sep= "\s+")
+            org_veg_c = df_org['Total_C'].values
+            
+            ds_new = xr.open_dataset(os.path.join(THIS_DIR, self.OUTPUT_DIR, site,"VEG_transient_daily.nc"), decode_times=True)
+            new_veg_c = ds_new['total_veg_c'][:].values
+               
+                
+            print(f"Total carbon pools: QPy({new_veg_c[-1]}) vs Org({org_veg_c[-1]})")
+            
+            min_diff = np.min(new_veg_c[:]- org_veg_c[:])  
+            
+            self.assertAlmostEqual(min_diff, 0.0, 4, "Carbon pools do not match to 4 digits")  
+            
+            self.assertGreater(0.1, min_diff)        
+    
         ds_new.close()
         
         print("Done!")
@@ -207,10 +236,11 @@ class Test_Test_Bed(unittest.TestCase):
         
         
 if __name__ == "__main__":
-    ttb = Test_Test_Bed()
-    ttb.init()
-    ttb.test_standard_config()
-    ttb.compare_outputs()
+    tu30 = Test_U30()
+    tu30.init()
+    tu30.test_standard_config()
+    
+    tu30.compare_outputs()
     
     
     

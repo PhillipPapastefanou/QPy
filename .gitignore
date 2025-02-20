@@ -10,3 +10,5 @@ examples/sens/oaat_example
 examples/sens/test_bed
 !app/run_model_user_interface.py
 tests/runs/output/
+tests/runs/output_u30/
+tests/runs/output_u31/

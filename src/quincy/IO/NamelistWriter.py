@@ -31,7 +31,12 @@ class NamelistWriter:
     def iadd_category(self, instance):
 
         # Beginning string
-        str_start = f"&{type(instance).__name__}"
+        cat_name = type(instance).__name__
+        
+        if cat_name == "JSB_RAD_NML":
+            cat_name = cat_name.lower()
+        
+        str_start = f"&{cat_name}"
         self.lines.append(str_start)
 
         if len(vars(instance)) == 0:

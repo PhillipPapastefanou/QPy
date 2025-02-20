@@ -27,6 +27,17 @@ else:
     print("Please set QUINCY to the directory of your quincy root path")
     exit(99)
 
+# Fluxnet3 forcing
+forcing = ForcingDataset.FLUXNET3
+# Fluxnet3 sites
+sites = ["DE-Hai"]
+# Use static forcing
+forcing_mode = ForcingMode.STATIC
+# Number of cpu cores to be used
+NTASKS  = 4
+# Path where all the simulation data will be saved
+RUN_DIRECTORY = "oaat_example"
+
 
 # Classic sensitivity analysis where we are apply differnt Namelist or Lctlib files to ONE climate file
 # The basic forcing path
@@ -34,21 +45,12 @@ else:
 namelist_root_path = os.path.join(QUINCY_ROOT_PATH,'contrib', 'namelist' ,'namelist.slm')
 lctlib_root_path = os.path.join(QUINCY_ROOT_PATH,'data', 'lctlib_quincy_nlct14.def')
 
-
-# Path where to save the setup
-setup_root_path = os.path.join(THIS_DIR, "oaat_example")
-
 # Parse base namelist path
 nlm_reader = NamelistReader(namelist_root_path)
 namelist_base = nlm_reader.parse()
 
-
-# Fluxnet3 forcing
-forcing = ForcingDataset.FLUXNET3
-# Fluxnet3 sites
-sites = ["DE-Hai"]
-# Use static forcing
-forcing_mode = ForcingMode.STATIC
+# Path where to save the setup
+setup_root_path = os.path.join(THIS_DIR, RUN_DIRECTORY)
 
 env_input = EnvironmentalInputSite(sitelist=sites,
                                    forcing_mode=forcing_mode, 
@@ -86,7 +88,7 @@ psi50_xylem_min = -6.0
 psi50_xylem_max = -0.5
 
 # Define the number of steps we want to slice
-nslice = 16
+nslice = 4
 # Now we can use numpy to create and array
 psi50s = np.linspace(psi50_xylem_min, psi50_xylem_max, num=nslice)
 
@@ -126,7 +128,7 @@ df_parameter_setup['id'] = np.arange(0, nslice)
 df_parameter_setup.to_csv(os.path.join(setup_root_path, "parameters.csv"), index=False)
 
 
-NTASKS  = 4
+
 
 GenerateSlurmScript(path = setup_root_path, ntasks=NTASKS)
 
