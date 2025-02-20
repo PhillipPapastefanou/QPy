@@ -145,8 +145,8 @@ quincy_multi_run.generate_files()
 #Important: we need to save the psi50s so that we can later identify which simulation belongs to which file
 df_parameter_setup = pd.DataFrame(np.round(10**k_xylem_sats_log,3))
 df_parameter_setup.columns = ['k_xylem_sat']
-df_parameter_setup['id'] = np.arange(0, nslice)
-df_parameter_setup['fid'] = np.arange(0, nslice)
+df_parameter_setup['id'] = np.arange(0, number_of_runs)
+df_parameter_setup['fid'] = np.arange(0, number_of_runs)
 df_parameter_setup['kappa_stem'] = np.round(10**kappa_stems_log,3)
 df_parameter_setup['kappa_leaf'] = np.round(10**kappa_leaves_log,5)
 
