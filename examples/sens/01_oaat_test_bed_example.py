@@ -16,6 +16,7 @@ from src.sens.base import Quincy_Multi_Run
 from src.quincy.base.EnvironmentalInputTypes import *
 from src.quincy.base.NamelistTypes import ForcingMode
 from src.quincy.base.EnvironmentalInput import EnvironmentalInputSite
+from src.quincy.base.user_git_information import UserGitInformation
 
 from src.quincy.run_scripts.default import ApplyDefaultTestbed
 from src.quincy.run_scripts.submit import GenerateSlurmScript
@@ -36,7 +37,7 @@ forcing_mode = ForcingMode.STATIC
 # Number of cpu cores to be used
 NTASKS  = 4
 # Path where all the simulation data will be saved
-RUN_DIRECTORY = "output/oaat_test_bed_example"
+RUN_DIRECTORY = "output/01_oaat_test_bed_example"
 
 
 # Classic sensitivity analysis where we are apply differnt Namelist or Lctlib files to ONE climate file
@@ -108,12 +109,17 @@ for i in range(0, nslice):
     lctlib[pft].psi50_xylem = float(psi50s[i])
     # lctlib[pft].k_xylem_sat = 10.0
     # lctlib[pft].kappa_leaf = 1.0
-
+    
+    
+    user_git_info = UserGitInformation(QUINCY_ROOT_PATH, 
+                                           os.path.join(setup_root_path, str(i)), 
+                                           site)  
     #Create one QUINCY setup
     quincy_setup = Quincy_Setup(folder = os.path.join(setup_root_path, str(i)), 
                                 namelist = namelist_base,
                                 lctlib = lctlib,
-                                forcing_path = forcing_file)
+                                forcing_path = forcing_file,
+                                user_git_info= user_git_info)
 
     # Add to the setup creation
     quincy_multi_run.add_setup(quincy_setup)

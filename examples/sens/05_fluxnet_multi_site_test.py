@@ -16,6 +16,7 @@ from src.sens.base import Quincy_Multi_Run
 from src.quincy.base.EnvironmentalInputTypes import *
 from src.quincy.base.NamelistTypes import *
 from src.quincy.base.EnvironmentalInput import EnvironmentalInputSite
+from src.quincy.base.user_git_information import UserGitInformation
 
 from src.quincy.run_scripts.default import ApplyDefaultSiteLevel
 from src.quincy.run_scripts.submit import GenerateSlurmScript
@@ -37,7 +38,7 @@ forcing_mode = ForcingMode.TRANSIENT
 # Number of cpu cores to be used
 NTASKS  = 4
 # Path where all the simulation data will be saved
-RUN_DIRECTORY = "output/transient_fluxnet_test_multi"
+RUN_DIRECTORY = "output/05_transient_fluxnet_test_multi"
 
 
 # Classic sensitivity analysis where we are apply differnt Namelist or Lctlib files to ONE climate file
@@ -100,12 +101,18 @@ pft = list(PftQuincy)[pft_id - 1]
 
 quincy_multi_run = Quincy_Multi_Run(setup_root_path)
         
-for site in namelists:        
+for site in namelists:
+    
+    user_git_info = UserGitInformation(QUINCY_ROOT_PATH, 
+                                           os.path.join(setup_root_path, site), 
+                                           site) 
+            
     #Create one QUINCY setup
     quincy_setup = Quincy_Setup(folder = os.path.join(setup_root_path, site), 
                                 namelist = namelists[site],
                                 lctlib = lctlib_base,
-                                forcing_path= forcing_files[site])
+                                forcing_path= forcing_files[site],
+                                user_git_info=user_git_info)
     
     # Add to the setup creation
     quincy_multi_run.add_setup(quincy_setup)

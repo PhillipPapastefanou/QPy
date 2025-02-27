@@ -1,10 +1,12 @@
-from src.postprocessing.output_parser import QNC_output_parser
-from src.postprocessing.defintions import OutputFormat
-from src.postprocessing.std_output_plotting import QNC_std_output_plotting
-from src.postprocessing.obs_model_comparer import Obs_Model_Var_List
-from src.postprocessing.obs_model_comparer import QNC_Obs_Model_Variable_Pair
-from src.postprocessing.obs_model_comparer import QNC_Variable
-from src.postprocessing.fluxnet_diagnostics import QNC_Fluxnet_Diagnostics
+import os.path
+
+from src.postprocessing.qnc_output_parser import QNC_output_parser
+from src.postprocessing.qnc_defintions import Output_format, Simuluation_type
+from src.postprocessing.qnc_std_output_plotting import QNC_std_output_plotting
+from src.postprocessing.qnc_obs_model_comparer import Obs_Model_Var_List
+from src.postprocessing.qnc_obs_model_comparer import QNC_Obs_Model_Variable_Pair
+from src.postprocessing.qnc_obs_model_comparer import QNC_Variable
+from src.postprocessing.qnc_fluxnet_diagnostics import QNC_Fluxnet_Diagnostics
 
 class QNC_std_output_factory:
     def __init__(self, root_path, output_format,
@@ -13,40 +15,55 @@ class QNC_std_output_factory:
         self.root_path = root_path
         self.output_format = output_format
 
-        self.Output_Parser = QNC_output_parser(self.root_path)
-        self.Output_Parser.read()
+        self.output_Parser = QNC_output_parser(self.root_path)
+        self.output_Parser.Read()
 
         if len(target_categories) > 0:
-            self.Output_Parser.check_target_categories(target_categories)
+            self.output_Parser.check_target_categories(target_categories)
 
 
-    def calculate_std_output(self):
+    def Calculate_std_output(self):
 
         self.plotter = QNC_std_output_plotting(
-                                    self.Output_Parser.output_files_path,
+                                    self.output_Parser.output_files_path,
+                                    self.output_Parser.post_processing_path,
                                     self.output_format,
-                                    self.Output_Parser.Available_outputs,
-                                    self.Output_Parser.Basic_info)
+                                    self.output_Parser.Available_outputs,
+                                    self.output_Parser.Basic_info)
 
-        if self.output_format == OutputFormat.Single:
-            self.plotter.plot_single_1D()
-        elif self.output_format == OutputFormat.Combined:
-            self.plotter.plot_all_1D()
+        if self.output_format == Output_format.Single:
+            self.plotter.Plot_single_1D()
+        elif self.output_format == Output_format.Combined:
+            self.plotter.Plot_all_1D()
 
-        self.plotter.plot_2d_split()
+        if not self.plotter.parsing_success:
+            return
+        self.plotter.Plot_2d_split()
 
-    def calculate_fluxnet_stat(self):
+    def Calculate_fluxnet_stat(self):
+
+        if self.output_Parser.simulation_type == Simuluation_type.Static:
+            print("Static output does not need to be compared to FLUXNET output.")
+            return
+
+
+        fluxnet_path = os.path.join(self.output_Parser.output_files_path, 'obs.nc')
+        if not os.path.exists(fluxnet_path):
+            print("Could not find any fluxnet path: ")
+            print(fluxnet_path)
+            print("Not performing fluxnet analysis")
+            exit(-1)
 
         #Defining standard fluxnet output
         target_variable_list = Obs_Model_Var_List()
 
         omp = QNC_Obs_Model_Variable_Pair(name="Gc")
-        omp.Plus_model_var(QNC_Variable("gc_avg", "ASSIMI"))
+        omp.Plus_model_var(QNC_Variable("gc_avg", "Q_ASSIMI"))
         omp.Plus_obs_var(QNC_Variable("Gc"))
         target_variable_list.Add(omp)
 
         omp = QNC_Obs_Model_Variable_Pair(name="GPP")
-        omp.Plus_model_var(QNC_Variable("gpp_avg", "ASSIMI"))
+        omp.Plus_model_var(QNC_Variable("gpp_avg", "Q_ASSIMI"))
         omp.Plus_obs_var(QNC_Variable("GPP"))
         target_variable_list.Add(omp)
 
@@ -73,18 +90,18 @@ class QNC_std_output_factory:
 
         omp = QNC_Obs_Model_Variable_Pair(name="Reco")
         omp.Plus_model_var(QNC_Variable("het_respiration_avg", "SB"))
-        omp.Plus_model_var(QNC_Variable("gpp_avg", "ASSIMI"))
+        omp.Plus_model_var(QNC_Variable("gpp_avg", "Q_ASSIMI"))
         omp.Substract_model_var(QNC_Variable("npp_avg", "VEG"))
 
         omp = QNC_Obs_Model_Variable_Pair(name="PPFD")
-        omp.Plus_model_var(QNC_Variable("appfd_avg", "RAD"))
+        omp.Plus_model_var(QNC_Variable("appfd_avg", "Q_RAD"))
         omp.Plus_obs_var(QNC_Variable("PPFD"))
         target_variable_list.Add(omp)
 
         fluxnet_diagnostics = QNC_Fluxnet_Diagnostics(rt_path=self.root_path, target_variable_list=target_variable_list)
 
         # Only perform analysis when we have data
-        if fluxnet_diagnostics.Have_fluxet_data:
+        if fluxnet_diagnostics.Have_fluxnet_variables:
             fluxnet_diagnostics.parse_env_variables()
             fluxnet_diagnostics.Check_output_variables()
             fluxnet_diagnostics.Analyse_and_plot()

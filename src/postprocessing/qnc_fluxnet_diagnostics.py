@@ -1,46 +1,44 @@
-from src.postprocessing.obs_reader import QNC_obs_reader
-from src.postprocessing.obs_model_comparer import Obs_Model_Var_List
-from src.postprocessing.obs_model_comparer import QNC_Obs_Model_Variable_Pair
-from src.postprocessing.output_parser import QNC_output_parser
-from src.postprocessing.quincy_output_ncdf_reader import QNC_ncdf_reader
-
-
+import os
 import pandas as pd
 import matplotlib.pyplot as plt
-from matplotlib.dates import DateFormatter
 import numpy as np
 
+from src.postprocessing.qnc_obs_reader import QNC_obs_reader
+from src.postprocessing.qnc_obs_model_comparer import Obs_Model_Var_List
+from src.postprocessing.qnc_obs_model_comparer import QNC_Obs_Model_Variable_Pair
+from src.postprocessing.qnc_output_parser import QNC_output_parser
+from src.postprocessing.qnc_ncdf_reader import QNC_ncdf_reader
 
 class QNC_Fluxnet_Diagnostics:
+
     def __init__(self, rt_path, target_variable_list : Obs_Model_Var_List):
         # Fluxnet output should always have this folder structure as it is not static
         parser = QNC_output_parser(rt_path)
 
         parser.check_target_categories([])
-        parser.read()
+        parser.Read()
 
         # We must have fluxnetdata otherwise it will not work
         self.identifier = 'fluxnetdata'
 
         if not self.identifier in parser.Available_outputs:
             self.Target_variable_list = []
-            self.Have_fluxet_data = False
+            self.Have_fluxnet_variables = False
             print("No fluxnet type output found. Skipping fluxnet statistics")
             return
 
 
         print("Calculating fluxnet statistics...")
-        self.Have_fluxet_data = True
+        self.Have_fluxnet_variables = True
 
         output_file = parser.Available_outputs[self.identifier]
         self.cats = output_file.Target_categories
         self.sim_type = output_file.Simulation_type
         self.time_res = output_file.Time_resolution
 
-        self.output_path = rt_path + "output/"
-
+        self.output_path = os.path.join(rt_path, "output")
+        self.post_processing_path = os.path.join(rt_path, "postprocessing")
         self.Target_variable_list = target_variable_list
-
         self.col_obs = 'tab:red'
         self.col_mod = 'tab:blue'
 
@@ -48,7 +46,7 @@ class QNC_Fluxnet_Diagnostics:
     def parse_env_variables(self):
 
         self.nc_obs = QNC_obs_reader(self.output_path)
-        self.nc_obs.parse_env_and_variables(pandas_time=True)
+        self.nc_obs.Parse_env_and_variables()
 
 
         self.nc_output = QNC_ncdf_reader(self.output_path,
@@ -56,11 +54,11 @@ class QNC_Fluxnet_Diagnostics:
                                     self.identifier,
                                     self.time_res
                                     )
-        self.nc_output.parse_env_and_variables(pandas_time=True)
+        self.nc_output.Parse_env_and_variables()
 
     def Check_output_variables(self):
 
-        obs_variables_found = self.nc_obs.check_variables(self.Target_variable_list.Get_obs_var_list())
+        obs_variables_found = self.nc_obs.Check_variables(self.Target_variable_list.Get_obs_var_list())
         mods_variables_found = self.nc_output.check_1D_variables(self.Target_variable_list.Get_model_var_list())
 
         # Reducing all checked variables for the once that are available in both obs and model
@@ -102,12 +100,12 @@ class QNC_Fluxnet_Diagnostics:
 
         obs_plus = []
         for var in pair.obs_vars_plus:
-            df = self.nc_obs.read_data(var.name)
+            df = self.nc_obs.Read_data(var.name)
             obs_plus.append(df)
 
         obs_minus = []
         for var in pair.obs_vars_minus:
-            df = self.nc_obs.read_data(var.name)
+            df = self.nc_obs.Read_data(var.name)
             obs_minus.append(df)
 
         i = 0
@@ -145,34 +143,52 @@ class QNC_Fluxnet_Diagnostics:
 
             ax = fig.add_subplot(gs[0,0])
             dfs= self.avg_timerange(df, freq='1D')
-            ax.plot(dfs['date'], dfs[name_m], c = self.col_mod)
-            ax.plot(dfs['date'], dfs[name_o], c = self.col_obs)
+            ax.plot(dfs['date'], dfs[name_m], c = self.col_mod, alpha = 0.8)
+            ax.plot(dfs['date'], dfs[name_o], c = self.col_obs, alpha = 0.8)
+            ax.tick_params(labelrotation=45)
             ax.set_title("Daily average")
 
             ax = fig.add_subplot(gs[0, 1])
             dfs= self.avg_timerange(df, freq='1W')
-            ax.plot(dfs['date'], dfs[name_m], c = self.col_mod)
-            ax.plot(dfs['date'], dfs[name_o], c = self.col_obs)
+            ax.plot(dfs['date'], dfs[name_m], c = self.col_mod, alpha = 0.8)
+            ax.plot(dfs['date'], dfs[name_o], c = self.col_obs, alpha = 0.8)
+            ax.tick_params(labelrotation=45)
             ax.set_title("Weekly average")
 
             ax = fig.add_subplot(gs[0, 2])
-            dfs= self.avg_timerange(df, freq='1M')
-            ax.plot(dfs['date'], dfs[name_m], c = self.col_mod)
-            ax.plot(dfs['date'], dfs[name_o], c = self.col_obs)
+            dfs= self.avg_timerange(df, freq='1ME')
+            ax.plot(dfs['date'], dfs[name_m], c = self.col_mod, alpha = 0.8)
+            ax.plot(dfs['date'], dfs[name_o], c = self.col_obs, alpha = 0.8)
+            ax.tick_params(labelrotation=45)
             ax.set_title("Monthly average")
 
             ax = fig.add_subplot(gs[1:3, :-1])
             dfs, dt = self.overall_avg_day(df)
-            dfs_std = self.overall_std_day(df)
+            dfs_02 = self.overall_q_day(df, 0.2)
+            dfs_08 = self.overall_q_day(df, 0.8)
 
-            ax.plot( dfs[name_m].values, c = self.col_mod)
-            ax.plot( dfs[name_o].values, c = self.col_obs)
-            ax.plot( dfs[name_o].values + dfs_std[name_o].values, c = self.col_obs, alpha = 0.5)
-            ax.plot( dfs[name_o].values - dfs_std[name_o].values, c = self.col_obs, alpha = 0.5)
-            #ax.fill_between( dfs[name_o].values - dfs_std[name_o].values, dfs[name_o].values + dfs_std[name_o].values,
-            #                facecolor = self.col_obs, alpha = 0.2)
-            #ax.xaxis.set_major_formatter(DateFormatter('%H:%M'))
+            x_multi = dfs.index
+            float_times = []
+            for hour, minute in x_multi:
+                float_time = hour + minute / 60
+                float_times.append(float_time)
+
+            ax.plot(float_times, dfs[name_m].values, c = self.col_mod, label = 'model mean')
+
+            ax.plot( float_times, dfs_02[name_m].values,
+                     c = self.col_mod, alpha = 0.5, label = 'model q02')
+            ax.plot( float_times, dfs_08[name_m].values,
+                     c = self.col_mod, alpha = 0.5, label = 'model q08')
+
+            ax.plot(float_times, dfs[name_o].values, c = self.col_obs, label = 'obs mean')
+            ax.plot(float_times, dfs_02[name_o].values,
+                     c = self.col_obs, alpha = 0.5, label = 'obs q02')
+            ax.plot(float_times, dfs_08[name_o].values,
+                     c = self.col_obs, alpha = 0.5, label = 'obs q08')
+
             ax.set_title("Subdaily distribution")
+            ax.legend()
+            ax.set_xlabel("Hour")
             fig.suptitle(pair.name, fontsize=16)
 
             dfd = pd.DataFrame()
@@ -191,7 +207,8 @@ class QNC_Fluxnet_Diagnostics:
             table.auto_set_font_size(False)
             table.set_fontsize(14)
 
-            plt.savefig(f"{pair.name}.png", bbox_inches='tight', pad_inches=0)
+            plt.savefig(os.path.join(self.post_processing_path, f"{pair.name}.png"),
+                        bbox_inches='tight', pad_inches=0)
 
 
 
@@ -206,8 +223,8 @@ class QNC_Fluxnet_Diagnostics:
         dfs = df.groupby([df.index.hour, df.index.minute]).mean()
         tx = pd.date_range('2000-01-01', periods=48, freq='30min')
         return dfs, tx
-    def overall_std_day(self, df):
-        dfs = df.groupby([df.index.hour, df.index.minute]).std()
+    def overall_q_day(self, df, q):
+        dfs = df.groupby([df.index.hour, df.index.minute]).quantile(q = q)
         return dfs
 
     def rmse(self, predictions, targets):

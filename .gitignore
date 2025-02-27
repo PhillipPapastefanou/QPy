@@ -10,3 +10,4 @@ examples/sens/output
 tests/runs/output/
 tests/runs/output_u30/
 tests/runs/output_u31/
+src/cal_parsing/build/

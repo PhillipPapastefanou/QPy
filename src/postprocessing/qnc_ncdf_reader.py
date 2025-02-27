@@ -1,82 +1,87 @@
+import os
 import pandas as pd
 import xarray as xr
 import numpy as np
-from src.postprocessing.cal_parsing.julian_arithmetics import JulianDate
-from src.postprocessing.cal_parsing.julian_arithmetics import JulianCalendarParse
 from time import perf_counter
-from src.postprocessing.defintions import Output_Time_Res
-from src.postprocessing.defintions import Second_dim_type
+from src.postprocessing.qnc_defintions import Output_Time_Res
+from src.postprocessing.qnc_defintions import Second_dim_type
 from enum import Enum
+
+
 
 
 class QNC_ncdf_reader:
     def __init__(self, output_path, output_cats, output_identifier, output_time_res):
+
         self.output_path = output_path
         self.output_time_res = output_time_res
         self.output_identifier = output_identifier
         self.output_cat_names = output_cats
 
-        self.Second_dim =  Second_dim_type.Invalid
         self.soil_depths = []
+        self.Second_dim =  Second_dim_type.Invalid
 
-    def parse_env_and_variables(self, pandas_time = False):
+        self.SECONDS_IN_ONE_TIMESTEP = 1800
+
+    def Parse_env_and_variables(self):
         self.files = {}
         for name in self.output_cat_names:
-            self.files[name] = xr.open_dataset(
-                self.output_path + '/' + name + '_'+   self.output_identifier + "_"  +  str(self.output_time_res.name).lower() +'.nc'
-                , decode_times=False)
+            filename = os.path.join(self.output_path, f'{name}_{self.output_identifier}_{str(self.output_time_res.name).lower()}.nc')
+            try:
+                self.files[name] = xr.open_dataset(filename, decode_times=False)
+            except:
+                print(f'Could not open {filename}. HDF error')
+                return False
 
         print(f"     Reading time variable... ", end='')
         t1_start = perf_counter()
 
         # Get the time variable from the first output file
-        time = self.files[self.output_cat_names[0]]['time'].load().values.astype(int)
-
+        time_steps = self.files[self.output_cat_names[0]]['time'].load().values.astype(int)
         # Accounting for a bug in the output of output module. We sometimes have one timestep too much
-        if (self.output_time_res ==  Output_Time_Res.Timestep) & (time[0] > 0):
-            time -= 1800
-
+        if (self.output_time_res ==  Output_Time_Res.Timestep) & (time_steps[0] > 0):
+            time_steps -= self.SECONDS_IN_ONE_TIMESTEP
 
         time_units = self.files[self.output_cat_names[0]]['time'].attrs['units']
-        t_stop = perf_counter()
-        print(f"     Done! ({np.round(t_stop-t1_start, 1)} sec.)")
+
+
+        print(f"     Done! ({np.round(perf_counter()-t1_start, 1)} sec.)")
 
         # Parse time to calendar variable
         print(f"     Parsing time variable... ", end='')
         t1_start = perf_counter()
-        jcp = JulianCalendarParse()
-        jcp.GetStartDateFromNetCDFUnitString(time_units)
 
+        from src.postprocessing.cal_parsing.julian_arithmetics import JulianDate
+        from src.postprocessing.cal_parsing.julian_arithmetics import JulianCalendarParser
+
+        jcp = JulianCalendarParser(output_time_res=self.output_time_res,
+                                   output_identifier=self.output_identifier)
 
         # Parse time and create main data frame object
-        # Using C version of calendar parsing
-        self.dF = jcp.ParseDatesC(time)
-
-        # Diagnostic to check whether this is still from old ouptut files
-        if self.dF['year'].iloc[0] == 0:
-            self.dF['year'] += 1900
-
-        # Create date string
-        self.dF['date'] = self.dF['year'].map(str) + "-" + self.dF['month'].map(self._int2strZ) + '-' + self.dF[
-                'day'].map(
-                self._int2strZ) + ' ' + self.dF['hour'].map(self._int2strZ) + ':' + self.dF['min'].map(
-                self._int2strZ) + ':' + self.dF['sec'].map(self._int2strZ)
+        self.dF = jcp.ParseDates(time_units, time_steps)
 
 
+        # Pandas approach (should be used for fluxnetoutput only)
+        # self.dF['date'] = self.dF['year'].map(str) + "-" + self.dF['month'].map(self._int2strZ) + '-' + self.dF[
+        #         'day'].map(
+        #         self._int2strZ) + ' ' + self.dF['hour'].map(self._int2strZ) + ':' + self.dF['min'].map(
+        #         self._int2strZ) + ':' + self.dF['sec'].map(self._int2strZ)
+        # self.dF['date'] = pd.to_datetime(self.dF['date'], format='%Y-%m-%d %H')
+
+        # Numpy approach to cover datetimes outside of the pandas range
         # If we have a timespan low enough (from ~ 1600 to 2100) we can acutally use the pandas datetime
-        if pandas_time:
-            self.dF['date'] = pd.to_datetime(self.dF['date'], format='%Y-%m-%d %H:%M')
-
-        self.times_np_64 = np.empty(self.dF.shape[0], dtype='datetime64[s]')
-        for i in range(0, self.dF.shape[0]):
-            self.times_np_64[i] = np.datetime64(self.dF['date'][i])
+        # if pandas_time:
+        #     self.dF['date'] = pd.to_datetime(self.dF['date'], format='%Y-%m-%d %H:%M')
+        #
+        # self.times_np_64 = np.empty(self.dF.shape[0], dtype='datetime64[s]')
+        # for i in range(0, self.dF.shape[0]):
+        #     self.times_np_64[i] = np.datetime64(self.dF['date'][i])
 
         t_stop = perf_counter()
         print(f"Done! ({np.round(t_stop-t1_start, 1)} sec.)")
 
 
         print(f"     Reading variable names and units... ", end='')
-
         self.Dataset_Names_2D = {}
         self.Dataset_Names_1D = {}
 
@@ -115,7 +120,7 @@ class QNC_ncdf_reader:
                     elif second_dim == "soil_layer":
                         self.Second_dim = Second_dim_type.Soil_layer
                     else:
-                        "Invaild or unsupported second dimensiof ncdf output"
+                        "Invaild or unsuppored second dimensionf ncdf output"
 
                 elif var == "soil_depth":
                     self.soil_depths = self.files[name][var].data
@@ -131,6 +136,7 @@ class QNC_ncdf_reader:
 
         t_stop = perf_counter()
         print(f"Done! ({np.round(t_stop - t1_start, 1)} sec.)")
+        return True
 
 
     def check_1D_variables(self, target_variables):
@@ -169,7 +175,7 @@ class QNC_ncdf_reader:
 
         return df_1d
 
-    def read_all_1D(self):
+    def Read_all_1D(self):
 
         # Reading in all output data into dataframes.
         # This could be improved at one point...
@@ -209,7 +215,7 @@ class QNC_ncdf_reader:
         df_2d = pd.concat([self.dF.reset_index(), df_2d], axis = 1)
         return df_2d
 
-    def close(self):
+    def Close(self):
         for name in self.output_cat_names:
             self.files[name].close()
 

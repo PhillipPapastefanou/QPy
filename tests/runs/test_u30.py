@@ -19,6 +19,7 @@ from src.sens.base import Quincy_Multi_Run
 from src.quincy.base.EnvironmentalInputTypes import *
 from src.quincy.base.NamelistTypes import ForcingMode
 from src.quincy.base.EnvironmentalInput import EnvironmentalInputSite
+from src.quincy.base.user_git_information import UserGitInformation
 from src.quincy.run_scripts.default import ApplyDefaultSiteLevel
 from time import perf_counter
 
@@ -80,6 +81,8 @@ class Test_U30(unittest.TestCase):
         namelist_base.jsb_forcing_ctl.transient_spinup_years.value = 2
         namelist_base.jsb_forcing_ctl.simulation_length_number.value = 4
         
+
+        
         
         # Parse paths of the forcing
         namelist_dicts, forcing_dicts = env_input.parse_multi_sites(namelist=namelist_base,
@@ -93,15 +96,24 @@ class Test_U30(unittest.TestCase):
         
         quincy_multi_run = Quincy_Multi_Run(setup_root_path)
                 
-        for site in self.sites:        
+        for site in self.sites:
+            
+            # Generate user git info 
+            user_git_info = UserGitInformation(self.QUINCY_ROOT_PATH, os.path.join(setup_root_path, site), site)     
+                    
             #Create one QUINCY setup
             quincy_setup = Quincy_Setup(folder = os.path.join(setup_root_path, site), 
                                         namelist = namelist_dicts[site],
                                         lctlib = lctlib_base,
-                                        forcing_path= forcing_dicts[site])
+                                        forcing_path= forcing_dicts[site], 
+                                        user_git_info= user_git_info)
             
             # Add to the setup creation
             quincy_multi_run.add_setup(quincy_setup)
+            
+
+    
+            
         
         # Generate quincy setups
         quincy_multi_run.generate_files()

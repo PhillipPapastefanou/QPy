@@ -1,5 +1,6 @@
 from src.quincy.base.Lctlib import  Lctlib
 from src.quincy.base.Namelist import  Namelist
+from src.quincy.base.user_git_information import  UserGitInformation
 from src.quincy.IO.NamelistWriter import NamelistWriter
 from src.quincy.IO.LctlibWriter import LctlibWriter
 from os import path
@@ -10,12 +11,14 @@ class Quincy_Setup:
                  folder,
                  lctlib: Lctlib,
                  namelist: Namelist,
-                 forcing_path):
+                 forcing_path, 
+                 user_git_info : UserGitInformation):
 
         self.folder = folder
         self.lctlib = lctlib
         self.namelist = namelist
         self.climate_forcing_path = forcing_path
+        self.user_git_info = user_git_info
 
     def export(self):
         if not os.path.exists(self.folder):
@@ -26,9 +29,13 @@ class Quincy_Setup:
 
         lctlib_writer = LctlibWriter(self.lctlib)
         lctlib_writer.export(path.join(self.folder, "lctlib_quincy_nlct14.def"))
+        
+        self.user_git_info.Generate()
 
         #Create a link of the climate dat file
         os.symlink(self.climate_forcing_path, path.join(self.folder, "climate.dat"))
+        
+
 
 
 class Quincy_Multi_Run:

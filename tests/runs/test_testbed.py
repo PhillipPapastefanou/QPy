@@ -18,6 +18,7 @@ from src.sens.base import Quincy_Single_Run
 from src.quincy.base.EnvironmentalInputTypes import *
 from src.quincy.base.NamelistTypes import ForcingMode
 from src.quincy.base.EnvironmentalInput import EnvironmentalInputSite
+from src.quincy.base.user_git_information import UserGitInformation
 from src.quincy.run_scripts.default import ApplyDefaultTestbed
 from time import perf_counter
 
@@ -32,8 +33,7 @@ class Test_Test_Bed(unittest.TestCase):
             exit(99)
         self.OUTPUT_DIR = 'output'
         self.org_delta = 0.0
-        self.qpy_delta = 0.0
-        
+        self.qpy_delta = 0.0        
         
     def test_standard_config(self):
         
@@ -58,7 +58,11 @@ class Test_Test_Bed(unittest.TestCase):
         site = "DE-Hai"
         # Use static forcing
         forcing_mode = ForcingMode.STATIC
-
+        
+        user_git_info = UserGitInformation(self.QUINCY_ROOT_PATH, 
+                                           setup_root_path, 
+                                           site)      
+    
         env_input = EnvironmentalInputSite(
                                         forcing_mode=forcing_mode, 
                                         forcing_dataset=forcing)
@@ -85,7 +89,10 @@ class Test_Test_Bed(unittest.TestCase):
         #Create one QUINCY setup
         quincy_setup = Quincy_Setup(folder = setup_root_path,
                                     namelist = namelist_base, 
-                                    lctlib = lctlib_base, forcing_path=forcing_file)
+                                    lctlib = lctlib_base,
+                                    forcing_path=forcing_file, 
+                                    user_git_info = user_git_info)
+    
         # Export setup
         quincy_single_run_config.set_setup(quincy_setup)
         quincy_single_run_config.generate_files()
@@ -120,7 +127,8 @@ class Test_Test_Bed(unittest.TestCase):
             else:
                 print("Failure!")
             self.assertTrue(success, stderr.decode() if stderr else "No error message.")
-
+            
+        
         print(f"Org runtime elapsed: {self.org_delta}")
         print(f"QPy runtime elapsed: {self.qpy_delta}")
         

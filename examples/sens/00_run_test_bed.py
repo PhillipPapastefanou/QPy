@@ -19,6 +19,7 @@ from src.sens.base import Quincy_Single_Run
 from src.quincy.base.EnvironmentalInputTypes import *
 from src.quincy.base.NamelistTypes import ForcingMode
 from src.quincy.base.EnvironmentalInput import EnvironmentalInputSite
+from src.quincy.base.user_git_information import UserGitInformation
 from src.quincy.run_scripts.default import ApplyDefaultTestbed
 
 if 'QUINCY' in os.environ:        
@@ -28,7 +29,7 @@ else:
     print("Please set QUINCY to the directory of your quincy root path")
     exit(99)
     
-OUTPUT_DIR = 'output/test_bed'
+OUTPUT_DIR = 'output/00_test_bed'
 
 
 # Classic sensitivity analysis where we are apply differnt Namelist or Lctlib files to ONE climate file
@@ -50,6 +51,11 @@ forcing = ForcingDataset.FLUXNET3
 site = "DE-Hai"
 # Use static forcing
 forcing_mode = ForcingMode.STATIC
+
+
+user_git_info = UserGitInformation(QUINCY_ROOT_PATH, 
+                                           setup_root_path, 
+                                           site)      
 
 env_input = EnvironmentalInputSite(forcing_mode=forcing_mode, 
                                 forcing_dataset=forcing)
@@ -75,7 +81,9 @@ quincy_single_run_config = Quincy_Single_Run(setup_root_path)
 #Create one QUINCY setup
 quincy_setup = Quincy_Setup(folder = setup_root_path,
                             namelist = namelist_base, 
-                            lctlib = lctlib_base, forcing_path=forcing_file)
+                            lctlib = lctlib_base,
+                            forcing_path=forcing_file, 
+                            user_git_info= user_git_info)
 # Export setup
 quincy_single_run_config.set_setup(quincy_setup)
 quincy_single_run_config.generate_files()
