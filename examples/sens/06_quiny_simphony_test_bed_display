@@ -68,9 +68,10 @@ ApplyDefaultTestbed(namelist=namelist_base)
 namelist_base.base_ctl.file_sel_output_variables.value = os.path.join(QUINCY_ROOT_PATH,
                                                                         'data', 
                                                                         'basic_output_variables.txt')
+
+# Set Plant hydraulics on
 namelist_base.assimilation_ctl.gs_beta_type = GsBetaType.PLANT
 namelist_base.phyd_ctl.use_plant_hydraulics = True
-
 
 
 # Parse base lctlibe path

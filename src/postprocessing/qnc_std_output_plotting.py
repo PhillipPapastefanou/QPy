@@ -182,7 +182,7 @@ class QNC_std_output_plotting:
             output_file = self.Available_outputs[identifier]
 
             cats = output_file.Target_categories
-            sim_type = output_file.Simulation_type
+            sim_type = output_file.forcing_mode
             time_res = output_file.Time_resolution
 
             nc_output = QNC_ncdf_reader(self.output_path,
@@ -446,7 +446,7 @@ class QNC_std_output_plotting:
             print(f"Performing 2D {identifier} variables... ")
 
             cats = output_file.Target_categories
-            sim_type = output_file.Simulation_type
+            forcing_mode = output_file.forcing_mode
             time_res = output_file.Time_resolution
 
             nc_output = QNC_ncdf_reader(self.output_path,

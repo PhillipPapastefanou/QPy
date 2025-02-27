@@ -1,12 +1,13 @@
 import os.path
 
 from src.postprocessing.qnc_output_parser import QNC_output_parser
-from src.postprocessing.qnc_defintions import Output_format, Simuluation_type
+from src.postprocessing.qnc_defintions import Output_format
 from src.postprocessing.qnc_std_output_plotting import QNC_std_output_plotting
 from src.postprocessing.qnc_obs_model_comparer import Obs_Model_Var_List
 from src.postprocessing.qnc_obs_model_comparer import QNC_Obs_Model_Variable_Pair
 from src.postprocessing.qnc_obs_model_comparer import QNC_Variable
 from src.postprocessing.qnc_fluxnet_diagnostics import QNC_Fluxnet_Diagnostics
+from src.quincy.base.Namelist import ForcingMode
 
 class QNC_std_output_factory:
     def __init__(self, root_path, output_format,
@@ -42,7 +43,7 @@ class QNC_std_output_factory:
 
     def Calculate_fluxnet_stat(self):
 
-        if self.output_Parser.simulation_type == Simuluation_type.Static:
+        if self.output_Parser.forcing_mode == ForcingMode.STATIC:
             print("Static output does not need to be compared to FLUXNET output.")
             return
 
