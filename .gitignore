@@ -6,6 +6,7 @@ src/postprocessing/cal_parsing/build
 /forcing/
 app/*
 examples/sens/output
+examples/post_process/plant_hydraulics/output
 !app/run_model_user_interface.py
 tests/runs/output/
 tests/runs/output_u30/

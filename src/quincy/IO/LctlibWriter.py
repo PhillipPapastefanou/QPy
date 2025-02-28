@@ -41,7 +41,6 @@ class LctlibWriter:
 
                 if pft.value == 1:
                     line = var_str
-
                 if (var_type is float) | (var_type is int) :
                     line += (f" {value}" )
                 elif isinstance(value, enum.Enum):
