@@ -21,8 +21,7 @@ class Quincy_Setup:
         self.user_git_info = user_git_info
 
     def export(self):
-        if not os.path.exists(self.folder):
-            os.mkdir(self.folder)
+        os.makedirs(self.folder, exist_ok=True)
 
         nlm_writer = NamelistWriter(self.namelist)
         nlm_writer.export(path.join(self.folder, "namelist.slm"))
@@ -48,7 +47,7 @@ class Quincy_Multi_Run:
         if os.path.exists(self.root_path):
             shutil.rmtree(self.root_path)
 
-        os.mkdir(self.root_path)
+        os.makedirs(self.root_path, exist_ok=True)
 
         for setup in self.setups:
             setup.export()
@@ -62,6 +61,6 @@ class Quincy_Single_Run:
     def generate_files(self):
         if os.path.exists(self.root_path):
             shutil.rmtree(self.root_path)
-        os.mkdir(self.root_path)
+        os.makedirs(self.root_path, exist_ok=True)
         self.setup.export()
 

@@ -13,3 +13,4 @@ tests/runs/output_u30/
 tests/runs/output_u31/
 tests/post_process/output
 src/cal_parsing/build/
+science/phillip/output

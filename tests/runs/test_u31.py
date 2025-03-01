@@ -99,10 +99,10 @@ class Test_U31(unittest.TestCase):
                 
         for site in self.sites:        
             # Generate user git info 
-            user_git_info = UserGitInformation(self.QUINCY_ROOT_PATH, os.path.join(setup_root_path, site), site)     
+            user_git_info = UserGitInformation(self.QUINCY_ROOT_PATH, os.path.join(setup_root_path, "output", site), site)     
                     
             #Create one QUINCY setup
-            quincy_setup = Quincy_Setup(folder = os.path.join(setup_root_path, site), 
+            quincy_setup = Quincy_Setup(folder = os.path.join(setup_root_path, "output", site), 
                                         namelist = namelist_dicts[site],
                                         lctlib = lctlib_base,
                                         forcing_path= forcing_dicts[site], 
@@ -129,7 +129,10 @@ class Test_U31(unittest.TestCase):
         # p1.join()
         
         for site in self.sites:        
-            p = multiprocessing.Process(target= self.irun_QPY_test_bed, args = (self.QUINCY_ROOT_PATH, os.path.join(setup_root_path, site), results_queue, self.qpy_delta))
+            p = multiprocessing.Process(target= self.irun_QPY_test_bed,
+                                        args = (self.QUINCY_ROOT_PATH, os.path.join(setup_root_path, "output", site),
+                                                results_queue,
+                                                self.qpy_delta))
             processes.append(p)
         
         # p1.start()
@@ -224,7 +227,7 @@ class Test_U31(unittest.TestCase):
             df_org = pd.read_csv(os.path.join(ref_path, site , "output", "vegpoolC_daily.txt"), sep= "\s+")
             org_veg_c = df_org['Total_C'].values
             
-            ds_new = xr.open_dataset(os.path.join(THIS_DIR, self.OUTPUT_DIR, site,"VEG_transient_daily.nc"), decode_times=True)
+            ds_new = xr.open_dataset(os.path.join(THIS_DIR, self.OUTPUT_DIR,"output", site,"VEG_transient_daily.nc"), decode_times=True)
             new_veg_c = ds_new['total_veg_c'][:].values
                
                 

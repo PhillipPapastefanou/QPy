@@ -15,6 +15,7 @@ class ParallelSetup:
              setup_path,
              quincy_path):
         self.setup_path = setup_path
+        
         self.quincy_path = quincy_path
 
         if self.is_root:
@@ -53,10 +54,13 @@ class ParallelSetup:
 
         ri = 0
         self.displ = np.zeros(self.size)
+        
+        # Create output directories
+        os.makedirs(os.path.join(self.setup_path, "output"), exist_ok=True)
 
         for i in range(0, self.size):
             df_i = df.iloc[ri: ri + self.n_array_per_process[i]]
-            df_i.to_csv(os.path.join(self.setup_path,f"parameters.csv.{i}"), index = False)
+            df_i.to_csv(os.path.join(self.setup_path, "output",f"parameters.csv.{i}"), index = False)
             self.displ[i] = ri
             ri += self.n_array_per_process[i]
 
@@ -86,7 +90,7 @@ class ParallelSetup:
         print("Process {} received chunk with size ".format(self.rank, self.n_sims_per_process))
         
         # Read the filename containing the folder ids
-        self.df_sel = pd.read_csv(os.path.join(self.setup_path,f"parameters.csv.{self.rank}"))
+        self.df_sel = pd.read_csv(os.path.join(self.setup_path, "output",f"parameters.csv.{self.rank}"))
         
         print(f"Chunk: {self.df_sel['fid']}")
 
@@ -99,7 +103,7 @@ class ParallelSetup:
 
         for fid in self.df_sel['fid']:
             p = subprocess.Popen(self.quincy_path,
-                             cwd=os.path.join(self.setup_path,
+                             cwd=os.path.join(self.setup_path,"output",
                                               str(fid)))
             p.communicate()
 

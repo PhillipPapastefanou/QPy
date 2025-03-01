@@ -1,7 +1,14 @@
 
 import os
 
-def GenerateSlurmScript(ntasks, path):    
+def GenerateSlurmScript(ntasks, path, ram_in_gb = 64):  
+    
+    if ntasks > 64:
+        print("For now only 64 tasks are suppored more")
+        print("Please contact Phillip haha")
+        exit(99)
+    
+      
     script_content = f"""#!/bin/bash
 #SBATCH -J QUINCY_QPY
 #SBATCH --error=%j.err
@@ -13,7 +20,7 @@ def GenerateSlurmScript(ntasks, path):
 #SBATCH --nodes=1
 #SBATCH --ntasks={ntasks}
 #SBATCH --partition='work'
-#SBATCH --mem='64G'
+#SBATCH --mem='{ram_in_gb}G'
 module purge
 module -q load gnu12 R/4.3.2
 module -q load openmpi4 netcdf
@@ -29,7 +36,7 @@ which python
 
 export FI_PROVIDER=tcp
 
-mpirun -n 4 python run_mpi.py
+mpirun -n {ntasks} python run_mpi.py
 """
     
     with open(os.path.join(path, 'submit.sh'), 'w') as f:

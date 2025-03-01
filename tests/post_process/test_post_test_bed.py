@@ -33,6 +33,8 @@ class Test_Post_Process_Test_Bed(unittest.TestCase):
             
     def test_run_test_bed(self):
         
+        self.init()
+        
         self.OUTPUT_DIR = 'output/static'
 
         # Classic sensitivity analysis where we are apply differnt Namelist or Lctlib files to ONE climate file
@@ -109,6 +111,10 @@ class Test_Post_Process_Test_Bed(unittest.TestCase):
         print(f"Elapsed: {t2-t1} seconds.")
                             
     def test_post_process_std(self):
+        
+        self.OUTPUT_DIR = 'output/static'
+        self.setup_root_path = os.path.join(THIS_DIR, self.OUTPUT_DIR)
+        
         
         if not os.path.exists(self.setup_root_path):
             print("No testbed output found")
