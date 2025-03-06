@@ -247,8 +247,6 @@ class Lctlib_Item:
         self.root_area_index = 0.0
         # (1?)
         self.eta_stem = 0.0
-        # (-)
-        self.huber_value = 0.0
         # (mol m-2 MPa-1)
         self.kappa_leaf = 0.0
         # (mol m-3 MPa-1)

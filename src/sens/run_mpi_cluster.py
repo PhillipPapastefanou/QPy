@@ -82,12 +82,18 @@ class ParallelSetup:
 
         # Initialize the memory according to that file size
         self.recvbuf = np.zeros(self.n_array_per_process[self.rank], dtype='i')
-
+        
+        # print('----')
+        # print(f"recvbuf {type(self.recvbuf)}")
+        # print(f"sendbuf {type(self.sendbuf)}")
+        # print(f"narray {type(self.n_array_per_process)}")
+        # print(f"displ {type(self.displ)}")
+        # print('+++')
         # Send the indexes ot each process
-        self.comm.Scatterv([self.sendbuf, self.n_array_per_process, self.displ, MPI.INTEGER], self.recvbuf, root=0)
+        #self.comm.Scatterv([self.sendbuf, self.n_array_per_process, self.displ, MPI.INTEGER], self.recvbuf, root=0)
 
         # Print the chunk that was received by this process
-        print("Process {} received chunk with size ".format(self.rank, self.n_sims_per_process))
+        #print("Process {} received chunk with size ".format(self.rank, self.n_sims_per_process))
         
         # Read the filename containing the folder ids
         self.df_sel = pd.read_csv(os.path.join(self.setup_path, "output",f"parameters.csv.{self.rank}"))
@@ -100,6 +106,8 @@ class ParallelSetup:
         if self.is_root:
             print("Starting simulations...")
             t1 = perf_counter()
+            
+        
 
         for fid in self.df_sel['fid']:
             p = subprocess.Popen(self.quincy_path,

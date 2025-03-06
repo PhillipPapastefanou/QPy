@@ -3,6 +3,7 @@ import os
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(THIS_DIR, os.pardir, os.pardir, os.pardir, os.pardir))
+sys.path.append("/Net/Groups/BSI/work_scratch/ppapastefanou/src/QPy")
 
 if 'QUINCY' in os.environ:        
     QUINCY_ROOT_PATH = os.environ.get("QUINCY")

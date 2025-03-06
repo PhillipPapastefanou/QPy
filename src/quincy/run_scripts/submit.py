@@ -1,12 +1,7 @@
 
 import os
 
-def GenerateSlurmScript(ntasks, path, ram_in_gb = 64):  
-    
-    if ntasks > 64:
-        print("For now only 64 tasks are suppored more")
-        print("Please contact Phillip haha")
-        exit(99)
+def GenerateSlurmScript(ntasks, path, ram_in_gb = 300, nnodes = 1, partition = 'work'):  
     
       
     script_content = f"""#!/bin/bash
@@ -17,13 +12,16 @@ def GenerateSlurmScript(ntasks, path, ram_in_gb = 64):
 #SBATCH --get-user-env
 #SBATCH --export=NONE
 #SBATCH --time=24:00:00
-#SBATCH --nodes=1
+#SBATCH --nodes={nnodes}
 #SBATCH --ntasks={ntasks}
-#SBATCH --partition='work'
+#SBATCH --partition='{partition}'
 #SBATCH --mem='{ram_in_gb}G'
+
 module purge
-module -q load gnu12 R/4.3.2
-module -q load openmpi4 netcdf
+#module -q load gnu12 
+#module -q load openmpi4 netcdf
+ml gnu12/12.2.0 mpich/3.4.3-ofi
+ml netcdf/4.9.0
 
 ml all/Miniconda3
 
@@ -31,7 +29,7 @@ source ~/.bash_profile
 echo "QUINCY path: $QUINCY"
 
 source /User/homes/ppapastefanou/miniconda3/etc/profile.d/conda.sh
-conda activate /Net/Groups/BSI/work_scratch/ppapastefanou/envs/phs
+conda activate /Net/Groups/BSI/work_scratch/ppapastefanou/envs/QPy_gnu_mpich
 which python
 
 export FI_PROVIDER=tcp

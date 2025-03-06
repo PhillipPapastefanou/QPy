@@ -9,7 +9,7 @@ from src.postprocessing.qnc_obs_model_comparer import QNC_Obs_Model_Variable_Pai
 from src.postprocessing.qnc_output_parser import QNC_output_parser
 from src.postprocessing.qnc_ncdf_reader import QNC_ncdf_reader
 
-class QNC_Fluxnet_Diagnostics:
+class QNC_Std_Fluxnet_Diagnostics:
 
     def __init__(self, rt_path, target_variable_list : Obs_Model_Var_List):
         # Fluxnet output should always have this folder structure as it is not static

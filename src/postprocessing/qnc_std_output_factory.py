@@ -6,7 +6,7 @@ from src.postprocessing.qnc_std_output_plotting import QNC_std_output_plotting
 from src.postprocessing.qnc_obs_model_comparer import Obs_Model_Var_List
 from src.postprocessing.qnc_obs_model_comparer import QNC_Obs_Model_Variable_Pair
 from src.postprocessing.qnc_obs_model_comparer import QNC_Variable
-from src.postprocessing.qnc_fluxnet_diagnostics import QNC_Fluxnet_Diagnostics
+from postprocessing.qnc_std_fluxnet_diagnostics import QNC_Std_Fluxnet_Diagnostics
 from src.quincy.base.Namelist import ForcingMode
 
 class QNC_std_output_factory:
@@ -99,7 +99,7 @@ class QNC_std_output_factory:
         omp.Plus_obs_var(QNC_Variable("PPFD"))
         target_variable_list.Add(omp)
 
-        fluxnet_diagnostics = QNC_Fluxnet_Diagnostics(rt_path=self.root_path, target_variable_list=target_variable_list)
+        fluxnet_diagnostics = QNC_Std_Fluxnet_Diagnostics(rt_path=self.root_path, target_variable_list=target_variable_list)
 
         # Only perform analysis when we have data
         if fluxnet_diagnostics.Have_fluxnet_variables:
