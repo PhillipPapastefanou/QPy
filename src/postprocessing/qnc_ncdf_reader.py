@@ -156,7 +156,7 @@ class QNC_ncdf_reader:
             grp_var_target_found.append(var_target_found)
         return grp_var_target_found;
 
-    def read_1D_flat(self, cat_name, var_name):
+    def Read_1D_flat(self, cat_name, var_name):
 
         # Reading in all output data into dataframes.
         # This could be improved at one point...

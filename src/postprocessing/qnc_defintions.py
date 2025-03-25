@@ -28,3 +28,13 @@ class Second_dim_type(Enum):
     Soil_layer = 0
     Canopy_layer = 1
     Invalid = 2
+
+class Time_Reduction_Type(Enum):
+    ThirtyMinOfDay = 0
+    HourOfDay = 1
+    DayOfYear = 2
+    MonthOfYear = 3
+    ThirtyMinSeries = 4
+    DailySeries = 5
+    MonthlySeries = 6
+    YearlySeries = 7    

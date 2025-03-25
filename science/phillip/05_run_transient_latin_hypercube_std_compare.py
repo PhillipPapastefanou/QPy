@@ -34,7 +34,7 @@ from src.sens.auxil import rescale_mean
 from scipy.stats import qmc
 
 # Define the number of runs and variables
-number_of_runs = 2048
+number_of_runs = 4096
 # Fluxnet3 forcing
 forcing = ForcingDataset.FLUXNET3
 # Fluxnet3 sites
@@ -47,7 +47,7 @@ RAM_IN_GB = 300
 NNODES = 8
 PARTITION = 'work'
 # Path where all the simulation data will be saved
-RUN_DIRECTORY = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/10_transient_latin_hypercube_with_std_soilchange"
+RUN_DIRECTORY = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/14_transient_latin_hypercube_with_std_HAINICH_data_full"
 
 # Path where to save the setup
 setup_root_path = os.path.join(THIS_DIR, RUN_DIRECTORY)
@@ -117,7 +117,7 @@ pft = PftQuincy(pft_id)
 
 
 # If we speicify more variables that we use we do NOT have a problem
-number_of_variables = 9
+number_of_variables = 10
 
 # Create a latin hypercube sample that is distributed between 0-1
 seed   = 123456789
@@ -150,19 +150,23 @@ g1_max = 7.0
 
 # 6. Parameter klatosa 
 g0_min = 0.001
-g0_max = 0.015
+g0_max = 0.02
 
 # 7. Parameter klatosa 
 psi_close50_min = -2.5
 psi_close50_max = -2.0
 
 # 8. Parameter sand 
-sand_min = 0.02
-sand_max = 0.1
+sand_min = 0.16
+sand_max = 0.25
 
 # 9. Parameter silt 
-silt_min = 0.3
-silt_max = 0.7
+silt_min = 0.28
+silt_max = 0.38
+
+# 10. Parameter silt 
+root_dist_min = 1.2
+root_dist_max = 6.5
 
 # Now we rescale parameters
 k_xylem_sats = rescale(slicer.get(), min = k_xylem_sat_min, max = k_xylem_sat_max)
@@ -174,6 +178,7 @@ g0s = rescale(slicer.get(), min = g0_min, max = g0_max)
 psi_close50s = rescale(slicer.get(), min = psi_close50_min, max = psi_close50_max)
 silts = rescale(slicer.get(), min = silt_min, max = silt_max)
 sands = rescale(slicer.get(), min = sand_min, max = sand_max)
+root_dists = rescale(slicer.get(), min = root_dist_min, max = root_dist_max)
 
 # We create a multi quincy run object
 quincy_multi_run = Quincy_Multi_Run(setup_root_path)
@@ -200,7 +205,9 @@ for i in range(0, number_of_runs):
         lctlib[pft].g0 = float(g0s[i])
         lctlib[pft].g1_medlyn = float(g1s[i])
         lctlib[pft].psi50_leaf_close = float(psi_close50s[i])
+        lctlib[pft].k_root_dist = float(root_dists[i])
         lctlib[pft].psi50_xylem = -3.7
+
     
         nlm.spq_ctl.soil_silt.value = float(silts[i])
         nlm.spq_ctl.soil_sand.value = float(sands[i])
@@ -234,6 +241,9 @@ df_parameter_setup['k_latosa']= np.round(k_latosas,5)
 df_parameter_setup['g0']= np.round(g0s,5)
 df_parameter_setup['g1']= np.round(g1s,5)
 df_parameter_setup['psi50_close']= np.round(psi_close50s,5)
+df_parameter_setup['root_dist']= np.round(root_dists,5)
+df_parameter_setup['silt']= np.round(silts ,5)
+df_parameter_setup['samd']= np.round(sands ,5)
 
 
 df_parameter_setup.to_csv(os.path.join(setup_root_path, "parameters.csv"), index=False)

@@ -69,13 +69,13 @@ class QNC_Std_Fluxnet_Diagnostics:
 
         model_plus = []
         for var in pair.model_vars_plus:
-            df = self.nc_output.read_1D_flat(var.cat, var.name)
+            df = self.nc_output.Read_1D_flat(var.cat, var.name)
             df.set_index('date', inplace=True)
             model_plus.append(df)
 
         model_minus = []
         for var in pair.model_vars_minus:
-            df = self.nc_output.read_1D_flat(var.cat, var.name)
+            df = self.nc_output.Read_1D_flat(var.cat, var.name)
             df.set_index('date', inplace=True)
             model_minus.append(df)
 

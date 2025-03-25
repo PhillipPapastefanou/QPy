@@ -131,13 +131,13 @@ class QNC_Multi_Fluxnet_Comparer:
     def get_mod_df(self, nc_output : QNC_ncdf_reader , pair : QNC_Obs_Model_Variable_Pair):
         model_plus = []
         for var in pair.model_vars_plus:
-            df = nc_output.read_1D_flat(var.cat, var.name)
+            df = nc_output.Read_1D_flat(var.cat, var.name)
             df.set_index('date', inplace=True)
             model_plus.append(df)
 
         model_minus = []
         for var in pair.model_vars_minus:
-            df = nc_output.read_1D_flat(var.cat, var.name)
+            df = nc_output.Read_1D_flat(var.cat, var.name)
             df.set_index('date', inplace=True)
             model_minus.append(df)
 

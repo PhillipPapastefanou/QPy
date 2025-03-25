@@ -95,6 +95,8 @@ class ParallelSetup:
         # Print the chunk that was received by this process
         #print("Process {} received chunk with size ".format(self.rank, self.n_sims_per_process))
         
+        self.comm.Barrier()
+        
         # Read the filename containing the folder ids
         self.df_sel = pd.read_csv(os.path.join(self.setup_path, "output",f"parameters.csv.{self.rank}"))
         

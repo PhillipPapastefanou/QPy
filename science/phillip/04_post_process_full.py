@@ -18,7 +18,8 @@ from src.postprocessing.qnc_ncdf_reader import QNC_ncdf_reader
 from src.postprocessing.qnc_multi_fluxnet_comparer import QNC_Multi_Fluxnet_Comparer
 
 
-OUTPUT_DIR = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/10_transient_latin_hypercube_with_std_soilchange"
+OUTPUT_DIR = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/14_transient_latin_hypercube_with_std_HAINICH_data_full"
+
 
 
 comparer = QNC_Multi_Fluxnet_Comparer("DE-Hai")
@@ -59,4 +60,4 @@ df['fid'] = range(0, nsims)
 t2 = perf_counter()
 
 print(f"elapsed: {t2-t1}")
-df.to_csv(os.path.join(THIS_DIR, OUTPUT_DIR,"rmsedata.csv"), index=False)
+df.to_csv(os.path.join(THIS_DIR, OUTPUT_DIR, "rmsedata.csv"), index=False)
