@@ -46,6 +46,7 @@ d = {}
 d['var_cat'] = 'Q_ASSIMI'
 d['var_name_mod'] = 'gpp_avg'
 d['var_name_obs'] = 'GPP'
+d['var_name_obs'] = None
 d['fig'] = plt.figure(figsize=(16, 12))
 setups.append(d)
 
@@ -73,14 +74,14 @@ setups.append(d)
 d = {}
 d['var_cat'] = 'SPQ'
 d['var_name_mod'] = 'qle_avg'
-d['var_name_obs'] = 'LE'
+d['var_name_obs'] = None
 d['fig'] = plt.figure(figsize=(16, 12))
 setups.append(d)
 
 d = {}
 d['var_cat'] = 'Q_ASSIMI'
 d['var_name_mod'] = 'gc_avg'
-d['var_name_obs'] = 'Gc'
+d['var_name_obs'] = None
 d['fig'] = plt.figure(figsize=(16, 12))
 setups.append(d)
 

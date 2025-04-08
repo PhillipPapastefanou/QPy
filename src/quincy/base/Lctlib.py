@@ -251,5 +251,7 @@ class Lctlib_Item:
         self.kappa_leaf = 0.0
         # (mol m-3 MPa-1)
         self.kappa_stem = 0.0
-        # (-)
-        self.alpha_k_soil = 1.0
+        # Root scaler
+        self.root_scale = 1.0
+        # Residual hydraulic conductivity (kg H2O m-2 s-1)
+        self.g_res = 0.0

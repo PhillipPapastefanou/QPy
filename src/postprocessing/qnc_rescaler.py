@@ -65,7 +65,7 @@ class QNC_Rescaler:
             df_mod_rescale['monthofyear'] = df_mod_rescale['date'].dt.month
             df_mod_rescale = df_mod_rescale.groupby('monthofyear').mean()
             df_mod_rescale.reset_index(drop=True, inplace=True)
-            df_mod_rescale['mothofyear'] = np.arange(0, 12)
+            df_mod_rescale['monthofyear'] = np.arange(0, 12)
         else:
             print(f"Invalid time reduction type: {time_reduction.name}")
             exit(99)
