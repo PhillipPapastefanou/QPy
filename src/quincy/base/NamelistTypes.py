@@ -19,6 +19,9 @@ class NamelistCategories(Enum):
     JSB_FORCING_CTL     = 10
     Q_SH_CTL            = 11
     JSB_RAD_NML         = 12
+    ATMLAND_CTL         = 13 #For Paramlist
+    SHARED_CTL          = 14 #For Paramlist
+    SB_CTL              = 15 #For Paramlist
 
 class GsBetaType(Enum):
     PLANT = 0

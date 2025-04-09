@@ -1,7 +1,9 @@
 from src.quincy.base.Lctlib import  Lctlib
 from src.quincy.base.Namelist import  Namelist
+from src.quincy.base.Paramlist import  Paramlist
 from src.quincy.base.user_git_information import  UserGitInformation
 from src.quincy.IO.NamelistWriter import NamelistWriter
+from src.quincy.IO.ParamlistWriter import ParamlistWriter
 from src.quincy.IO.LctlibWriter import LctlibWriter
 from os import path
 import os
@@ -12,13 +14,15 @@ class Quincy_Setup:
                  lctlib: Lctlib,
                  namelist: Namelist,
                  forcing_path, 
-                 user_git_info : UserGitInformation):
+                 user_git_info : UserGitInformation,
+                 paramlist = None):
 
         self.folder = folder
         self.lctlib = lctlib
         self.namelist = namelist
         self.climate_forcing_path = forcing_path
         self.user_git_info = user_git_info
+        self.paramlist = paramlist
 
     def export(self):
         os.makedirs(self.folder, exist_ok=True)
@@ -28,6 +32,10 @@ class Quincy_Setup:
 
         lctlib_writer = LctlibWriter(self.lctlib)
         lctlib_writer.export(path.join(self.folder, "lctlib_quincy_nlct14.def"))
+        
+        if self.paramlist != None:
+            paramlist_writer = ParamlistWriter(self.paramlist)
+            paramlist_writer.export(path.join(self.folder, "parameter_slm_run.list"))
         
         self.user_git_info.Generate()
 

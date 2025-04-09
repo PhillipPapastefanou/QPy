@@ -7,9 +7,9 @@
 #SBATCH --export=NONE
 #SBATCH --time=04:00:00
 #SBATCH --nodes=1
-#SBATCH --ntasks=128
-#SBATCH --partition='big'
-#SBATCH --mem='1000G'
+#SBATCH --ntasks=64
+#SBATCH --partition='work'
+#SBATCH --mem='300'
 
 ml purge 
 ml intel/2023.0.0  impi/2021.6.0
@@ -25,4 +25,4 @@ which python
 
 export FI_PROVIDER=tcp
 
-mpirun -n 128 python -u post_process_complete_parallel.py
+mpirun -n 64 python -u post_process_complete_parallel.py
