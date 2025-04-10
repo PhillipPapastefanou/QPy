@@ -112,10 +112,10 @@ for i in range(0, nslice):
     
     
     user_git_info = UserGitInformation(QUINCY_ROOT_PATH, 
-                                           os.path.join(setup_root_path, str(i)), 
+                                           os.path.join(setup_root_path, "output", str(i)), 
                                            site)  
     #Create one QUINCY setup
-    quincy_setup = Quincy_Setup(folder = os.path.join(setup_root_path, str(i)), 
+    quincy_setup = Quincy_Setup(folder = os.path.join(setup_root_path,"output", str(i)), 
                                 namelist = namelist_base,
                                 lctlib = lctlib,
                                 forcing_path = forcing_file,
