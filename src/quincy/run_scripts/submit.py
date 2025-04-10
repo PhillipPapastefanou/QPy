@@ -28,13 +28,13 @@ ml all/Miniconda3
 source ~/.bash_profile
 echo "QUINCY path: $QUINCY"
 
-source /User/homes/ppapastefanou/miniconda3/etc/profile.d/conda.sh
-conda activate /Net/Groups/BSI/work_scratch/ppapastefanou/envs/QPy_gnu_mpich
-which python
+#source /User/homes/ppapastefanou/miniconda3/etc/profile.d/conda.sh
+#conda activate /Net/Groups/BSI/work_scratch/ppapastefanou/envs/QPy_gnu_mpich
+# which python
 
 export FI_PROVIDER=tcp
 
-mpirun -n {ntasks} python run_mpi.py
+mpirun -n {ntasks} /Net/Groups/BSI/work_scratch/ppapastefanou/envs/QPy_gnu_mpich/bin/python run_mpi.py
 """
     
     with open(os.path.join(path, 'submit.sh'), 'w') as f:
