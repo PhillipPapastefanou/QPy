@@ -100,6 +100,11 @@ class SPQ_CTL:
         self.soil_silt    = NamelistItem(0.3)
         self.soil_clay    = NamelistItem(0.3)
         self.bulk_density = NamelistItem(1500.0)
+        
+        self.saxtonA = NamelistItem(-0.2E-4)
+        self.saxtonB    = NamelistItem(-10.0)
+        self.kdiff_sat_sl    = NamelistItem(1E-6)
+        self.theta_sat_sl    = NamelistItem(0.5)
 
 class Q_SH_CTL:
     def __init__(self):

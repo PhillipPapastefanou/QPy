@@ -11,7 +11,7 @@ def GenerateSlurmScript(ntasks, path, ram_in_gb = 300, nnodes = 1, partition = '
 #SBATCH -D ./
 #SBATCH --get-user-env
 #SBATCH --export=NONE
-#SBATCH --time=72:00:00
+#SBATCH --time=200:00:00
 #SBATCH --nodes={nnodes}
 #SBATCH --ntasks={ntasks}
 #SBATCH --partition='{partition}'

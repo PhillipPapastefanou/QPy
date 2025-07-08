@@ -68,7 +68,7 @@ def rescale(df, time_reduction: Time_Reduction_Type):
 
     
 OUTPUT_DIR = '/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/11_transient_latin_hypercube_with_std_HAINICH_data'
-OUTPUT_DIR = '/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/25_transient_latin_hypercube_with_std_HAINICH_data_full_2024_rs_work_high_gammastem'
+OUTPUT_DIR = '/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/23_transient_latin_hypercube_with_std_HAINICH_data_full_2024_rs_work_high_gammastem'
 post_dir = os.path.join(OUTPUT_DIR, 'post')
 os.makedirs(post_dir, exist_ok=True)
 
@@ -86,6 +86,20 @@ df_sap_flow_obs.loc[df_sap_flow_obs['J0.5'] < 0.0, 'J0.5'] = 0.0
 setups = []
 
 obt = OutputBenchType()
+obt.mod_var_cat   = 'PHYD'
+obt.mod_var_name  = 'G_avg'
+obt.plt_name      = 'G_avg'
+obt.fig = plt.figure(figsize=(16, 12))
+setups.append(obt)
+
+obt = OutputBenchType()
+obt.mod_var_cat   = 'PHYD'
+obt.mod_var_name  = 'stem_flow_avg'
+obt.plt_name      = 'stem_flow_avg'
+obt.fig = plt.figure(figsize=(16, 12))
+setups.append(obt)
+
+obt = OutputBenchType()
 obt.mod_var_cat   = 'Q_ASSIMI'
 obt.mod_var_name  = 'beta_gs'
 obt.fig = plt.figure(figsize=(16, 12))
@@ -95,6 +109,7 @@ obt = OutputBenchType()
 obt.mod_var_cat   = 'PHYD'
 obt.mod_var_name  = 'G_avg'
 obt.obs_var_name  = 'J0.5'
+obt.plt_name      = 'G_avg_obs'
 obt.normalized = True
 obt.df_obs = df_sap_flow_obs
 obt.fig = plt.figure(figsize=(16, 12))
@@ -105,9 +120,11 @@ obt.mod_var_cat   = 'PHYD'
 obt.mod_var_name  = 'stem_flow_avg'
 obt.obs_var_name  = 'J0.5'
 obt.normalized = True
+obt.plt_name      = 'stem_flow_obs'
 obt.df_obs = df_sap_flow_obs
 obt.fig = plt.figure(figsize=(16, 12))
 setups.append(obt)
+
 
 
 obt = OutputBenchType()
@@ -115,7 +132,7 @@ obt.mod_var_cat   = 'Q_ASSIMI'
 obt.mod_var_name  = 'gpp_avg'
 obt.obs_var_name  = 'GPP'
 obt.df_obs = df22fnet
-obt.plt_name = 'GPP22'
+obt.plt_name = 'GPP22_obs'
 obt.fig = plt.figure(figsize=(16, 12))
 setups.append(obt)
 
@@ -123,9 +140,9 @@ setups.append(obt)
 obt = OutputBenchType()
 obt.mod_var_cat   = 'Q_ASSIMI'
 obt.mod_var_name  = 'gpp_avg'
-obt.obs_var_name  = 'GPP'
-obt.df_obs = df24fnet
-obt.plt_name = 'GPP24'
+obt.plt_name  = 'GPP2017-2023'
+obt.dt_begin = pd.to_datetime("01-01-2017")
+obt.dt_end = pd.to_datetime("31-12-2023")
 obt.fig = plt.figure(figsize=(16, 12))
 setups.append(obt)
 
@@ -142,6 +159,13 @@ obt.plt_name      = 'psi_stem_avg'
 obt.fig = plt.figure(figsize=(16, 12))
 setups.append(obt)
 
+obt = OutputBenchType()
+obt.mod_var_cat   = 'SPQ'
+obt.mod_var_name  = 'transpiration_avg'
+obt.plt_name      = 'transpiration_avg'
+obt.fig = plt.figure(figsize=(16, 12))
+setups.append(obt)
+
 
 obt = OutputBenchType()
 obt.mod_var_cat   = 'PHYD'
@@ -152,6 +176,24 @@ obt.dt_end = pd.to_datetime("31-12-2023")
 obt.fig = plt.figure(figsize=(16, 12))
 setups.append(obt)
 
+obt = OutputBenchType()
+obt.mod_var_cat   = 'PHYD'
+obt.mod_var_name  = 'psi_stem_avg'
+obt.plt_name      = 'psi_stem_avg_2017-2023'
+obt.dt_begin = pd.to_datetime("01-01-2017")
+obt.dt_end = pd.to_datetime("31-12-2023")
+obt.fig = plt.figure(figsize=(16, 12))
+setups.append(obt)
+
+
+obt = OutputBenchType()
+obt.mod_var_cat   = 'PHYD'
+obt.mod_var_name  = 'psi_leaf_avg'
+obt.plt_name      = 'psi_leaf_avg_2017-2023'
+obt.dt_begin = pd.to_datetime("01-01-2017")
+obt.dt_end = pd.to_datetime("31-12-2023")
+obt.fig = plt.figure(figsize=(16, 12))
+setups.append(obt)
 
 
 obt = OutputBenchType()
@@ -201,10 +243,18 @@ for setup in setups:
 
 
 cat_error = 'rmseStem'
-fids  =  [0,7404]
+fids  =  [0,2120, 4914, 4972, 5962, 6129, 7251, 8025, 8269, 8949, 9769, 15671]
 
-# cat_error = 'both'
-# fids  =  [0,4066]
+# cat_error = 'slope'
+# fids  =  [0,3050, 16317,
+#  8220,
+#  15476,
+#  14592,
+#  3493,
+#  11970,
+#  526,
+#  16140,
+#  15434]
 
 for fid in fids:
     parser = QNC_output_parser(os.path.join(OUTPUT_DIR,'output', str(fid)))

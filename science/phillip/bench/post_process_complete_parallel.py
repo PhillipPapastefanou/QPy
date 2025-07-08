@@ -18,7 +18,8 @@ from src.postprocessing.qnc_obs_reader import QNC_obs_reader
 from science.phillip.bench.post_process_aggregate import aggregate
     
 OUTPUT_DIR = '/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/11_transient_latin_hypercube_with_std_HAINICH_data'
-OUTPUT_DIR = '/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/26_transient_latin_hypercube_with_std_HAINICH_data_full_2024_rs_work_high_gammastem'
+#OUTPUT_DIR = '/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/kmax_gammastem/12_std_only'
+OUTPUT_DIR = '/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/pheno_hydro/06_std_only'
 post_dir = os.path.join(OUTPUT_DIR, 'post')
 rtobspath = '/Net/Groups/BSI/work_scratch/ppapastefanou/data/Fluxnet_detail/eval_processed'
 
@@ -47,7 +48,6 @@ size = comm.Get_size()
 
 # Initialize
 nsims_total = None
-nsims_local = None
 
 if rank == 0:   
     os.makedirs(post_dir, exist_ok=True)

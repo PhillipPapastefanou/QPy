@@ -3,7 +3,7 @@ import os
 import shutil
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(os.path.join(THIS_DIR, os.pardir, os.pardir))
+sys.path.append(os.path.join(THIS_DIR, os.pardir, os.pardir, os.pardir))
 from copy import deepcopy
 import numpy as np
 import pandas as pd
@@ -34,7 +34,7 @@ from src.sens.auxil import rescale_mean
 from scipy.stats import qmc
 
 # Define the number of runs and variables
-number_of_runs = 64*16*8
+number_of_runs = 4*128
 # Fluxnet3 forcing
 forcing = ForcingDataset.FLUXNET3
 # Fluxnet3 sites
@@ -42,12 +42,13 @@ site = "DE-Hai"
 # Use static forcing
 forcing_mode = ForcingMode.TRANSIENT
 # Number of cpu cores to be used
-NTASKS  = 64*10
-RAM_IN_GB = 300
-NNODES = 10
-PARTITION = 'work'
+NNODES = 4
+NTASKS  = 128*NNODES
+RAM_IN_GB = 600
+
+PARTITION = 'big'
 # Path where all the simulation data will be saved
-RUN_DIRECTORY = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/27_transient_latin_hypercube_with_std_HAINICH_data_full_2024_high_kappa_nodens_high_gammastem"
+RUN_DIRECTORY = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/kmax_gammastem/02_initial_variation_fixed_stom_clos"
 
 # Path where to save the setup
 setup_root_path = os.path.join(THIS_DIR, RUN_DIRECTORY)
@@ -119,7 +120,7 @@ pft = PftQuincy(pft_id)
 
 
 # If we speicify more variables that we use we do NOT have a problem
-number_of_variables = 13
+number_of_variables = 5
 
 # Create a latin hypercube sample that is distributed between 0-1
 seed   = 123456789
@@ -131,74 +132,42 @@ sample = sample.T
 slicer = Subslicer(array=sample)
 
 # 1. Parameter k_xylem_sat
-k_xylem_sat_min = 5.0
-k_xylem_sat_max = 15.0
-# Actual value should be between 1 and 2.5
+k_xylem_sat_min = 0.1
+k_xylem_sat_max = 5.0
 
 # 2. Parameter kappa_stem
 kappa_stem_min = 40
-kappa_stem_max = 1000
+kappa_stem_max = 10000
 
-# 3. Parameter kappa_leaf 
-kappa_leaf_min      = 0.5 * 10**(-3.0)
-kappa_leaf_max      = 10.0 * 10**(-3.0)
+# 3. Parameter stom closure 
+psi_close50_min = -0.5
+psi_close50_max = -1.5
 
-# 4. Parameter klatosa 
-k_latosa_min = 3300
-k_latosa_max = 5000
-
-# 5. Parameter klatosa 
-g1_min = 3.8
-g1_max = 4.2
-
-# 6. Parameter klatosa 
-g0_min = 0.0025
-g0_max = 0.0075
-
-# 7. Parameter klatosa 
-psi_close50_min = -2.5
-psi_close50_max = -2.0
-
-# 8. Parameter sand 
-sand_min = 0.16
-sand_max = 0.25
-
-# 9. Parameter silt 
-silt_min = 0.28
-silt_max = 0.38
-
-# 10. root dist
+# 4. root dist
 root_dist_min = 1.4
 root_dist_max = 6.5
 
-# 11. Parameter kappa_leaf 
-root_scale_min = 10.0
+# 5. Parameter kappa_leaf 
+root_scale_min = 2.0
 root_scale_max = 100.0
-
-# 12. Parameter kappa_leaf 
-slope_leaf_close_min = 2.0
-slope_leaf_close_max = 4.0
-
-# 13. Parameter kappa_leaf 
-g_res_min = 10**-7
-g_res_max = 1.0 * 10**-4
-
 
 
 # Now we rescale parameters
 k_xylem_sats = rescale(slicer.get(), min = k_xylem_sat_min, max = k_xylem_sat_max)
 kappa_stems = rescale(slicer.get(), min = kappa_stem_min, max = kappa_stem_max)
-kappa_leaves = rescale(slicer.get(), min = kappa_leaf_min, max = kappa_leaf_max)
-k_latosas = rescale(slicer.get(), min = k_latosa_min, max = k_latosa_max)
-g1s = rescale(slicer.get(), min = g1_min, max = g1_max)
-g0s = rescale(slicer.get(), min = g0_min, max = g0_max)
 psi_close50s = rescale(slicer.get(), min = psi_close50_min, max = psi_close50_max)
-silts = rescale(slicer.get(), min = silt_min, max = silt_max)
-sands = rescale(slicer.get(), min = sand_min, max = sand_max)
+
+# kappa_leaves = rescale(slicer.get(), min = kappa_leaf_min, max = kappa_leaf_max)
+# k_latosas = rescale(slicer.get(), min = k_latosa_min, max = k_latosa_max)
+# g1s = rescale(slicer.get(), min = g1_min, max = g1_max)
+# g0s = rescale(slicer.get(), min = g0_min, max = g0_max)
+
+# silts = rescale(slicer.get(), min = silt_min, max = silt_max)
+# sands = rescale(slicer.get(), min = sand_min, max = sand_max)
 root_dists = rescale(slicer.get(), min = root_dist_min, max = root_dist_max)
 root_scale_log= rescale(slicer.get(), min = np.log10(root_scale_min), max = np.log10(root_scale_max))
-slope_leaf_closes = rescale(slicer.get(), min = slope_leaf_close_min, max = slope_leaf_close_max)
-g_res_logs= rescale(slicer.get(), min = np.log10(g_res_min), max = np.log10(g_res_max))
+# slope_leaf_closes = rescale(slicer.get(), min = slope_leaf_close_min, max = slope_leaf_close_max)
+# g_res_logs= rescale(slicer.get(), min = np.log10(g_res_min), max = np.log10(g_res_max))
 
 
 # We create a multi quincy run object
@@ -219,21 +188,22 @@ for i in range(0, number_of_runs):
     else:     
         #... and change the value of psi50
         # the float conversion in necessary to convert from a numpy numeric type to standard numeric python
-        lctlib[pft].k_xylem_sat = float(k_xylem_sats[i])
-        lctlib[pft].kappa_stem = float(kappa_stems[i])
-        lctlib[pft].kappa_leaf = float(kappa_leaves[i])
-        lctlib[pft].k_latosa = float(k_latosas[i])
-        lctlib[pft].g0 = float(g0s[i])
-        lctlib[pft].g1_medlyn = float(g1s[i])
+        lctlib[pft].k_xylem_sat = float(k_xylem_sats[i])#  = 2.03655
+        lctlib[pft].kappa_stem = float(kappa_stems[i])# = 342.64
         lctlib[pft].psi50_leaf_close = float(psi_close50s[i])
+        
+        
+        lctlib[pft].kappa_leaf = 0.03082
+        lctlib[pft].k_latosa = 4192.01589
+        lctlib[pft].g0 = 0.00613
+        lctlib[pft].g1_medlyn = 4.0101
         lctlib[pft].k_root_dist = float(root_dists[i])
         lctlib[pft].root_scale = float(10**root_scale_log[i])
         lctlib[pft].psi50_xylem = -3.8        
-        lctlib[pft].slope_leaf_close = float(slope_leaf_closes[i])
-        lctlib[pft].g_res = float(10**g_res_logs[i])
-        
-        nlm.spq_ctl.soil_silt.value = float(silts[i])
-        nlm.spq_ctl.soil_sand.value = float(sands[i])
+        lctlib[pft].slope_leaf_close = 3.98491
+        lctlib[pft].g_res = 0.0        
+        nlm.spq_ctl.soil_silt.value = 0.30449
+        nlm.spq_ctl.soil_sand.value = 0.18081
         nlm.spq_ctl.soil_clay.value = 1.0 - nlm.spq_ctl.soil_silt.value - nlm.spq_ctl.soil_sand.value
         
 
@@ -260,17 +230,17 @@ df_parameter_setup.columns = ['k_xylem_sat']
 df_parameter_setup['id'] = np.arange(0, number_of_runs)
 df_parameter_setup['fid'] = np.arange(0, number_of_runs)
 df_parameter_setup['kappa_stem'] = np.round(kappa_stems,5)
-df_parameter_setup['kappa_leaf'] = np.round(kappa_leaves,5)
-df_parameter_setup['k_latosa']= np.round(k_latosas,5)
-df_parameter_setup['g0']= np.round(g0s,5)
-df_parameter_setup['g1']= np.round(g1s,5)
-df_parameter_setup['psi50_close']= np.round(psi_close50s,5)
-df_parameter_setup['root_dist']= np.round(root_dists,5)
-df_parameter_setup['silt']= np.round(silts ,5)
-df_parameter_setup['sand']= np.round(sands ,5)
-df_parameter_setup['root_scale']= np.round(10**root_scale_log,5)
-df_parameter_setup['slope_leaf_close']= np.round(slope_leaf_closes ,5)
-df_parameter_setup['g_res']= np.round(10**g_res_logs,8)
+# df_parameter_setup['kappa_leaf'] = np.round(kappa_leaves,5)
+# df_parameter_setup['k_latosa']= np.round(k_latosas,5)
+# df_parameter_setup['g0']= np.round(g0s,5)
+# df_parameter_setup['g1']= np.round(g1s,5)
+# df_parameter_setup['psi50_close']= np.round(psi_close50s,5)
+# df_parameter_setup['root_dist']= np.round(root_dists,5)
+# df_parameter_setup['silt']= np.round(silts ,5)
+# df_parameter_setup['sand']= np.round(sands ,5)
+# df_parameter_setup['root_scale']= np.round(10**root_scale_log,5)
+# df_parameter_setup['slope_leaf_close']= np.round(slope_leaf_closes ,5)
+# df_parameter_setup['g_res']= np.round(10**g_res_logs,8)
 
 df_parameter_setup.to_csv(os.path.join(setup_root_path, "parameters.csv"), index=False)
 
@@ -280,7 +250,7 @@ GenerateSlurmScript(path         = setup_root_path,
                     nnodes       = NNODES, 
                     partition    = PARTITION)
 
-shutil.copyfile(os.path.join(THIS_DIR, os.pardir, os.pardir,'src', 'quincy', 'run_scripts', 'run_mpi.py'), 
+shutil.copyfile(os.path.join(THIS_DIR, os.pardir, os.pardir, os.pardir,'src', 'quincy', 'run_scripts', 'run_mpi.py'), 
                              os.path.join(setup_root_path, 'run_mpi.py'))
 
 import time

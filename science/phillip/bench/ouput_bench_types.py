@@ -1,5 +1,5 @@
 
-
+import pandas as pd
 class OutputBenchType:
     def __init__(self):
         self.mod_var_cat = ''
@@ -11,3 +11,8 @@ class OutputBenchType:
         self.plt_name = None
         self.dt_begin = None
         self.dt_end = None
+        
+        self.df_std = None
+        self.df_mod = pd.DataFrame()
+        self.ylim = None
+        self.ylab = None
