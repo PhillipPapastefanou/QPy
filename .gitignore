@@ -11,6 +11,7 @@ examples/post_process/plant_hydraulics/output
 tests/runs/output/
 tests/runs/output_u30/
 tests/runs/output_u31/
+tests/forcing/atto/output
 tests/post_process/output
 src/cal_parsing/build/
 science/phillip/output
