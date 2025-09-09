@@ -14,4 +14,4 @@ tests/runs/output_u31/
 tests/forcing/atto/output
 tests/post_process/output
 src/cal_parsing/build/
-science/phillip/output
+science/atto_excercises/output
