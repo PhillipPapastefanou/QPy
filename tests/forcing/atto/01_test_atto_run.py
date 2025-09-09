@@ -95,7 +95,11 @@ namelist_base.base_ctl.forcing_file_start_yr.value = 1901
 namelist_base.base_ctl.forcing_file_last_yr.value = 2023
 
 
-# Turn on plant hydraulics
+namelist_base.base_ctl.output_interval_pool.value = OutputIntervalPool.DAILY
+namelist_base.base_ctl.output_interval_flux.value = OutputIntervalPool.DAILY
+
+
+# Turn off plant hydraulics
 namelist_base.assimilation_ctl.gs_beta_type.value = GsBetaType.SOIL
 namelist_base.phyd_ctl.use_plant_hydraulics.value = False
 

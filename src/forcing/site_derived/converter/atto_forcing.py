@@ -54,7 +54,7 @@ class Quincy_ATTO_Forcing(Base_Parsing):
         self.year_max = df_raw.index.year[-1]
 
         self.DataFrame['year']= df_raw.index.year
-        self.DataFrame['doy'] = df_raw.index.dayofyear.values
+        self.DataFrame['doy'] = np.tile(np.repeat(np.arange(1, 366), 48), self.year_max-self.year_min+1)
         
         hour_dec = df_raw.index.hour + df_raw.index.minute / 60.0
         self.DataFrame['hour'] = hour_dec
@@ -72,6 +72,10 @@ class Quincy_ATTO_Forcing(Base_Parsing):
 
         # Removing too low wind values to avoid model instabilities
         self.DataFrame.loc[self.DataFrame['wind_air'] < 0.1, 'wind_air'] = 0.1
+        
+        
+
+        
 
 
         # # Parse CO2 forcing
@@ -250,6 +254,8 @@ class Quincy_ATTO_Forcing(Base_Parsing):
         
         #self.DataFrame  =  self.DataFrame .drop(columns=['co2_dC13', 'co2_mixing_ratio', 'co2DC14'])
 
+
+
         
         # Parse CO2 forcing
         self.dprint("Parsing CO2..", lambda: self._parse_co2_forcing())
@@ -265,7 +271,12 @@ class Quincy_ATTO_Forcing(Base_Parsing):
 
         # Testing for Nan
         self.dprint("Testing for missing values..", lambda: self._testing_for_nan())
-        
+       
+
+
+        for i in range(1901, 2023):
+            if self.DataFrame[self.DataFrame['year'] == i].shape[0] != 17520:
+                print(f"{i} has a problem: {self.DataFrame[self.DataFrame['year'] == i].shape[0]}")
        
         
         # Round values according to 4 significant figures
