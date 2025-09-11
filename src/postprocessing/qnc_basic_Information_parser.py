@@ -52,7 +52,7 @@ class Basic_information_parser:
             exit(-1)
 
         try:
-            sinfo_data = pd.read_csv(os.path.join(self.root_path, self.postprocess_subdir, self.sinfo_file), sep='\s+', nrows=1)
+            sinfo_data = pd.read_csv(os.path.join(self.root_path, self.postprocess_subdir, self.sinfo_file), sep=r'\s+', nrows=1)
 
             self.commit = sinfo_data['commit'].values.squeeze()
             self.branch = sinfo_data['branch'].values.squeeze()
@@ -62,7 +62,7 @@ class Basic_information_parser:
             traceback.print_exc()
 
         try:
-            exp_info_data = pd.read_csv(os.path.join(self.root_path, self.postprocess_subdir, self.exp_info_file), sep='\s+')
+            exp_info_data = pd.read_csv(os.path.join(self.root_path, self.postprocess_subdir, self.exp_info_file), sep=r'\s+')
 
             self.sitename = exp_info_data['sitename'].values.squeeze()
             self.user = exp_info_data['user'].values.squeeze()
