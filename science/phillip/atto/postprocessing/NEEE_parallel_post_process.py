@@ -5,15 +5,10 @@ from mpi4py import MPI
 import os
 import time
 
-
-
 def rmse(y_true, y_pred):
     return np.sqrt(np.mean((y_true - y_pred) ** 2))
 
-
-
 df_obs = pd.read_csv("/Net/Groups/BSI/work_scratch/ppapastefanou/atto_summerschool_25/data/ATTO_evaluation.csv")
-
 
 
 comm = MPI.COMM_WORLD
@@ -22,7 +17,7 @@ size = comm.Get_size()
 
 # ---------------- rank 0: discover work ----------------
 if rank == 0:
-    base_path = '/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/ATTO_example_04_hydraulics'
+    base_path = '/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/ATTO_example_05_hydraulics'
     base_path_output = os.path.join(base_path, "output")
     # your discovery logic (subdirs are ints)
     subdirs = [int(d) for d in os.listdir(base_path_output)
