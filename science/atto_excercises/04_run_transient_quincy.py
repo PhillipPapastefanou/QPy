@@ -40,10 +40,10 @@ number_of_runs = 3
 # Number of cpu cores to be used
 NNODES = 1
 NTASKS  = 3
-RAM_IN_GB = 3
+RAM_IN_GB = 10
 PARTITION = 'work'
 
-OUTPUT_DIRECTORY = "03_example"
+OUTPUT_DIRECTORY = "04_transient"
 
 # Path where all the simulation data will be saved
 RUN_DIRECTORY = os.path.join("/Net/Groups/BSI/scratch/atto_school", USER, 'simulations', OUTPUT_DIRECTORY)
@@ -51,7 +51,7 @@ RUN_DIRECTORY = os.path.join("/Net/Groups/BSI/scratch/atto_school", USER, 'simul
 # We need a base namelist and lctlib which we then modify accordingly
 namelist_root_path = os.path.join(THIS_DIR, "namelist_atto_base.slm")
 lctlib_root_path = os.path.join(QUINCY_ROOT_PATH, 'data', 'lctlib_quincy_nlct14.def')
-forcing_file = '/Net/Groups/BSI/work_scratch/ppapastefanou/ATTO_forcing/static/ATTO_s_2000-2023.dat'
+forcing_file = '/Net/Groups/BSI/work_scratch/ppapastefanou/ATTO_forcing/transient/ATTO_t_1901-2023.dat'
 
 # Parse base namelist path
 nlm_reader = NamelistReader(namelist_root_path)
@@ -80,15 +80,20 @@ namelist.soil_biogeochemistry_ctl.flag_sb_prescribe_po4.value = True
 namelist.soil_biogeochemistry_ctl.sb_bnf_scheme.value = SbBnfScheme.UNLIMITED
 namelist.base_ctl.flag_slow_sb_pool_spinup_accelerator.value = False
 
-# Static forcing setup
-namelist.jsb_forcing_ctl.forcing_mode.value = ForcingMode.STATIC
-namelist.base_ctl.forcing_file_start_yr.value = 2000
-namelist.base_ctl.forcing_file_last_yr.value = 2023
-namelist.base_ctl.output_end_last_day_year.value = 24
+# Transient forcing setup
+namelist.jsb_forcing_ctl.forcing_mode.value = ForcingMode.TRANSIENT
+namelist.base_ctl.output_end_last_day_year.value = 123
 namelist.base_ctl.output_start_first_day_year.value = 1
-namelist.jsb_forcing_ctl.simulation_length_number.value = 100
-namelist.base_ctl.output_interval_pool.value = OutputIntervalPool.DAILY
-namelist.base_ctl.output_interval_flux.value = OutputIntervalPool.DAILY
+namelist.jsb_forcing_ctl.transient_simulation_start_year.value = 1901
+namelist.jsb_forcing_ctl.transient_spinup_start_year.value = 1901
+namelist.jsb_forcing_ctl.transient_spinup_end_year.value = 1930
+namelist.jsb_forcing_ctl.transient_spinup_years.value = 100
+namelist.jsb_forcing_ctl.simulation_length_number.value = 123
+namelist.base_ctl.fluxnet_type_transient_timestep_output.value = True
+namelist.base_ctl.fluxnet_static_forc_start_yr.value = 2000
+namelist.base_ctl.fluxnet_static_forc_last_yr.value = 2023
+namelist.base_ctl.forcing_file_start_yr.value = 1901
+namelist.base_ctl.forcing_file_last_yr.value = 2023
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 # Main code to be modified
@@ -179,9 +184,14 @@ poll_interval = 10
 # --- Poll with sacct until job is finished ---
 final_states = {"COMPLETED", "FAILED", "CANCELLED", "TIMEOUT", "OUT_OF_MEMORY"}
 done = False
+pending = True
+running = False
 tstart = time.time()
 while not done:
-    print(f"Waiting for simulation to fininsh...({int(np.round(time.time()-tstart))}s)")
+    if pending:
+        print(f"Waiting for simulation to start...({int(np.round(time.time()-tstart))}s) You can suppress this output")
+    if running:
+        print(f"Waiting for simulation to fininsh...({int(np.round(time.time()-tstart))}s) You can suppress this output")
     res = subprocess.run(
         ["sacct", "-j", jobid, "--format=JobID,State", "--noheader"],
         capture_output=True,
@@ -191,6 +201,15 @@ while not done:
     if state_lines:
         # Job may have multiple steps; pick the main one (exact jobid, not jobid.batch)
         for jid, state in state_lines:
+            if jid == jobid and state == 'PENDING':
+                pending = True
+                running = False 
+                break           
+            if jid == jobid and state == 'RUNNING':
+                pending = False
+                running = True
+                break
+        
             if jid == jobid and state in final_states:
                 print(f"Job {jobid} finished with state: {state}")
                 done = True
@@ -203,8 +222,8 @@ while not done:
 # Postprocessing
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-print("Starting postprocessing...", end='')
-qm_post_process = Quincy_Multi_Run_Plot(RUN_DIRECTORY)
+# print("Starting postprocessing...", end='')
+# qm_post_process = Quincy_Multi_Run_Plot(RUN_DIRECTORY)
 
-qm_post_process.plot_variable("Q_ASSIMI", "gpp_avg", "D")
-print('Done!')
+# qm_post_process.plot_variable("Q_ASSIMI", "gpp_avg", "D")
+# print('Done!')
