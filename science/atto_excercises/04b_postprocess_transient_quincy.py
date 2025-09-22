@@ -39,17 +39,24 @@ RUN_DIRECTORY = os.path.join("/Net/Groups/BSI/scratch/atto_school", USER, 'simul
 
 qm_post_process = Quincy_Multi_Run_Plot(RUN_DIRECTORY)
 
-qm_post_process.plot_variable_multi_time("Q_ASSIMI", "gpp_avg")
-# qm_post_process.plot_variable_multi_time("VEG", "npp_avg")
-# qm_post_process.plot_variable_multi_time("VEG", "total_veg_c")
-# qm_post_process.plot_variable_multi_time("VEG", "LAI")
-# qm_post_process.plot_variable_multi_time("SPQ", "transpiration_avg")
-# qm_post_process.plot_variable_multi_time("Q_ASSIMI", "beta_gs")
+phases = [
+    SimPhase.SPINUP,
+    SimPhase.TRANSIENT,
+    SimPhase.FLUXNETDATA
+]
 
-# qm_post_process.plot_against_NEE_variable_multi_time()
+print("Postprocessing output...")
+for phase in phases:
+    print(f"SimPhase {phase.name}")
+    qm_post_process.plot_variable_multi_time("Q_ASSIMI", "gpp_avg", phase)
+    qm_post_process.plot_variable_multi_time("Q_ASSIMI", "beta_gs", phase)
+    qm_post_process.plot_variable_multi_time("VEG", "npp_avg", phase)
+    qm_post_process.plot_variable_multi_time("VEG", "total_veg_c", phase)
+    qm_post_process.plot_variable_multi_time("VEG", "LAI", phase)
+    qm_post_process.plot_variable_multi_time("SPQ", "transpiration_avg", phase)
+    qm_post_process.plot_variable_multi_time("SPQ", "evaporation_avg", phase)
+    qm_post_process.plot_variable_multi_time("SPQ", "rootzone_soilwater_potential", phase)
+    qm_post_process.plot_variable_multi_time("SB", "sb_total_c", phase)
+    qm_post_process.plot_variable_multi_time("SB", "sb_total_som_c", phase) 
 
-#qm_post_process.plot_variable_multi_time("Q_ASSIMI", "gpp_avg")
-#qm_post_process.plot_variable_multi_time("Q_ASSIMI", "gpp_avg", SimPhase.FLUXNETDATA)
-qm_post_process.plot_variable_multi_time("Q_ASSIMI", "gpp_avg", SimPhase.SPINUP)
-
-#qm_post_process.plot_against_NEE_variable_multi_time()
+qm_post_process.plot_against_NEE_variable_multi_time()

@@ -132,6 +132,9 @@ class Quincy_Multi_Run_Plot:
         
         plt.suptitle(title, fontsize=16, fontweight='bold')
         
+        df_p  = pd.read_csv(os.path.join(self.base_path_output, os.pardir, "parameters.csv"))
+        
+        
         for run in self.subdirs:      
                
             ds_mod = xr.open_dataset(os.path.join(self.base_path_output, str(run), f"{cat}_{file_str}.nc"))
@@ -153,6 +156,10 @@ class Quincy_Multi_Run_Plot:
             
             ds_mod.close()
             
+            row = df_p.loc[run]  # get row by index
+
+            # drop id and fid, then format
+            row_str = ", ".join(f"{col}:{row[col]}" for col in df_p.columns if col not in ["id", "fid"])
    
             dfg = df_mod.groupby([df_mod.index.day_of_year]).agg(
             var_mean_mod=(varname, "mean"),
@@ -160,9 +167,10 @@ class Quincy_Multi_Run_Plot:
             var_median_mod=(varname, "median"),
             var_q75_mod=(varname, lambda x: x.quantile(0.75)))
             
-            axes[0, 0].plot(dfg['var_mean_mod'], label = run)
+            axes[0, 0].plot(dfg['var_mean_mod'], label = row_str)
             axes[0, 0].set_ylabel(f'{varname}\n[{unitname}]')
             axes[0, 0].set_xlabel(f'day of year')
+            axes[0, 0].legend()
                 
             dfg = df_mod.groupby([df_mod.index.month]).agg(
             var_mean_mod=(varname, "mean"),

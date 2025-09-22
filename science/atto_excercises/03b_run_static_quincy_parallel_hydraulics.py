@@ -11,9 +11,10 @@ import shutil
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(THIS_DIR, os.pardir, os.pardir))
 
-from src.quincy.IO.ParamlistWriter import Paramlist
 from src.quincy.IO.NamelistReader import NamelistReader
 from src.quincy.IO.LctlibReader import LctlibReader
+from src.quincy.IO.ParamlistWriter import ParamlistWriter
+from src.quincy.IO.ParamlistWriter import Paramlist
 from src.quincy.base.PFTTypes import PftQuincy, PftFluxnet
 from src.sens.base import Quincy_Setup
 from src.sens.base import Quincy_Multi_Run
@@ -41,10 +42,10 @@ number_of_runs = 3
 # Number of cpu cores to be used
 NNODES = 1
 NTASKS  = 3
-RAM_IN_GB = 10
+RAM_IN_GB = 3
 PARTITION = 'work'
 
-OUTPUT_DIRECTORY = "04_transient"
+OUTPUT_DIRECTORY = "03_static_parallel_hyd"
 
 # Path where all the simulation data will be saved
 RUN_DIRECTORY = os.path.join("/Net/Groups/BSI/scratch/atto_school", USER, 'simulations', OUTPUT_DIRECTORY)
@@ -52,18 +53,20 @@ RUN_DIRECTORY = os.path.join("/Net/Groups/BSI/scratch/atto_school", USER, 'simul
 # We need a base namelist and lctlib which we then modify accordingly
 namelist_root_path = os.path.join(THIS_DIR, "namelist_atto_base.slm")
 lctlib_root_path = os.path.join(QUINCY_ROOT_PATH, 'data', 'lctlib_quincy_nlct14.def')
-forcing_file = '/Net/Groups/BSI/work_scratch/ppapastefanou/ATTO_forcing/transient/ATTO_t_1901-2023.dat'
+forcing_file = '/Net/Groups/BSI/work_scratch/ppapastefanou/ATTO_forcing/static/ATTO_s_2000-2023.dat'
 
 # Parse base namelist path
 nlm_reader = NamelistReader(namelist_root_path)
 nlm_base = nlm_reader.parse()
+
+pft_id = nlm_base.vegetation_ctl.plant_functional_type_id.value
+pft = PftQuincy(pft_id)
 
 # Parse base lctlib path
 lctlib_reader = LctlibReader(lctlib_root_path)
 lctlib_base = lctlib_reader.parse()
 
 paramslist_base = Paramlist()
-
 
 # Parse user git information
 user_git_info = UserGitInformation(QUINCY_ROOT_PATH, 
@@ -83,36 +86,33 @@ nlm_base.soil_biogeochemistry_ctl.flag_sb_prescribe_po4.value = True
 nlm_base.soil_biogeochemistry_ctl.sb_bnf_scheme.value = SbBnfScheme.UNLIMITED
 nlm_base.base_ctl.flag_slow_sb_pool_spinup_accelerator.value = False
 
-# Transient forcing setup
-nlm_base.jsb_forcing_ctl.forcing_mode.value = ForcingMode.TRANSIENT
-nlm_base.base_ctl.output_end_last_day_year.value = 123
-nlm_base.base_ctl.output_start_first_day_year.value = 1
-nlm_base.jsb_forcing_ctl.transient_simulation_start_year.value = 1901
-nlm_base.jsb_forcing_ctl.transient_spinup_start_year.value = 1901
-nlm_base.jsb_forcing_ctl.transient_spinup_end_year.value = 1930
-nlm_base.jsb_forcing_ctl.transient_spinup_years.value = 100
-nlm_base.jsb_forcing_ctl.simulation_length_number.value = 123
-nlm_base.base_ctl.fluxnet_type_transient_timestep_output.value = True
-nlm_base.base_ctl.fluxnet_static_forc_start_yr.value = 2000
-nlm_base.base_ctl.fluxnet_static_forc_last_yr.value = 2023
-nlm_base.base_ctl.forcing_file_start_yr.value = 1901
+# Static forcing setup
+nlm_base.jsb_forcing_ctl.forcing_mode.value = ForcingMode.STATIC
+nlm_base.base_ctl.forcing_file_start_yr.value = 2000
 nlm_base.base_ctl.forcing_file_last_yr.value = 2023
-
-pft_id = nlm_base.vegetation_ctl.plant_functional_type_id.value
-pft = PftQuincy(pft_id)
+nlm_base.base_ctl.output_end_last_day_year.value = 24
+nlm_base.base_ctl.output_start_first_day_year.value = 1
+nlm_base.jsb_forcing_ctl.simulation_length_number.value = 24
+nlm_base.base_ctl.output_interval_pool.value = OutputIntervalPool.DAILY
+nlm_base.base_ctl.output_interval_flux.value = OutputIntervalPool.DAILY
 
 # This line is important so QUINCY know it is expecting a paramlist
 nlm_base.base_ctl.set_parameter_values_from_file.value = True
+
+# Turn on plant hydraulics
+nlm_base.assimilation_ctl.gs_beta_type.value = GsBetaType.PLANT
+nlm_base.phyd_ctl.use_plant_hydraulics.value = True
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 # Main code to be modified
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
 # Now we rescale parameters
-sand_fracs = [0.2, 0.2, 0.2]
-clay_fracs = [0.3, 0.3, 0.3]
+# phi_leaf_mins = [-1.0, -1.0, -1.0]
+resp_coeffs = [0.1, 0.1, 0.1]
+# sand_fracs = [0.3, 0.3, 0.3]
+# clay_fracs = [0.5, 0.5, 0.5]
 
-print(RUN_DIRECTORY)
 
 # We create a multi quincy run object
 quincy_multi_run = Quincy_Multi_Run(RUN_DIRECTORY)
@@ -123,16 +123,16 @@ for i in range(0, number_of_runs):
     # We create a copy of the lctlibfile...
     lctlib = deepcopy(lctlib_base)
     nlm = deepcopy(nlm_base)
-
-    nlm.spq_ctl.soil_sand.value = sand_fracs[i]
-    nlm.spq_ctl.soil_clay.value = clay_fracs[i]
-    nlm.spq_ctl.soil_silt.value = 1.0 - nlm.spq_ctl.soil_clay.value - nlm.spq_ctl.soil_sand.value
-    
     paramlist = deepcopy(paramslist_base)
-    paramlist.vegetation_ctl.fresp_growth.value =  0.1
+
+    # nlm.spq_ctl.soil_sand.value = sand_fracs[i]
+    # nlm.spq_ctl.soil_clay.value = clay_fracs[i]
+    # nlm.spq_ctl.soil_silt.value = 1.0 - nlm.spq_ctl.soil_clay.value - nlm.spq_ctl.soil_sand.value
+    
+    paramlist.vegetation_ctl.fresp_growth.value = resp_coeffs[i] 
     paramlist.vegetation_ctl.fresp_growth.parsed = True  
-        
-    lctlib[pft].phi_leaf_min = -0.5
+    
+    #lctlib[pft].phi_leaf_min = phi_leaf_mins[i] 
 
     user_git_info = UserGitInformation(QUINCY_ROOT_PATH, 
                                            os.path.join(RUN_DIRECTORY, "output", str(i)), 
@@ -144,7 +144,7 @@ for i in range(0, number_of_runs):
                                 lctlib = lctlib, 
                                 forcing_path= forcing_file,
                                 user_git_info= user_git_info,
-                                paramlist= paramlist)
+                                paramlist = paramlist)
 
     # Add to the setup creation
     quincy_multi_run.add_setup(quincy_setup)    
@@ -155,14 +155,16 @@ quincy_multi_run.generate_files()
 df_parameter_setup = pd.DataFrame({
     "id": np.arange(number_of_runs),
     "fid": np.arange(number_of_runs),
-    "sand_fracs": np.round(sand_fracs, 3),
-    "clay_fracs": np.round(clay_fracs, 3),
+    "resp_coeffs": np.round(resp_coeffs, 3),
+
+    # "sand_fracs": np.round(sand_fracs, 3),
+    # "clay_fracs": np.round(clay_fracs, 3),
 })
 df_parameter_setup.to_csv(os.path.join(RUN_DIRECTORY, "parameters.csv"), index=False)
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 # Quincy run scripts
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
+print(RUN_DIRECTORY)
 GenerateSlurmScript(path         = RUN_DIRECTORY, 
                     ntasks       = NTASKS,
                     ram_in_gb    = RAM_IN_GB, 
@@ -199,14 +201,9 @@ poll_interval = 10
 # --- Poll with sacct until job is finished ---
 final_states = {"COMPLETED", "FAILED", "CANCELLED", "TIMEOUT", "OUT_OF_MEMORY"}
 done = False
-pending = True
-running = False
 tstart = time.time()
 while not done:
-    if pending:
-        print(f"Waiting for simulation to start...({int(np.round(time.time()-tstart))}s) You can suppress this output")
-    if running:
-        print(f"Waiting for simulation to fininsh...({int(np.round(time.time()-tstart))}s) You can suppress this output")
+    print(f"Waiting for simulation to fininsh...({int(np.round(time.time()-tstart))}s)")
     res = subprocess.run(
         ["sacct", "-j", jobid, "--format=JobID,State", "--noheader"],
         capture_output=True,
@@ -216,15 +213,6 @@ while not done:
     if state_lines:
         # Job may have multiple steps; pick the main one (exact jobid, not jobid.batch)
         for jid, state in state_lines:
-            if jid == jobid and state == 'PENDING':
-                pending = True
-                running = False 
-                break           
-            if jid == jobid and state == 'RUNNING':
-                pending = False
-                running = True
-                break
-        
             if jid == jobid and state in final_states:
                 print(f"Job {jobid} finished with state: {state}")
                 done = True
@@ -237,8 +225,18 @@ while not done:
 # Postprocessing
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-# print("Starting postprocessing...", end='')
-# qm_post_process = Quincy_Multi_Run_Plot(RUN_DIRECTORY)
+print("Starting postprocessing...", end='')
+qm_post_process = Quincy_Multi_Run_Plot(RUN_DIRECTORY)
 
-# qm_post_process.plot_variable("Q_ASSIMI", "gpp_avg", "D")
-# print('Done!')
+qm_post_process.plot_variable_multi_time("Q_ASSIMI", "gpp_avg", "D")
+qm_post_process.plot_variable_multi_time("Q_ASSIMI", "beta_gs", "D")
+qm_post_process.plot_variable_multi_time("VEG", "npp_avg", "D")
+qm_post_process.plot_variable_multi_time("VEG", "total_veg_c", "D")
+qm_post_process.plot_variable_multi_time("VEG", "LAI", "D")
+qm_post_process.plot_variable_multi_time("SPQ", "transpiration_avg", "D")
+qm_post_process.plot_variable_multi_time("SPQ", "evaporation_avg", "D")
+qm_post_process.plot_variable_multi_time("SPQ", "rootzone_soilwater_potential", "D")
+qm_post_process.plot_variable_multi_time("SB", "sb_total_c", "D")
+qm_post_process.plot_variable_multi_time("SB", "sb_total_som_c", "D")
+
+print('Done!')

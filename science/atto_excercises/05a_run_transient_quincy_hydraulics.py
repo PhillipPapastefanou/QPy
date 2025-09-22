@@ -44,7 +44,7 @@ NTASKS  = 3
 RAM_IN_GB = 10
 PARTITION = 'work'
 
-OUTPUT_DIRECTORY = "04_transient"
+OUTPUT_DIRECTORY = "05_transient_hydraulics"
 
 # Path where all the simulation data will be saved
 RUN_DIRECTORY = os.path.join("/Net/Groups/BSI/scratch/atto_school", USER, 'simulations', OUTPUT_DIRECTORY)
@@ -103,6 +103,11 @@ pft = PftQuincy(pft_id)
 
 # This line is important so QUINCY know it is expecting a paramlist
 nlm_base.base_ctl.set_parameter_values_from_file.value = True
+
+
+# Turn on plant hydraulics
+nlm_base.assimilation_ctl.gs_beta_type.value = GsBetaType.PLANT
+nlm_base.phyd_ctl.use_plant_hydraulics.value = True
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 # Main code to be modified

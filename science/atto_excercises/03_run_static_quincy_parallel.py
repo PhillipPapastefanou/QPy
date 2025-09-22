@@ -42,7 +42,7 @@ number_of_runs = 3
 # Number of cpu cores to be used
 NNODES = 1
 NTASKS  = 3
-RAM_IN_GB = 3
+RAM_IN_GB = 10
 PARTITION = 'work'
 
 OUTPUT_DIRECTORY = "03_static_parallel"
@@ -57,9 +57,9 @@ forcing_file = '/Net/Groups/BSI/work_scratch/ppapastefanou/ATTO_forcing/static/A
 
 # Parse base namelist path
 nlm_reader = NamelistReader(namelist_root_path)
-namelist = nlm_reader.parse()
+nlm_base = nlm_reader.parse()
 
-pft_id = namelist.vegetation_ctl.plant_functional_type_id.value
+pft_id = nlm_base.vegetation_ctl.plant_functional_type_id.value
 pft = PftQuincy(pft_id)
 
 # Parse base lctlib path
@@ -74,30 +74,30 @@ user_git_info = UserGitInformation(QUINCY_ROOT_PATH,
                                            "ATTO")      
 
 # Apply the testbed configuration
-ApplyDefaultSiteLevel(namelist=namelist)
+ApplyDefaultSiteLevel(namelist=nlm_base)
 
 # Limit output variables
-namelist.base_ctl.file_sel_output_variables.value = os.path.join(QUINCY_ROOT_PATH, 'data', 'basic_output_variables.txt')
+nlm_base.base_ctl.file_sel_output_variables.value = os.path.join(QUINCY_ROOT_PATH, 'data', 'basic_output_variables.txt')
 
 # C only
-namelist.vegetation_ctl.veg_bnf_scheme.value = VegBnfScheme.UNLIMITED
-namelist.vegetation_ctl.leaf_stoichom_scheme.value = LeafStoichomScheme.FIXED
-namelist.soil_biogeochemistry_ctl.flag_sb_prescribe_po4.value = True
-namelist.soil_biogeochemistry_ctl.sb_bnf_scheme.value = SbBnfScheme.UNLIMITED
-namelist.base_ctl.flag_slow_sb_pool_spinup_accelerator.value = False
+nlm_base.vegetation_ctl.veg_bnf_scheme.value = VegBnfScheme.UNLIMITED
+nlm_base.vegetation_ctl.leaf_stoichom_scheme.value = LeafStoichomScheme.FIXED
+nlm_base.soil_biogeochemistry_ctl.flag_sb_prescribe_po4.value = True
+nlm_base.soil_biogeochemistry_ctl.sb_bnf_scheme.value = SbBnfScheme.UNLIMITED
+nlm_base.base_ctl.flag_slow_sb_pool_spinup_accelerator.value = False
 
 # Static forcing setup
-namelist.jsb_forcing_ctl.forcing_mode.value = ForcingMode.STATIC
-namelist.base_ctl.forcing_file_start_yr.value = 2000
-namelist.base_ctl.forcing_file_last_yr.value = 2023
-namelist.base_ctl.output_end_last_day_year.value = 24
-namelist.base_ctl.output_start_first_day_year.value = 1
-namelist.jsb_forcing_ctl.simulation_length_number.value = 24
-namelist.base_ctl.output_interval_pool.value = OutputIntervalPool.DAILY
-namelist.base_ctl.output_interval_flux.value = OutputIntervalPool.DAILY
+nlm_base.jsb_forcing_ctl.forcing_mode.value = ForcingMode.STATIC
+nlm_base.base_ctl.forcing_file_start_yr.value = 2000
+nlm_base.base_ctl.forcing_file_last_yr.value = 2023
+nlm_base.base_ctl.output_end_last_day_year.value = 24
+nlm_base.base_ctl.output_start_first_day_year.value = 1
+nlm_base.jsb_forcing_ctl.simulation_length_number.value = 24
+nlm_base.base_ctl.output_interval_pool.value = OutputIntervalPool.DAILY
+nlm_base.base_ctl.output_interval_flux.value = OutputIntervalPool.DAILY
 
 # This line is important so QUINCY know it is expecting a paramlist
-namelist.base_ctl.set_parameter_values_from_file.value = True
+nlm_base.base_ctl.set_parameter_values_from_file.value = True
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 # Main code to be modified
@@ -118,7 +118,7 @@ for i in range(0, number_of_runs):
     
     # We create a copy of the lctlibfile...
     lctlib = deepcopy(lctlib_base)
-    nlm = deepcopy(namelist)
+    nlm = deepcopy(nlm_base)
     paramlist = deepcopy(paramslist_base)
 
     # nlm.spq_ctl.soil_sand.value = sand_fracs[i]
@@ -151,6 +151,7 @@ quincy_multi_run.generate_files()
 df_parameter_setup = pd.DataFrame({
     "id": np.arange(number_of_runs),
     "fid": np.arange(number_of_runs),
+    "resp_coeffs": np.round(resp_coeffs, 3),
     # "sand_fracs": np.round(sand_fracs, 3),
     # "clay_fracs": np.round(clay_fracs, 3),
 })
@@ -223,10 +224,14 @@ print("Starting postprocessing...", end='')
 qm_post_process = Quincy_Multi_Run_Plot(RUN_DIRECTORY)
 
 qm_post_process.plot_variable_multi_time("Q_ASSIMI", "gpp_avg", "D")
+qm_post_process.plot_variable_multi_time("Q_ASSIMI", "beta_gs", "D")
 qm_post_process.plot_variable_multi_time("VEG", "npp_avg", "D")
 qm_post_process.plot_variable_multi_time("VEG", "total_veg_c", "D")
 qm_post_process.plot_variable_multi_time("VEG", "LAI", "D")
 qm_post_process.plot_variable_multi_time("SPQ", "transpiration_avg", "D")
-qm_post_process.plot_variable_multi_time("Q_ASSIMI", "beta_gs", "D")
+qm_post_process.plot_variable_multi_time("SPQ", "evaporation_avg", "D")
+qm_post_process.plot_variable_multi_time("SPQ", "rootzone_soilwater_potential", "D")
+qm_post_process.plot_variable_multi_time("SB", "sb_total_c", "D")
+qm_post_process.plot_variable_multi_time("SB", "sb_total_som_c", "D")
 
 print('Done!')
