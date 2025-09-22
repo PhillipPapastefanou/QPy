@@ -39,7 +39,7 @@ RUN_DIRECTORY = os.path.join("/Net/Groups/BSI/scratch/atto_school", USER, 'simul
 
 qm_post_process = Quincy_Multi_Run_Plot(RUN_DIRECTORY)
 
-#qm_post_process.plot_variable_multi_time("Q_ASSIMI", "gpp_avg")
+qm_post_process.plot_variable_multi_time("Q_ASSIMI", "gpp_avg")
 # qm_post_process.plot_variable_multi_time("VEG", "npp_avg")
 # qm_post_process.plot_variable_multi_time("VEG", "total_veg_c")
 # qm_post_process.plot_variable_multi_time("VEG", "LAI")

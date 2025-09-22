@@ -97,8 +97,11 @@ class SPQ_CTL:
         self.soil_theta_prescribe   = NamelistItem(1.0)
         self.elevation = NamelistItem(0.0)
         
+        # Average sand content of the soil across all depths [fraction]
         self.soil_sand    = NamelistItem(0.4)
+        # Average silt content of the soil across all depths [fraction]
         self.soil_silt    = NamelistItem(0.3)
+        # Average clay content of the soil across all depths [fraction]
         self.soil_clay    = NamelistItem(0.3)
         
         self.bulk_density = NamelistItem(1500.0)

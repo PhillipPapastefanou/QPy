@@ -35,8 +35,14 @@ site = 'ATTO'
 
 # Number of cpu cores to be used
 NTASKS  = 1
+USER = os.environ.get("USER")
+
+# Change this
+OUTPUT_DIRECTORY = "01_static_single"
+
 # Path where all the simulation data will be saved
-RUN_DIRECTORY = "output/01_static_quincy"
+RUN_DIRECTORY = os.path.join("/Net/Groups/BSI/scratch/atto_school", USER, 'simulations', OUTPUT_DIRECTORY)
+
 
 # We need a base namelist and lctlib which we then modify accordingly
 namelist_root_path = os.path.join(THIS_DIR, "namelist_atto_base.slm")
@@ -88,9 +94,10 @@ namelist.base_ctl.output_interval_flux.value = OutputIntervalPool.DAILY
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
 # Change some parameters 
-namelist.spq_ctl.soil_clay.value = 0.5
-namelist.spq_ctl.soil_sand.value = 0.3
-namelist.spq_ctl.soil_silt.value = 0.2
+# namelist.spq_ctl.soil_clay.value = 0.5
+# namelist.spq_ctl.soil_sand.value = 0.3
+# namelist.spq_ctl.soil_silt.value = 0.2
+
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 # Do not modify below

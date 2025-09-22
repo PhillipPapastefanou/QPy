@@ -11,6 +11,7 @@ import shutil
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(THIS_DIR, os.pardir, os.pardir))
 
+from src.quincy.IO.ParamlistWriter import Paramlist
 from src.quincy.IO.NamelistReader import NamelistReader
 from src.quincy.IO.LctlibReader import LctlibReader
 from src.quincy.base.PFTTypes import PftQuincy, PftFluxnet
@@ -61,6 +62,8 @@ namelist = nlm_reader.parse()
 lctlib_reader = LctlibReader(lctlib_root_path)
 lctlib_base = lctlib_reader.parse()
 
+paramslist_base = Paramlist()
+
 
 # Parse user git information
 user_git_info = UserGitInformation(QUINCY_ROOT_PATH, 
@@ -95,13 +98,19 @@ namelist.base_ctl.fluxnet_static_forc_last_yr.value = 2023
 namelist.base_ctl.forcing_file_start_yr.value = 1901
 namelist.base_ctl.forcing_file_last_yr.value = 2023
 
+pft_id = namelist.vegetation_ctl.plant_functional_type_id.value
+pft = PftQuincy(pft_id)
+
+# This line is important so QUINCY know it is expecting a paramlist
+namelist.base_ctl.set_parameter_values_from_file.value = True
+
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 # Main code to be modified
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
 # Now we rescale parameters
-sand_fracs = [0.2, 0.3, 0.4]
-clay_fracs = [0.4, 0.5, 0.6]
+sand_fracs = [0.2, 0.2, 0.2]
+clay_fracs = [0.3, 0.3, 0.3]
 
 print(RUN_DIRECTORY)
 
@@ -118,7 +127,12 @@ for i in range(0, number_of_runs):
     nlm.spq_ctl.soil_sand.value = sand_fracs[i]
     nlm.spq_ctl.soil_clay.value = clay_fracs[i]
     nlm.spq_ctl.soil_silt.value = 1.0 - nlm.spq_ctl.soil_clay.value - nlm.spq_ctl.soil_sand.value
+    
+    paramlist = deepcopy(paramslist_base)
+    paramlist.vegetation_ctl.fresp_growth.value =  0.1
+    paramlist.vegetation_ctl.fresp_growth.parsed = True  
         
+    lctlib[pft].phi_leaf_min = -0.5
 
     user_git_info = UserGitInformation(QUINCY_ROOT_PATH, 
                                            os.path.join(RUN_DIRECTORY, "output", str(i)), 
@@ -129,7 +143,8 @@ for i in range(0, number_of_runs):
                                 namelist = nlm, 
                                 lctlib = lctlib, 
                                 forcing_path= forcing_file,
-                                user_git_info= user_git_info)
+                                user_git_info= user_git_info,
+                                paramlist= paramlist)
 
     # Add to the setup creation
     quincy_multi_run.add_setup(quincy_setup)    

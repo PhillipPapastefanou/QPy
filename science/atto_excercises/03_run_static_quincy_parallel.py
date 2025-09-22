@@ -13,6 +13,8 @@ sys.path.append(os.path.join(THIS_DIR, os.pardir, os.pardir))
 
 from src.quincy.IO.NamelistReader import NamelistReader
 from src.quincy.IO.LctlibReader import LctlibReader
+from src.quincy.IO.ParamlistWriter import ParamlistWriter
+from src.quincy.IO.ParamlistWriter import Paramlist
 from src.quincy.base.PFTTypes import PftQuincy, PftFluxnet
 from src.sens.base import Quincy_Setup
 from src.sens.base import Quincy_Multi_Run
@@ -43,7 +45,7 @@ NTASKS  = 3
 RAM_IN_GB = 3
 PARTITION = 'work'
 
-OUTPUT_DIRECTORY = "03_example"
+OUTPUT_DIRECTORY = "03_static_parallel"
 
 # Path where all the simulation data will be saved
 RUN_DIRECTORY = os.path.join("/Net/Groups/BSI/scratch/atto_school", USER, 'simulations', OUTPUT_DIRECTORY)
@@ -57,10 +59,14 @@ forcing_file = '/Net/Groups/BSI/work_scratch/ppapastefanou/ATTO_forcing/static/A
 nlm_reader = NamelistReader(namelist_root_path)
 namelist = nlm_reader.parse()
 
+pft_id = namelist.vegetation_ctl.plant_functional_type_id.value
+pft = PftQuincy(pft_id)
+
 # Parse base lctlib path
 lctlib_reader = LctlibReader(lctlib_root_path)
 lctlib_base = lctlib_reader.parse()
 
+paramslist_base = Paramlist()
 
 # Parse user git information
 user_git_info = UserGitInformation(QUINCY_ROOT_PATH, 
@@ -86,19 +92,23 @@ namelist.base_ctl.forcing_file_start_yr.value = 2000
 namelist.base_ctl.forcing_file_last_yr.value = 2023
 namelist.base_ctl.output_end_last_day_year.value = 24
 namelist.base_ctl.output_start_first_day_year.value = 1
-namelist.jsb_forcing_ctl.simulation_length_number.value = 100
+namelist.jsb_forcing_ctl.simulation_length_number.value = 24
 namelist.base_ctl.output_interval_pool.value = OutputIntervalPool.DAILY
 namelist.base_ctl.output_interval_flux.value = OutputIntervalPool.DAILY
+
+# This line is important so QUINCY know it is expecting a paramlist
+namelist.base_ctl.set_parameter_values_from_file.value = True
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 # Main code to be modified
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
 # Now we rescale parameters
-sand_fracs = [0.2, 0.3, 0.4]
-clay_fracs = [0.4, 0.5, 0.6]
+# phi_leaf_mins = [-1.0, -1.0, -1.0]
+resp_coeffs = [0.1, 0.1, 0.1]
+# sand_fracs = [0.3, 0.3, 0.3]
+# clay_fracs = [0.5, 0.5, 0.5]
 
-print(RUN_DIRECTORY)
 
 # We create a multi quincy run object
 quincy_multi_run = Quincy_Multi_Run(RUN_DIRECTORY)
@@ -109,11 +119,16 @@ for i in range(0, number_of_runs):
     # We create a copy of the lctlibfile...
     lctlib = deepcopy(lctlib_base)
     nlm = deepcopy(namelist)
+    paramlist = deepcopy(paramslist_base)
 
-    nlm.spq_ctl.soil_sand.value = sand_fracs[i]
-    nlm.spq_ctl.soil_clay.value = clay_fracs[i]
-    nlm.spq_ctl.soil_silt.value = 1.0 - nlm.spq_ctl.soil_clay.value - nlm.spq_ctl.soil_sand.value
-        
+    # nlm.spq_ctl.soil_sand.value = sand_fracs[i]
+    # nlm.spq_ctl.soil_clay.value = clay_fracs[i]
+    # nlm.spq_ctl.soil_silt.value = 1.0 - nlm.spq_ctl.soil_clay.value - nlm.spq_ctl.soil_sand.value
+    
+    paramlist.vegetation_ctl.fresp_growth.value = resp_coeffs[i] 
+    paramlist.vegetation_ctl.fresp_growth.parsed = True  
+    
+    #lctlib[pft].phi_leaf_min = phi_leaf_mins[i] 
 
     user_git_info = UserGitInformation(QUINCY_ROOT_PATH, 
                                            os.path.join(RUN_DIRECTORY, "output", str(i)), 
@@ -124,7 +139,8 @@ for i in range(0, number_of_runs):
                                 namelist = nlm, 
                                 lctlib = lctlib, 
                                 forcing_path= forcing_file,
-                                user_git_info= user_git_info)
+                                user_git_info= user_git_info,
+                                paramlist = paramlist)
 
     # Add to the setup creation
     quincy_multi_run.add_setup(quincy_setup)    
@@ -135,14 +151,14 @@ quincy_multi_run.generate_files()
 df_parameter_setup = pd.DataFrame({
     "id": np.arange(number_of_runs),
     "fid": np.arange(number_of_runs),
-    "sand_fracs": np.round(sand_fracs, 3),
-    "clay_fracs": np.round(clay_fracs, 3),
+    # "sand_fracs": np.round(sand_fracs, 3),
+    # "clay_fracs": np.round(clay_fracs, 3),
 })
 df_parameter_setup.to_csv(os.path.join(RUN_DIRECTORY, "parameters.csv"), index=False)
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 # Quincy run scripts
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
+print(RUN_DIRECTORY)
 GenerateSlurmScript(path         = RUN_DIRECTORY, 
                     ntasks       = NTASKS,
                     ram_in_gb    = RAM_IN_GB, 
@@ -206,5 +222,11 @@ while not done:
 print("Starting postprocessing...", end='')
 qm_post_process = Quincy_Multi_Run_Plot(RUN_DIRECTORY)
 
-qm_post_process.plot_variable("Q_ASSIMI", "gpp_avg", "D")
+qm_post_process.plot_variable_multi_time("Q_ASSIMI", "gpp_avg", "D")
+qm_post_process.plot_variable_multi_time("VEG", "npp_avg", "D")
+qm_post_process.plot_variable_multi_time("VEG", "total_veg_c", "D")
+qm_post_process.plot_variable_multi_time("VEG", "LAI", "D")
+qm_post_process.plot_variable_multi_time("SPQ", "transpiration_avg", "D")
+qm_post_process.plot_variable_multi_time("Q_ASSIMI", "beta_gs", "D")
+
 print('Done!')

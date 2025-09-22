@@ -148,6 +148,7 @@ class SPQ_CTL:
         
 class VEGETATION_CTL:
     def __init__(self):      
+        # Growth respiration per unit new biomass [0-1]
         self.fresp_growth=NamelistItem(0.0)
         self.fmaint_rate_base=NamelistItem(0.0)
         self.fmaint_rate_wood=NamelistItem(0.0)

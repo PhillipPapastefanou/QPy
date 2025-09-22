@@ -100,7 +100,7 @@ class Quincy_Multi_Run_Plot:
             
             ax.plot(dfg['var_mean_mod'], label = run)
         plt.legend()
-        plt.savefig(os.path.join(self.run_directory, os.pardir, "post_process", f"{varname}.png"))
+        plt.savefig(os.path.join(self.run_directory, "post_process", f"{varname}.png"))
         
         
         
