@@ -40,8 +40,22 @@ class Basic_information_parser:
                         compiled_with_netcdf = True
                 if str_clean == 'compiler':
                     self.compiler_str = base_data[i + 1]
+            
+            
+            if not compiled_with_netcdf:
+                print("Not convinced that this is not NetCDF")
+                print("Checking for NetCDF files... s")
+                folder = os.path.join(self.root_path, self.postprocess_subdir)
+
+                for root, dirs, files in os.walk(folder):
+                    for f in files:
+                        if f.lower().endswith(".nc"):
+                            compiled_with_netcdf = True
+                            break           
+            
         except:
-            print(f"Error while parsing file {self.sinfo_file}. Error:")
+            
+            print(f"Problme while parsing file {self.sinfo_file}. Error:")
             traceback.print_exc()
 
         # If we do not have the correct indication that the binaries were build with NetCDF we might

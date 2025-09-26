@@ -43,33 +43,38 @@ class UserGitInformation:
                     if match:
                         key, value = match.groups()
                         config[key] = value
+                        
+                    self.compiler_str = config['COMP']
+        
+            if "gfortran" in self.compiler_str:
+                self.compiler_short_str = "gfortran"
+            else: 
+                self.compiler_short_str = self.compiler_str    
+            
+            fc_str = config['F_C']
+            
+            if "__QUINCY_WITH_NETCDF__" in fc_str:
+                self.compiled_with_netcdf = "TRUE"
+            else:
+                self.compiled_with_netcdf = "FALSE"
         except FileNotFoundError:
             print(f"Error: File not found at {quincy_standard_comp_opts}")
+            self.compiler_str = "unknown"
+            self.compiler_short_str = "unknown"
+            self.compiled_with_netcdf = "unknown"
             
-        self.compiler_str = config['COMP']
-        
-        if "gfortran" in self.compiler_str:
-            self.compiler_short_str = "gfortran"
-        else: 
-            self.compiler_short_str = self.compiler_str    
-        
-        fc_str = config['F_C']
-        
-        if "__QUINCY_WITH_NETCDF__" in fc_str:
-            self.compiled_with_netcdf = "TRUE"
-        else:
-            self.compiled_with_netcdf = "FALSE"
+
                 
         quincy_potential_path = os.path.join(self.quincy_root_path, self.compiler_str, "bin", "land.x")
         
-        if os.path.exists(quincy_potential_path):
-            self.quincy_binary_path = quincy_potential_path
-            self.quincy_build_syste = QUINCY_BUILD_SYSTEM.DEFAULT
+        # if os.path.exists(quincy_potential_path):
+        #     self.quincy_binary_path = quincy_potential_path
+        #     self.quincy_build_syste = QUINCY_BUILD_SYSTEM.DEFAULT
             
-        else:
-            print("Could not determine QUINCY build system")
-            print("So far only DEFAULT is supported")
-            exit(99)
+        # else:
+        #     print("Could not determine QUINCY build system")
+        #     print("So far only DEFAULT is supported")
+        #     exit(99)
             
         
     def get_git_info(self):
