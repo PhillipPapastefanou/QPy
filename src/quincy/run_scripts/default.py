@@ -70,7 +70,7 @@ def ApplyDefaultSiteLevel(namelist : Namelist):
 
     namelist.vegetation_ctl.biomass_alloc_scheme.value = BiomassAllocScheme.DYNAMIC
     namelist.vegetation_ctl.leaf_stoichom_scheme.value = LeafStoichomScheme.DYNAMIC
-    namelist.vegetation_ctl.flag_dynamic_roots.value= True
+    namelist.vegetation_ctl.flag_dynamic_roots.value= False
     namelist.vegetation_ctl.flag_dynroots_h2o_n_limit.value = False
     namelist.vegetation_ctl.flag_herbivory.value = False
 

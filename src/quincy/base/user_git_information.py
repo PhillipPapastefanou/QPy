@@ -78,6 +78,12 @@ class UserGitInformation:
             
         
     def get_git_info(self):
+        
+        self.commit_hash = 'unkown'
+        self.author_name = 'unkown'
+        self.author_email = 'unkown'
+        self.branch_name = 'unkown'
+        self.git_status = 'unkown'
         try:
             repo = git.Repo(self.quincy_root_path) 
 

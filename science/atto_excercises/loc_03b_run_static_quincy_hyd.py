@@ -4,56 +4,74 @@ import subprocess
 from time import perf_counter
 import numpy as np
 import pandas as pd
-import subprocess
 from copy import deepcopy
-import shutil
+
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(THIS_DIR, os.pardir, os.pardir))
 
+RT_DIR = os.path.join(THIS_DIR, os.pardir, os.pardir, os.pardir)
+QPY_DIR = os.path.join(THIS_DIR, os.pardir, os.pardir)
+RESULT_DIR = os.path.join(RT_DIR, "results")
+
+from pathlib import Path
+
+
+# Read paths from your metadata files
+with open(os.path.join(RESULT_DIR, "data_files.txt")) as f:
+    data_files = [Path(line.strip()) for line in f if line.strip()]
+
+with open(os.path.join(RESULT_DIR, "python_path.txt")) as f:
+    python_path = Path(f.read().strip())
+
+with open(os.path.join(RESULT_DIR, "quincy_path.txt")) as f:
+    quincy_path = Path(f.read().strip())
+
+# Assign them to variables
+data_transient = data_files[0]
+data_static = data_files[1]
+data_nee_obs = data_files[2]
+
+print("Python path:", python_path)
+print("Quincy binary:", quincy_path)
+print("Transient data:", data_transient)
+print("Static data:", data_static)
+
 from src.quincy.IO.NamelistReader import NamelistReader
 from src.quincy.IO.LctlibReader import LctlibReader
-from src.quincy.IO.ParamlistWriter import ParamlistWriter
-from src.quincy.IO.ParamlistWriter import Paramlist
 from src.quincy.base.PFTTypes import PftQuincy, PftFluxnet
 from src.sens.base import Quincy_Setup
 from src.sens.base import Quincy_Multi_Run
+from src.quincy.IO.ParamlistWriter import Paramlist
 from src.quincy.base.EnvironmentalInputTypes import *
 from src.quincy.base.NamelistTypes import *
 from src.quincy.base.EnvironmentalInput import EnvironmentalInputSite
 from src.quincy.base.user_git_information import UserGitInformation
 from src.quincy.run_scripts.default import ApplyDefaultSiteLevel
-from src.quincy.run_scripts.submit import GenerateSlurmScript
 
 # Output libraries
 from src.postprocessing.qtd_multi_run_plot import Quincy_Multi_Run_Plot
 
-if 'QUINCY' in os.environ:        
-    QUINCY_ROOT_PATH = os.environ.get("QUINCY")
-else:
-    print("Environmental variable QUINCY is not defined")
-    print("Please set QUINCY to the directory of your quincy root path")
-    exit(99)
-    
+
+
+site = 'ATTO'
+
+# Number of cpu cores to be used
+NTASKS  = 1
 USER = os.environ.get("USER")
 
-# Define the number of runs and variables
-number_of_runs = 3
-# Number of cpu cores to be used
-NNODES = 1
-NTASKS  = 3
-RAM_IN_GB = 10
-PARTITION = 'work'
-
-OUTPUT_DIRECTORY = "03_static_parallel"
 
 # Path where all the simulation data will be saved
-RUN_DIRECTORY = os.path.join("/Net/Groups/BSI/scratch/atto_school", USER, 'simulations', OUTPUT_DIRECTORY)
+RUN_DIRECTORY = os.path.join(QPY_DIR, "simulations", "test_hyd") 
+
+
+print(RUN_DIRECTORY)
+QUINCY_ROOT_PATH = '/Users/pp/Documents/Repos/quincy'
 
 # We need a base namelist and lctlib which we then modify accordingly
 namelist_root_path = os.path.join(THIS_DIR, "namelist_atto_base.slm")
 lctlib_root_path = os.path.join(QUINCY_ROOT_PATH, 'data', 'lctlib_quincy_nlct14.def')
-forcing_file = '/Net/Groups/BSI/work_scratch/ppapastefanou/ATTO_forcing/static/ATTO_s_2000-2023.dat'
+forcing_file = data_static
 
 # Parse base namelist path
 nlm_reader = NamelistReader(namelist_root_path)
@@ -68,10 +86,14 @@ lctlib_base = lctlib_reader.parse()
 
 paramslist_base = Paramlist()
 
+
+# Path where to save the setup
+setup_root_path =  RUN_DIRECTORY
+
 # Parse user git information
 user_git_info = UserGitInformation(QUINCY_ROOT_PATH, 
-                                           RUN_DIRECTORY, 
-                                           "ATTO")      
+                                           setup_root_path, 
+                                           site)      
 
 # Apply the testbed configuration
 ApplyDefaultSiteLevel(namelist=nlm_base)
@@ -85,7 +107,6 @@ nlm_base.vegetation_ctl.leaf_stoichom_scheme.value = LeafStoichomScheme.FIXED
 nlm_base.soil_biogeochemistry_ctl.flag_sb_prescribe_po4.value = True
 nlm_base.soil_biogeochemistry_ctl.sb_bnf_scheme.value = SbBnfScheme.UNLIMITED
 nlm_base.base_ctl.flag_slow_sb_pool_spinup_accelerator.value = False
-
 # Static forcing setup
 nlm_base.jsb_forcing_ctl.forcing_mode.value = ForcingMode.STATIC
 nlm_base.base_ctl.forcing_file_start_yr.value = 2000
@@ -99,17 +120,27 @@ nlm_base.base_ctl.output_interval_flux.value = OutputIntervalPool.DAILY
 # This line is important so QUINCY know it is expecting a paramlist
 nlm_base.base_ctl.set_parameter_values_from_file.value = True
 
+
+# Turn on plant hydraulics
+nlm_base.assimilation_ctl.gs_beta_type.value = GsBetaType.PLANT
+nlm_base.phyd_ctl.use_plant_hydraulics.value = True
+
+
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 # Main code to be modified
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
 # Now we rescale parameters
-# phi_leaf_mins = [-1.0, -1.0, -1.0]
-resp_coeffs = [0.1, 0.1, 0.1]
+psi_leaf_close = [-0.5, -1.0, -1.5]
+resp_coeffs = [0.1, 0.5, 0.99]
 # sand_fracs = [0.3, 0.3, 0.3]
 # clay_fracs = [0.5, 0.5, 0.5]
 
+number_of_runs = 3
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+# Do not modify below
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 # We create a multi quincy run object
 quincy_multi_run = Quincy_Multi_Run(RUN_DIRECTORY)
 
@@ -125,10 +156,10 @@ for i in range(0, number_of_runs):
     # nlm.spq_ctl.soil_clay.value = clay_fracs[i]
     # nlm.spq_ctl.soil_silt.value = 1.0 - nlm.spq_ctl.soil_clay.value - nlm.spq_ctl.soil_sand.value
     
-    paramlist.vegetation_ctl.fresp_growth.value = resp_coeffs[i] 
-    paramlist.vegetation_ctl.fresp_growth.parsed = True  
+    # paramlist.vegetation_ctl.fresp_growth.value = resp_coeffs[i] 
+    # paramlist.vegetation_ctl.fresp_growth.parsed = True  
     
-    #lctlib[pft].phi_leaf_min = phi_leaf_mins[i] 
+    lctlib[pft].psi50_leaf_close = psi_leaf_close[i] 
 
     user_git_info = UserGitInformation(QUINCY_ROOT_PATH, 
                                            os.path.join(RUN_DIRECTORY, "output", str(i)), 
@@ -156,73 +187,47 @@ df_parameter_setup = pd.DataFrame({
     # "clay_fracs": np.round(clay_fracs, 3),
 })
 df_parameter_setup.to_csv(os.path.join(RUN_DIRECTORY, "parameters.csv"), index=False)
+
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 # Quincy run scripts
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-print(RUN_DIRECTORY)
-GenerateSlurmScript(path         = RUN_DIRECTORY, 
-                    ntasks       = NTASKS,
-                    ram_in_gb    = RAM_IN_GB, 
-                    nnodes       = NNODES, 
-                    partition    = PARTITION)
-
-shutil.copyfile(os.path.join(THIS_DIR, os.pardir, os.pardir,'src', 'quincy', 'run_scripts', 'run_mpi.py'), 
-                             os.path.join(RUN_DIRECTORY, 'run_mpi.py'))
-
-import time
-time.sleep(1.0)
 
 import subprocess
-scriptpath = os.path.join(RUN_DIRECTORY, 'submit.sh')
-p = subprocess.Popen(f'/usr/bin/sbatch {scriptpath}', 
-                     shell=True, 
-                     cwd=RUN_DIRECTORY,
-                     stdout=subprocess.PIPE,
-    stderr=subprocess.PIPE,
-    text=True)       
-stdout, stderr = p.communicate()
+import numpy as np
+from time import perf_counter
+n_cores = os.cpu_count()
 
-import re
-match = re.search(r"Submitted batch job (\d+)", stdout)
-
-if match:
-    jobid = match.group(1)
-    print(f"Captured job ID: {jobid}")
-else: 
-    raise RuntimeError(f"Could not parse job ID from sbatch output:\n{stdout}")
-    
-    
-poll_interval = 10
-# --- Poll with sacct until job is finished ---
-final_states = {"COMPLETED", "FAILED", "CANCELLED", "TIMEOUT", "OUT_OF_MEMORY"}
-done = False
-tstart = time.time()
-while not done:
-    print(f"Waiting for simulation to fininsh...({int(np.round(time.time()-tstart))}s)")
-    res = subprocess.run(
-        ["sacct", "-j", jobid, "--format=JobID,State", "--noheader"],
-        capture_output=True,
-        text=True
+print(f"System has {n_cores} cores; launching {number_of_runs} processes in parallel.")
+t1 = perf_counter()
+procs = []
+# launch 3 processes in parallel
+for i in range(number_of_runs):
+    p = subprocess.Popen(
+        [quincy_path],
+        cwd=os.path.join(setup_root_path, "output", str(i)),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
     )
-    state_lines = [line.strip().split() for line in res.stdout.splitlines() if line.strip()]
-    if state_lines:
-        # Job may have multiple steps; pick the main one (exact jobid, not jobid.batch)
-        for jid, state in state_lines:
-            if jid == jobid and state in final_states:
-                print(f"Job {jobid} finished with state: {state}")
-                done = True
-                break
-    if done:
-        break
-    time.sleep(poll_interval)
-    
+    procs.append(p)
+
+# wait for all to finish and collect results
+for i, p in enumerate(procs):
+    stdout, stderr = p.communicate()
+    print(f"Run {i} finished with code {p.returncode}")
+    if stdout:
+        print(stdout.decode())
+    if stderr:
+        print(stderr.decode())
+
+t2 = perf_counter()
+print(f"Elapsed: {np.round(t2 - t1)} seconds.")
+
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-# Postprocessing
+# Postprocess
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 print("Starting postprocessing...", end='')
-obs_path = "/Net/Groups/BSI/work_scratch/ppapastefanou/atto_summerschool_25/data/ATTO_evaluation.csv"
-qm_post_process = Quincy_Multi_Run_Plot(RUN_DIRECTORY, obs_path)
+qm_post_process = Quincy_Multi_Run_Plot(RUN_DIRECTORY, data_nee_obs)
 
 qm_post_process.plot_variable_multi_time("Q_ASSIMI", "gpp_avg", "D")
 qm_post_process.plot_variable_multi_time("Q_ASSIMI", "beta_gs", "D")
@@ -232,7 +237,12 @@ qm_post_process.plot_variable_multi_time("VEG", "LAI", "D")
 qm_post_process.plot_variable_multi_time("SPQ", "transpiration_avg", "D")
 qm_post_process.plot_variable_multi_time("SPQ", "evaporation_avg", "D")
 qm_post_process.plot_variable_multi_time("SPQ", "rootzone_soilwater_potential", "D")
-qm_post_process.plot_variable_multi_time("SB", "sb_total_c", "D")
-qm_post_process.plot_variable_multi_time("SB", "sb_total_som_c", "D")
+
+qm_post_process.plot_variable_multi_time("PHYD", "psi_leaf_avg", "D")
+qm_post_process.plot_variable_multi_time("PHYD", "psi_stem_avg", "D")
+qm_post_process.plot_variable_multi_time("PHYD", "stem_flow_avg", "D")
+
+# qm_post_process.plot_variable_multi_time("SB", "sb_total_c", "D")
+# qm_post_process.plot_variable_multi_time("SB", "sb_total_som_c", "D")
 
 print('Done!')

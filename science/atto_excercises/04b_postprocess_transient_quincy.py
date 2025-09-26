@@ -34,10 +34,13 @@ PARTITION = 'work'
 OUTPUT_DIRECTORY = "04_transient"
 #OUTPUT_DIRECTORY = "03_example"
 
+
+obs_path = "/Net/Groups/BSI/work_scratch/ppapastefanou/atto_summerschool_25/data/ATTO_evaluation.csv"
+
 # Path where all the simulation data will be saved
 RUN_DIRECTORY = os.path.join("/Net/Groups/BSI/scratch/atto_school", USER, 'simulations', OUTPUT_DIRECTORY)
 
-qm_post_process = Quincy_Multi_Run_Plot(RUN_DIRECTORY)
+qm_post_process = Quincy_Multi_Run_Plot(RUN_DIRECTORY, obs_path=obs_path)
 
 phases = [
     SimPhase.SPINUP,
@@ -58,5 +61,7 @@ for phase in phases:
     qm_post_process.plot_variable_multi_time("SPQ", "rootzone_soilwater_potential", phase)
     qm_post_process.plot_variable_multi_time("SB", "sb_total_c", phase)
     qm_post_process.plot_variable_multi_time("SB", "sb_total_som_c", phase) 
+    
+
 
 qm_post_process.plot_against_NEE_variable_multi_time()

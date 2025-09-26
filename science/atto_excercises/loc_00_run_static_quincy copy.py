@@ -19,19 +19,22 @@ with open(os.path.join(RESULT_DIR, "data_files.txt")) as f:
     data_files = [Path(line.strip()) for line in f if line.strip()]
 
 with open(os.path.join(RESULT_DIR, "python_path.txt")) as f:
-    python_path = Path(f.read().strip())
+    PYTHON_PATH = Path(f.read().strip())
 
 with open(os.path.join(RESULT_DIR, "quincy_path.txt")) as f:
-    quincy_path = Path(f.read().strip())
+    QUINCY_BIN_PATH = Path(f.read().strip())
 
 # Assign them to variables
-data_transient = data_files[0]
-data_static = data_files[1]
+DATA_FORC_TRANSIENT = data_files[0]
+DATA_FORC_STATIC = data_files[1]
 
-print("Python path:", python_path)
-print("Quincy binary:", quincy_path)
-print("Transient data:", data_transient)
-print("Static data:", data_static)
+QUINCY_ROOT_PATH = os.path.dirname(os.path.dirname(QUINCY_BIN_PATH))
+
+print("Python path:", PYTHON_PATH)
+print("Quincy binary:", QUINCY_BIN_PATH)
+print("Quincy root path:", QUINCY_ROOT_PATH)
+print("Transient data:", DATA_FORC_TRANSIENT)
+print("Static data:", DATA_FORC_STATIC)
 
 from src.quincy.IO.NamelistReader import NamelistReader
 from src.quincy.IO.LctlibReader import LctlibReader
@@ -61,12 +64,11 @@ USER = os.environ.get("USER")
 # Path where all the simulation data will be saved
 RUN_DIRECTORY = os.path.join(RESULT_DIR, "python_test_imgs") 
 
-QUINCY_ROOT_PATH = '/Users/pp/Documents/Repos/quincy'
 
 # We need a base namelist and lctlib which we then modify accordingly
 namelist_root_path = os.path.join(THIS_DIR, "namelist_atto_base.slm")
 lctlib_root_path = os.path.join(QUINCY_ROOT_PATH, 'data', 'lctlib_quincy_nlct14.def')
-forcing_file = data_static
+forcing_file = DATA_FORC_STATIC
 
 # Parse base namelist path
 nlm_reader = NamelistReader(namelist_root_path)
@@ -142,7 +144,7 @@ quincy_single_run_config.generate_files()
 
 t1 = perf_counter()
 
-quincy_binary_path = quincy_path
+quincy_binary_path = QUINCY_BIN_PATH
 
 p = subprocess.Popen(quincy_binary_path,
                         cwd=setup_root_path)
