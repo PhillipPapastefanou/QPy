@@ -125,7 +125,7 @@ nlm_base.phyd_ctl.use_plant_hydraulics.value = True
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
 # Now we rescale parameters
-psi_leaf_close = [ -2.0, -2.5, -1.5, -2.0]
+psi_leaf_close = [ -2.0, -1.75, -1.5, -2.0]
 #resp_coeffs = [0.1, 0.5, 0.99]
 # sand_fracs = [0.3, 0.3, 0.3]
 # clay_fracs = [0.5, 0.5, 0.5]
@@ -148,9 +148,9 @@ for i in range(0, number_of_runs):
     nlm = deepcopy(nlm_base)
     paramlist = deepcopy(paramslist_base)
 
-    # nlm.spq_ctl.soil_sand.value = sand_fracs[i]
-    # nlm.spq_ctl.soil_clay.value = clay_fracs[i]
-    # nlm.spq_ctl.soil_silt.value = 1.0 - nlm.spq_ctl.soil_clay.value - nlm.spq_ctl.soil_sand.value
+    nlm.spq_ctl.soil_sand.value = 0.1
+    nlm.spq_ctl.soil_clay.value = 0.8
+    nlm.spq_ctl.soil_silt.value = 1.0 - nlm.spq_ctl.soil_clay.value - nlm.spq_ctl.soil_sand.value
     
     # paramlist.vegetation_ctl.fresp_growth.value = resp_coeffs[i] 
     # paramlist.vegetation_ctl.fresp_growth.parsed = True  

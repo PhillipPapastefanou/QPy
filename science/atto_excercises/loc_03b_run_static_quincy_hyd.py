@@ -114,8 +114,8 @@ nlm_base.base_ctl.forcing_file_last_yr.value = 2023
 nlm_base.base_ctl.output_end_last_day_year.value = 24
 nlm_base.base_ctl.output_start_first_day_year.value = 1
 nlm_base.jsb_forcing_ctl.simulation_length_number.value = 24
-nlm_base.base_ctl.output_interval_pool.value = OutputIntervalPool.DAILY
-nlm_base.base_ctl.output_interval_flux.value = OutputIntervalPool.DAILY
+nlm_base.base_ctl.output_interval_pool.value = OutputIntervalPool.TIMESTEP
+nlm_base.base_ctl.output_interval_flux.value = OutputIntervalPool.TIMESTEP
 
 # This line is important so QUINCY know it is expecting a paramlist
 nlm_base.base_ctl.set_parameter_values_from_file.value = True
@@ -132,7 +132,6 @@ nlm_base.phyd_ctl.use_plant_hydraulics.value = True
 
 # Now we rescale parameters
 psi_leaf_close = [-0.5, -1.0, -1.5]
-resp_coeffs = [0.1, 0.5, 0.99]
 # sand_fracs = [0.3, 0.3, 0.3]
 # clay_fracs = [0.5, 0.5, 0.5]
 
@@ -151,6 +150,10 @@ for i in range(0, number_of_runs):
     lctlib = deepcopy(lctlib_base)
     nlm = deepcopy(nlm_base)
     paramlist = deepcopy(paramslist_base)
+    
+    if i == 0:
+        nlm.assimilation_ctl.gs_beta_type.value = GsBetaType.SOIL
+        nlm.phyd_ctl.use_plant_hydraulics.value = False
 
     # nlm.spq_ctl.soil_sand.value = sand_fracs[i]
     # nlm.spq_ctl.soil_clay.value = clay_fracs[i]
@@ -182,7 +185,7 @@ quincy_multi_run.generate_files()
 df_parameter_setup = pd.DataFrame({
     "id": np.arange(number_of_runs),
     "fid": np.arange(number_of_runs),
-    "resp_coeffs": np.round(resp_coeffs, 3),
+    
     # "sand_fracs": np.round(sand_fracs, 3),
     # "clay_fracs": np.round(clay_fracs, 3),
 })
@@ -229,20 +232,21 @@ print(f"Elapsed: {np.round(t2 - t1)} seconds.")
 print("Starting postprocessing...", end='')
 qm_post_process = Quincy_Multi_Run_Plot(RUN_DIRECTORY, data_nee_obs)
 
-qm_post_process.plot_variable_multi_time("Q_ASSIMI", "gpp_avg", "D")
-qm_post_process.plot_variable_multi_time("Q_ASSIMI", "beta_gs", "D")
-qm_post_process.plot_variable_multi_time("VEG", "npp_avg", "D")
-qm_post_process.plot_variable_multi_time("VEG", "total_veg_c", "D")
-qm_post_process.plot_variable_multi_time("VEG", "LAI", "D")
-qm_post_process.plot_variable_multi_time("SPQ", "transpiration_avg", "D")
-qm_post_process.plot_variable_multi_time("SPQ", "evaporation_avg", "D")
-qm_post_process.plot_variable_multi_time("SPQ", "rootzone_soilwater_potential", "D")
+qm_post_process.plot_variable_multi_time("Q_ASSIMI", "gpp_avg")
+# qm_post_process.plot_variable_multi_time("Q_ASSIMI", "beta_gs", "D")
+# qm_post_process.plot_variable_multi_time("VEG", "npp_avg", "D")
+qm_post_process.plot_variable_multi_time("VEG", "total_veg_c")
+# qm_post_process.plot_variable_multi_time("VEG", "LAI", "D")
+# qm_post_process.plot_variable_multi_time("SPQ", "transpiration_avg", "D")
+# qm_post_process.plot_variable_multi_time("SPQ", "evaporation_avg", "D")
+# qm_post_process.plot_variable_multi_time("SPQ", "rootzone_soilwater_potential", "D")
 
-qm_post_process.plot_variable_multi_time("PHYD", "psi_leaf_avg", "D")
-qm_post_process.plot_variable_multi_time("PHYD", "psi_stem_avg", "D")
-qm_post_process.plot_variable_multi_time("PHYD", "stem_flow_avg", "D")
+qm_post_process.plot_variable_multi_time("PHYD", "psi_leaf_avg",)
+qm_post_process.plot_variable_multi_time("PHYD", "psi_stem_avg")
+qm_post_process.plot_variable_multi_time("PHYD", "stem_flow_avg")
 
 # qm_post_process.plot_variable_multi_time("SB", "sb_total_c", "D")
 # qm_post_process.plot_variable_multi_time("SB", "sb_total_som_c", "D")
-
+obs_pl_path = os.path.join(THIS_DIR, os.pardir, os.pardir, "data", "atto_psi_leaf", "Day1.csv")
+qm_post_process.plot_against_PSILEAF_variable_multi_time(obs_pl_path, g = 1)
 print('Done!')

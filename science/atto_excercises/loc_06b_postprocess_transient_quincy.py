@@ -6,7 +6,6 @@ import numpy as np
 import pandas as pd
 from copy import deepcopy
 
-
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(THIS_DIR, os.pardir, os.pardir))
 from src.postprocessing.qtd_multi_run_plot import Quincy_Multi_Run_Plot
@@ -17,8 +16,6 @@ QPY_DIR = os.path.join(THIS_DIR, os.pardir, os.pardir)
 RESULT_DIR = os.path.join(RT_DIR, "results")
 
 from pathlib import Path
-
-
 # Read paths from your metadata files
 with open(os.path.join(RESULT_DIR, "data_files.txt")) as f:
     data_files = [Path(line.strip()) for line in f if line.strip()]
@@ -33,8 +30,6 @@ with open(os.path.join(RESULT_DIR, "quincy_path.txt")) as f:
 data_transient = data_files[0]
 data_static = data_files[1]
 data_nee_obs = data_files[2]
-
-
 
 
 from src.quincy.IO.NamelistReader import NamelistReader
@@ -68,14 +63,14 @@ phases = [
 print("Postprocessing output...")
 for phase in phases:
     print(f"SimPhase {phase.name}")
-    # qm_post_process.plot_variable_multi_time("Q_ASSIMI", "gpp_avg", phase)
-    # qm_post_process.plot_variable_multi_time("Q_ASSIMI", "beta_gs", phase)
+    qm_post_process.plot_variable_multi_time("Q_ASSIMI", "gpp_avg", phase)
+    qm_post_process.plot_variable_multi_time("Q_ASSIMI", "beta_gs", phase)
     qm_post_process.plot_variable_multi_time("VEG", "npp_avg", phase)
-    # qm_post_process.plot_variable_multi_time("VEG", "total_veg_c", phase)
-    # qm_post_process.plot_variable_multi_time("VEG", "LAI", phase)
-    # qm_post_process.plot_variable_multi_time("SPQ", "transpiration_avg", phase)
+    qm_post_process.plot_variable_multi_time("VEG", "total_veg_c", phase)
+    qm_post_process.plot_variable_multi_time("VEG", "LAI", phase)
+    qm_post_process.plot_variable_multi_time("SPQ", "transpiration_avg", phase)
     # qm_post_process.plot_variable_multi_time("SPQ", "evaporation_avg", phase)
-    # qm_post_process.plot_variable_multi_time("SPQ", "rootzone_soilwater_potential", phase)
+    qm_post_process.plot_variable_multi_time("SPQ", "rootzone_soilwater_potential", phase)
     # # qm_post_process.plot_variable_multi_time("SB", "sb_total_c", phase)
     # # qm_post_process.plot_variable_multi_time("SB", "sb_total_som_c", phase) 
     qm_post_process.plot_variable_multi_time("PHYD", "psi_leaf_avg", phase)

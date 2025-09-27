@@ -108,7 +108,7 @@ class Quincy_Multi_Run_Plot:
                    
         if self.is_static:
             title = "STATIC"
-            file_str = f"{title.lower()}_daily"
+            file_str = f"{title.lower()}_timestep"
             
         else:
             if sim_phase == SimPhase.SPINUP:
@@ -156,17 +156,19 @@ class Quincy_Multi_Run_Plot:
             
             ds_mod.close()
             
-            mask = (df_mod.index.strftime("%m-%d") >= "09-15") & (df_mod.index.strftime("%m-%d") <= "10-15")
-            df_mod = df_mod[mask]
+
             
             row = df_p.loc[run]  # get row by index
 
             # drop id and fid, then format
             row_str = ", ".join(f"{col}:{row[col]}" for col in df_p.columns if col not in ["id", "fid"])
    
-            if sim_phase == SimPhase.FLUXNETDATA:
+            if (sim_phase == SimPhase.FLUXNETDATA) |  (sim_phase == SimPhase.STATIC) :
+                
+                mask = (df_mod.index.strftime("%m-%d") >= "09-15") & (df_mod.index.strftime("%m-%d") <= "10-15")
+                df_mod_slice = df_mod[mask]
             
-                dfg = df_mod.groupby([df_mod.index.hour, df_mod.index.minute]).agg(
+                dfg = df_mod_slice.groupby([df_mod_slice.index.hour, df_mod_slice.index.minute]).agg(
                 var_mean_mod=(varname, "mean"),
                 var_q25_mod=(varname, lambda x: x.quantile(0.25)),
                 var_median_mod=(varname, "median"),
@@ -177,17 +179,17 @@ class Quincy_Multi_Run_Plot:
                 axes[0, 0].set_xlabel(f'hour of day')
                 axes[0, 0].legend()
                 
-            else:
-                dfg = df_mod.groupby([df_mod.index.day_of_year]).agg(
-                var_mean_mod=(varname, "mean"),
-                var_q25_mod=(varname, lambda x: x.quantile(0.25)),
-                var_median_mod=(varname, "median"),
-                var_q75_mod=(varname, lambda x: x.quantile(0.75)))
+            # else:
+            #     dfg = df_mod.groupby([df_mod.index.day_of_year]).agg(
+            #     var_mean_mod=(varname, "mean"),
+            #     var_q25_mod=(varname, lambda x: x.quantile(0.25)),
+            #     var_median_mod=(varname, "median"),
+            #     var_q75_mod=(varname, lambda x: x.quantile(0.75)))
                 
-                axes[0, 0].plot(dfg['var_mean_mod'], label = row_str)
-                axes[0, 0].set_ylabel(f'{varname}\n[{unitname}]')
-                axes[0, 0].set_xlabel(f'day of year')
-                axes[0, 0].legend()    
+            #     axes[0, 0].plot(dfg['var_mean_mod'], label = row_str)
+            #     axes[0, 0].set_ylabel(f'{varname}\n[{unitname}]')
+            #     axes[0, 0].set_xlabel(f'day of year')
+            #     axes[0, 0].legend()    
                 
             dfg = df_mod.groupby([df_mod.index.month]).agg(
             var_mean_mod=(varname, "mean"),
@@ -394,9 +396,10 @@ class Quincy_Multi_Run_Plot:
     def plot_against_PSILEAF_variable_multi_time(self, psi_leaf_path_obs, g):
         
         if self.is_static:
-            print("Comparing against NEE obs does only work when using transient runs")
-            return
-        
+            name = 'static'
+        else:
+            name = 'fluxnetdata'
+                
         # Create a figure with 4 subplots in a 2x2 grid
         fig, axes = plt.subplots(1,2, figsize=(12, 8))
         
@@ -418,7 +421,7 @@ class Quincy_Multi_Run_Plot:
         
         for run in self.subdirs:      
                
-            ds_mod = xr.open_dataset(os.path.join(self.base_path_output, str(run), f"PHYD_fluxnetdata_timestep.nc"))
+            ds_mod = xr.open_dataset(os.path.join(self.base_path_output, str(run), f"PHYD_{name}_timestep.nc"))
             
             unitname = ds_mod['psi_leaf_avg'].units
             df_mod = ds_mod[['psi_leaf_avg','psi_stem_avg']].to_pandas()
