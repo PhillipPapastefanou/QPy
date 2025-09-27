@@ -2,26 +2,44 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import os
 
-df = pd.read_csv(os.path.join("data", "atto_psi_leaf", "Day1.csv"),
-                 sep=";", decimal=",",   index_col=0)
-groups = [1, 2]  # group IDs based on spec_pl_1_* and spec_pl_2_*
-fig, axes = plt.subplots(len(groups), 1, figsize=(8, 6), sharex=True)
+tree_id = '232'
 
-if len(groups) == 1:  # make axes iterable if only one group
-    axes = [axes]
-# Convert index "HH:MM" → float hours
-df.index = pd.to_datetime(df.index, format="%H:%M").hour + pd.to_datetime(df.index, format="%H:%M").minute / 60
+# Read CSV
+df = pd.read_csv(
+    os.path.join("data", "atto_psi_leaf", "LeafWaterPotential_0926_0927.csv"),
+    decimal=",", sep=";", index_col=0
+)
+df.columns = df.columns.str.strip()
 
-for ax, g in zip(axes, groups):
-    cols = [c for c in df.columns if f"spec_pl_{g}_" in c]
-    mean, std = df[cols].mean(axis=1), df[cols].std(axis=1)
+# Convert Collected time -> fractional hours
+df["time_float"] = pd.to_datetime(df["Collected time"], format="%H:%M").dt.hour + \
+                   pd.to_datetime(df["Collected time"], format="%H:%M").dt.minute / 60
 
-    ax.errorbar(df.index, mean, yerr=std, fmt='o', capsize=5, c= 'black')
-    ax.set_title(f"Group {g}")
-    ax.set_ylabel("Average Value")
-    ax.grid(True)
+# Filter for given TreeID
+tree_df = df[df["TreeID"].astype(str) == tree_id]
 
-axes[-1].set_xlabel("Time of Day")
-plt.xticks(rotation=45)
+# Group only by time (all leaves combined)
+grouped = tree_df.groupby("time_float").agg(
+    avg=("Leaf water potential", "mean"),
+    std=("Leaf water potential", "std")
+).reset_index()
+
+# Plot
+plt.figure(figsize=(10, 6))
+plt.errorbar(
+    grouped["time_float"],
+    grouped["avg"],
+    yerr=grouped["std"],
+    capsize=4,
+    marker="o",
+    linestyle="--",
+    color="tab:blue",
+    label=f"Tree {tree_id}"
+)
+
+plt.xlabel("Time of Day (hours)")
+plt.ylabel("Leaf water potential")
+plt.title(f"Tree {tree_id} - Leaf Water Potential with Std Error Bars (all leaves)")
+plt.legend()
 plt.tight_layout()
 plt.show()

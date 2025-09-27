@@ -393,7 +393,7 @@ class Quincy_Multi_Run_Plot:
         plt.subplots_adjust(wspace=0.2)
         plt.savefig(os.path.join(self.run_directory, "post_process", f"NEE_obs_all_time.png"))
         
-    def plot_against_PSILEAF_variable_multi_time(self, psi_leaf_path_obs, g):
+    def plot_against_PSILEAF_variable_multi_time(self, psi_leaf_path_obs, tree):
         
         if self.is_static:
             name = 'static'
@@ -403,21 +403,31 @@ class Quincy_Multi_Run_Plot:
         # Create a figure with 4 subplots in a 2x2 grid
         fig, axes = plt.subplots(1,2, figsize=(12, 8))
         
-        plt.suptitle('PSI_LEAF', fontsize=16, fontweight='bold')
+        plt.suptitle(f'PSI + {tree}', fontsize=16, fontweight='bold')
         
         
 
         df_p  = pd.read_csv(os.path.join(self.base_path_output, os.pardir, "parameters.csv"))
         
         
-        df_leaf = pd.read_csv(psi_leaf_path_obs,
-                        sep=";", decimal=",",   index_col=0)
+        df = pd.read_csv(
+            psi_leaf_path_obs,
+            decimal=",", sep=";", index_col=0
+        )
+        df.columns = df.columns.str.strip()
 
-        cols = [c for c in df_leaf.columns if f"spec_pl_{g}_" in c]
-        mean_obs_pl, std_obs_pl = df_leaf[cols].mean(axis=1), df_leaf[cols].std(axis=1)
-        
-        df_leaf.index = pd.to_datetime(df_leaf.index, format="%H:%M").hour + pd.to_datetime(df_leaf.index, format="%H:%M").minute / 60
+        # Convert Collected time -> fractional hours
+        df["time_float"] = pd.to_datetime(df["Collected time"], format="%H:%M").dt.hour + \
+                        pd.to_datetime(df["Collected time"], format="%H:%M").dt.minute / 60
 
+        # Filter for given TreeID
+        tree_df = df[df["TreeID"].astype(str) == tree]
+
+        # Group only by time (all leaves combined)
+        grouped = tree_df.groupby("time_float").agg(
+            avg=("Leaf water potential", "mean"),
+            std=("Leaf water potential", "std")
+        ).reset_index()
         
         for run in self.subdirs:      
                
@@ -468,11 +478,10 @@ class Quincy_Multi_Run_Plot:
             axes[1].legend()
             
             
-            
-        axes[0].errorbar(df_leaf.index, mean_obs_pl, yerr=std_obs_pl, fmt='o', capsize=5, c= 'black')
+        axes[0].errorbar(grouped["time_float"], grouped["avg"], yerr=grouped["std"], fmt='o', capsize=5, c= 'black')
 
                   
         plt.legend()
         plt.subplots_adjust(wspace=0.2)
-        plt.savefig(os.path.join(self.run_directory, "post_process", f"psi_leaf_obs_sep_oct_spec_{g}.png"))
+        plt.savefig(os.path.join(self.run_directory, "post_process", f"psi_leaf_obs_sep_oct_spec_{tree}.png"))
 
