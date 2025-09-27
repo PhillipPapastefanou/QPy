@@ -27,13 +27,13 @@ class Quincy_Multi_Run_Plot:
             return
         
         files = os.listdir(os.path.join(self.base_path_output, str(self.subdirs[0])))
+        self.is_static = False
+
         for file in files:
             if 'static' in file:
                 self.is_static = True
-            else:
-                self.is_static = False
-                
-        
+
+        print(f"Found static output: {self.is_static}")
         self.df_obs = pd.read_csv(obs_path)
 
     def plot_variable(self,cat, varname, res):

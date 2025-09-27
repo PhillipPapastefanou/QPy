@@ -45,7 +45,7 @@ NTASKS  = number_of_runs
 RAM_IN_GB = 12
 PARTITION = 'work'
 
-OUTPUT_DIRECTORY = "03_static_parallel_hyd"
+OUTPUT_DIRECTORY = "03b_static_parallel_hyd"
 
 # Path where all the simulation data will be saved
 RUN_DIRECTORY = os.path.join("/Net/Groups/BSI/scratch/atto_school", USER, 'simulations', OUTPUT_DIRECTORY)
@@ -240,19 +240,19 @@ obs_path = "/Net/Groups/BSI/work_scratch/ppapastefanou/atto_summerschool_25/data
 qm_post_process = Quincy_Multi_Run_Plot(RUN_DIRECTORY, obs_path=obs_path)
 
 qm_post_process.plot_variable_multi_time("Q_ASSIMI", "gpp_avg")
-qm_post_process.plot_variable_multi_time("Q_ASSIMI", "beta_gs", "D")
-qm_post_process.plot_variable_multi_time("VEG", "npp_avg", "D")
-qm_post_process.plot_variable_multi_time("VEG", "total_veg_c", "D")
-qm_post_process.plot_variable_multi_time("VEG", "LAI", "D")
-qm_post_process.plot_variable_multi_time("SPQ", "transpiration_avg", "D")
-qm_post_process.plot_variable_multi_time("SPQ", "evaporation_avg", "D")
-qm_post_process.plot_variable_multi_time("SPQ", "rootzone_soilwater_potential", "D")
-qm_post_process.plot_variable_multi_time("SB", "sb_total_c", "D")
-qm_post_process.plot_variable_multi_time("SB", "sb_total_som_c", "D")
+# qm_post_process.plot_variable_multi_time("Q_ASSIMI", "beta_gs", "D")
+qm_post_process.plot_variable_multi_time("VEG", "npp_avg")
+# qm_post_process.plot_variable_multi_time("VEG", "total_veg_c", "D")
+qm_post_process.plot_variable_multi_time("VEG", "LAI")
+# qm_post_process.plot_variable_multi_time("SPQ", "transpiration_avg", "D")
+# qm_post_process.plot_variable_multi_time("SPQ", "evaporation_avg", "D")
+# qm_post_process.plot_variable_multi_time("SPQ", "rootzone_soilwater_potential", "D")
+# qm_post_process.plot_variable_multi_time("SB", "sb_total_c", "D")
+# qm_post_process.plot_variable_multi_time("SB", "sb_total_som_c", "D")
 
-qm_post_process.plot_variable_multi_time("PHYD", "psi_leaf_avg",)
-qm_post_process.plot_variable_multi_time("PHYD", "psi_stem_avg")
-qm_post_process.plot_variable_multi_time("PHYD", "stem_flow_avg")
+# qm_post_process.plot_variable_multi_time("PHYD", "psi_leaf_avg",)
+# qm_post_process.plot_variable_multi_time("PHYD", "psi_stem_avg")
+# qm_post_process.plot_variable_multi_time("PHYD", "stem_flow_avg")
 
 # qm_post_process.plot_variable_multi_time("SB", "sb_total_c", "D")
 # qm_post_process.plot_variable_multi_time("SB", "sb_total_som_c", "D")
