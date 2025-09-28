@@ -27,13 +27,13 @@ class Quincy_Multi_Run_Plot:
             return
         
         files = os.listdir(os.path.join(self.base_path_output, str(self.subdirs[0])))
+        self.is_static = False
+
         for file in files:
             if 'static' in file:
                 self.is_static = True
-            else:
-                self.is_static = False
-                
-        
+
+        print(f"Found static output: {self.is_static}")
         self.df_obs = pd.read_csv(obs_path)
 
     def plot_variable(self,cat, varname, res):
@@ -297,7 +297,7 @@ class Quincy_Multi_Run_Plot:
             
   
             if run == 0: 
-                axes[0, 0].plot(dfm['nee_mean_obs'], label = 'obs')
+                axes[0, 0].plot(dfm['nee_mean_obs'], label = 'obs', color ='black')
             axes[0, 0].plot(dfm['nee_mean_mod'], label = run)
             axes[0, 0].set_ylabel(f'NEE_avg\n[micro mol m-2 s-1]')
             axes[0, 0].set_xlabel(f'day of year')
@@ -323,7 +323,7 @@ class Quincy_Multi_Run_Plot:
             
   
             if run == 0: 
-                axes[0, 1].plot(dfm['nee_mean_obs'], label = 'obs')
+                axes[0, 1].plot(dfm['nee_mean_obs'], label = 'obs', color ='black')
             axes[0, 1].plot(dfm['nee_mean_mod'], label = run)
             axes[0, 1].set_ylabel(f'NEE_avg\n[micro mol m-2 s-1]')
             axes[0, 1].set_xlabel(f'month of year')
@@ -354,7 +354,7 @@ class Quincy_Multi_Run_Plot:
             
   
             if run == 0: 
-                axes[1, 0].plot(dfm['nee_mean_obs'], label = 'obs')
+                axes[1, 0].plot(dfm['nee_mean_obs'], label = 'obs', color ='black')
             axes[1, 0].plot(dfm['nee_mean_mod'], label = run)
             axes[1, 0].set_ylabel(f'NEE_avg\n[micro mol m-2 s-1]')
             axes[1, 0].set_xlabel(f'year')          
@@ -382,7 +382,7 @@ class Quincy_Multi_Run_Plot:
             
   
             if run == 0: 
-                axes[1, 1].plot(dfm['nee_mean_obs'], label = 'obs')
+                axes[1, 1].plot(dfm['nee_mean_obs'], label = 'obs', color ='black')
             axes[1, 1].plot(dfm['nee_mean_mod'], label = run)
             axes[1, 1].set_ylabel(f'NEE_avg\n[micro mol m-2 s-1]')
             axes[1, 1].set_xlabel(f'year')    
