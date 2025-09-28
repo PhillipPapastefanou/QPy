@@ -108,9 +108,9 @@ nlm_base.phyd_ctl.use_plant_hydraulics.value = True
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
 # Now we rescale parameters
-psi_leaf_close = [ -1.0, -2.0, -2.5, -2.6]
-gamma_stems = [400, 100, 100, 100]
-k_xylem_sats = [8, 2, 3, 2 ]
+psi_leaf_close = [ -1.0, -1.0, -1.0, -1.0]
+gamma_stems = [100, 100, 100, 100]
+k_xylem_sats = [2, 2, 2, 2 ]
 
 
 # We create a multi quincy run object
@@ -256,8 +256,13 @@ qm_post_process.plot_variable_multi_time("VEG", "LAI")
 
 # qm_post_process.plot_variable_multi_time("SB", "sb_total_c", "D")
 # qm_post_process.plot_variable_multi_time("SB", "sb_total_som_c", "D")
-obs_pl_path = os.path.join(THIS_DIR, os.pardir, os.pardir, "data", "atto_psi_leaf", "LeafWaterPotential_0926_0927.csv")
-qm_post_process.plot_against_PSILEAF_variable_multi_time(obs_pl_path, tree = '232')
-qm_post_process.plot_against_PSILEAF_variable_multi_time(obs_pl_path, tree = 'ITFSAC007')
+obs_pl_path = os.path.join(THIS_DIR, os.pardir, os.pardir, "data", "atto_psi_leaf", "Leafwaterpot.csv")
+obs_pr_path = os.path.join(THIS_DIR, os.pardir, os.pardir, "data", "atto_psi_leaf", "Rootwaterpot.csv")
+qm_post_process.plot_against_PSILEAF_variable_multi_time(obs_pl_path, obs_pr_path, tree = '232')
+qm_post_process.plot_against_PSILEAF_variable_multi_time(obs_pl_path, obs_pr_path, tree = 'ITFSAC007')
+qm_post_process.plot_against_PSILEAF_variable_multi_time(obs_pl_path, obs_pr_path, tree = 'TI05')
+qm_post_process.plot_against_PSILEAF_variable_multi_time(obs_pl_path, obs_pr_path, tree = 'TI02_green')
+qm_post_process.plot_against_PSILEAF_variable_multi_time(obs_pl_path, obs_pr_path, tree = 'TI02_brown')
+qm_post_process.plot_against_PSILEAF_variable_multi_time(obs_pl_path, obs_pr_path, tree = '4')
 
 print('Done!')

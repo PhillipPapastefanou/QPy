@@ -393,7 +393,7 @@ class Quincy_Multi_Run_Plot:
         plt.subplots_adjust(wspace=0.2)
         plt.savefig(os.path.join(self.run_directory, "post_process", f"NEE_obs_all_time.png"))
         
-    def plot_against_PSILEAF_variable_multi_time(self, psi_leaf_path_obs, tree):
+    def plot_against_PSILEAF_variable_multi_time(self, psi_leaf_path_obs, psi_root_path_obs, tree):
         
         if self.is_static:
             name = 'static'
@@ -410,23 +410,42 @@ class Quincy_Multi_Run_Plot:
         df_p  = pd.read_csv(os.path.join(self.base_path_output, os.pardir, "parameters.csv"))
         
         
-        df = pd.read_csv(
+        df_pl = pd.read_csv(
             psi_leaf_path_obs,
             decimal=",", sep=";", index_col=0
         )
-        df.columns = df.columns.str.strip()
+        df_pl.columns = df_pl.columns.str.strip()
 
         # Convert Collected time -> fractional hours
-        df["time_float"] = pd.to_datetime(df["Collected time"], format="%H:%M").dt.hour + \
-                        pd.to_datetime(df["Collected time"], format="%H:%M").dt.minute / 60
+        df_pl["time_float"] = pd.to_datetime(df_pl["Collection time"], format="%H:%M").dt.hour + \
+                        pd.to_datetime(df_pl["Collection time"], format="%H:%M").dt.minute / 60
 
         # Filter for given TreeID
-        tree_df = df[df["TreeID"].astype(str) == tree]
+        tree_df = df_pl[df_pl["TreeID"].astype(str) == tree]
 
         # Group only by time (all leaves combined)
-        grouped = tree_df.groupby("time_float").agg(
-            avg=("Leaf water potential", "mean"),
-            std=("Leaf water potential", "std")
+        grouped_pl = tree_df.groupby("time_float").agg(
+            avg=("Leaf water potential (MPa)", "mean"),
+            std=("Leaf water potential (MPa)", "std")
+        ).reset_index()
+        
+        
+        
+        df_ps = pd.read_csv(
+            psi_root_path_obs,
+            decimal=",", sep=";", index_col=0
+        )
+        df_ps.columns = df_ps.columns.str.strip()
+
+        # df_ps Collected time -> fractional hours
+        df_ps["time_float"] = pd.to_datetime(df_ps["Collection time"], format="%H:%M").dt.hour + \
+                        pd.to_datetime(df_ps["Collection time"], format="%H:%M").dt.minute / 60
+
+
+        # Group only by time (all leaves combined)
+        grouped_ps = df_ps.groupby("time_float").agg(
+            avg=("Root water potential (MPa)", "mean"),
+            std=("Root water potential (MPa)", "std")
         ).reset_index()
         
         for run in self.subdirs:      
@@ -478,8 +497,8 @@ class Quincy_Multi_Run_Plot:
             axes[1].legend()
             
             
-        axes[0].errorbar(grouped["time_float"], grouped["avg"], yerr=grouped["std"], fmt='o', capsize=5, c= 'black')
-
+        axes[0].errorbar(grouped_pl["time_float"], grouped_pl["avg"], yerr=grouped_pl["std"], fmt='o', capsize=5, c= 'black')
+        axes[1].errorbar(grouped_ps["time_float"], grouped_ps["avg"], yerr=grouped_ps["std"], fmt='o', capsize=5, c= 'black')
                   
         plt.legend()
         plt.subplots_adjust(wspace=0.2)
