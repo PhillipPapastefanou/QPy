@@ -80,3 +80,8 @@ for phase in phases:
 qm_post_process.plot_against_NEE_variable_multi_time()
 obs_pl_path = os.path.join(THIS_DIR, os.pardir, os.pardir, "data", "atto_psi_leaf", "LeafWaterPotential_0926_0927.csv")
 qm_post_process.plot_against_PSILEAF_variable_multi_time(obs_pl_path, tree = '232')
+qm_post_process.plot_against_PSILEAF_variable_multi_time(obs_pl_path, tree = 'ITFSAC007')
+qm_post_process.plot_against_PSILEAF_variable_multi_time(obs_pl_path, tree = 'TI05')
+qm_post_process.plot_against_PSILEAF_variable_multi_time(obs_pl_path, tree = 'TI02_green')
+qm_post_process.plot_against_PSILEAF_variable_multi_time(obs_pl_path, tree = 'TI02_brown')
+qm_post_process.plot_against_PSILEAF_variable_multi_time(obs_pl_path, tree = '4')

@@ -103,7 +103,7 @@ nlm_base.base_ctl.output_start_first_day_year.value = 1
 nlm_base.jsb_forcing_ctl.transient_simulation_start_year.value = 1901
 nlm_base.jsb_forcing_ctl.transient_spinup_start_year.value = 1901
 nlm_base.jsb_forcing_ctl.transient_spinup_end_year.value = 1930
-nlm_base.jsb_forcing_ctl.transient_spinup_years.value = 200
+nlm_base.jsb_forcing_ctl.transient_spinup_years.value = 50
 nlm_base.jsb_forcing_ctl.simulation_length_number.value = 123
 nlm_base.base_ctl.fluxnet_type_transient_timestep_output.value = True
 nlm_base.base_ctl.fluxnet_static_forc_start_yr.value = 2000
@@ -125,12 +125,10 @@ nlm_base.phyd_ctl.use_plant_hydraulics.value = True
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
 # Now we rescale parameters
-psi_leaf_close = [ -2.0, -1.75, -1.5, -2.0]
-#resp_coeffs = [0.1, 0.5, 0.99]
-# sand_fracs = [0.3, 0.3, 0.3]
-# clay_fracs = [0.5, 0.5, 0.5]
-gamma_stems = [300, 150, 100, 600]
-k_xylem_sats = [3, 2.5 , 5, 5 ]
+psi_leaf_close = [ -1.0, -2.0, -2.5, -2.6]
+gamma_stems = [400, 100, 100, 100]
+k_xylem_sats = [8, 2, 3, 2 ]
+
 
 number_of_runs = len(k_xylem_sats)
 
@@ -159,9 +157,9 @@ for i in range(0, number_of_runs):
     lctlib[pft].slope_leaf_close = 1.5 
     
     lctlib[pft].kappa_stem = gamma_stems[i]
-    lctlib[pft].kappa_leaf = 0.001
+    lctlib[pft].kappa_leaf = 0.05
     lctlib[pft].k_xylem_sat = k_xylem_sats[i]
-    lctlib[pft].root_scale = 200.0
+    lctlib[pft].root_scale = 100.0
 
     user_git_info = UserGitInformation(QUINCY_ROOT_PATH, 
                                            os.path.join(RUN_DIRECTORY, "output", str(i)), 

@@ -108,9 +108,9 @@ nlm_base.phyd_ctl.use_plant_hydraulics.value = True
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
 # Now we rescale parameters
-psi_leaf_close = [ -1.0, -1.0, -1.0, -1.0]
-gamma_stems = [400, 400, 400, 400]
-k_xylem_sats = [8, 8 , 8, 8 ]
+psi_leaf_close = [ -1.0, -2.0, -2.5, -2.6]
+gamma_stems = [400, 100, 100, 100]
+k_xylem_sats = [8, 2, 3, 2 ]
 
 
 # We create a multi quincy run object
@@ -139,9 +139,9 @@ for i in range(0, number_of_runs):
     lctlib[pft].slope_leaf_close = 1.5 
     
     lctlib[pft].kappa_stem = gamma_stems[i]
-    lctlib[pft].kappa_leaf = 0.001
+    lctlib[pft].kappa_leaf = 0.05
     lctlib[pft].k_xylem_sat = k_xylem_sats[i]
-    lctlib[pft].root_scale = 200.0
+    lctlib[pft].root_scale = 100.0
 
     user_git_info = UserGitInformation(QUINCY_ROOT_PATH, 
                                            os.path.join(RUN_DIRECTORY, "output", str(i)), 

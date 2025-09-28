@@ -28,7 +28,8 @@ with open(os.path.join(RESULT_DIR, "quincy_path.txt")) as f:
 DATA_FORC_TRANSIENT = data_files[0]
 DATA_FORC_STATIC = data_files[1]
 
-QUINCY_ROOT_PATH = os.path.dirname(os.path.dirname(QUINCY_BIN_PATH))
+QUINCY_ROOT_PATH = os.path.join(os.path.dirname(os.path.dirname(QUINCY_BIN_PATH)), "quincy")
+
 
 print("Python path:", PYTHON_PATH)
 print("Quincy binary:", QUINCY_BIN_PATH)

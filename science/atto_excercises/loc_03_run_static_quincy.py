@@ -126,11 +126,11 @@ nlm_base.base_ctl.set_parameter_values_from_file.value = True
 
 # Now we rescale parameters
 # phi_leaf_mins = [-1.0, -1.0, -1.0]
-resp_coeffs = [0.1, 0.5, 0.99]
+resp_coeffs = [0.1, 0.5, 0.99,7,7,7 ]
 # sand_fracs = [0.3, 0.3, 0.3]
 # clay_fracs = [0.5, 0.5, 0.5]
 
-number_of_runs = 3
+number_of_runs = 8
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 # Do not modify below
