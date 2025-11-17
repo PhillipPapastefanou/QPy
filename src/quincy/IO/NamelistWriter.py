@@ -2,6 +2,7 @@ import enum
 import numpy
 from datetime import datetime
 from src.quincy.base.Namelist import Namelist
+from src.quincy.base.NamelistTypes import NamelistItem
 
 class NamelistWriter:
     def __init__(self, namelist : Namelist):
@@ -30,14 +31,27 @@ class NamelistWriter:
     def iadd_category(self, instance):
 
         # Beginning string
-        str_start = f"&{type(instance).__name__}"
+        cat_name = type(instance).__name__
+        
+        if "JSB" in cat_name:
+            cat_name = cat_name.lower()              
+            if cat_name == "JSB_FORCING_CTL":
+                cat_name = cat_name.upper()
+        
+        str_start = f"&{cat_name}"
         self.lines.append(str_start)
 
         if len(vars(instance)) == 0:
             self.iadd_comment("nothing here yet", True)
 
         for var_str in vars(instance):
-            value = getattr(instance, var_str)
+            item = getattr(instance, var_str)
+    
+            if type(item) is not NamelistItem:
+                print(f"Could not write {var_str} in cat {instance}. Not a NameListItem")
+                continue
+            
+            value = item.value
             var_type =  type(value)
 
             if (var_type is float) | (var_type is numpy.float64) :

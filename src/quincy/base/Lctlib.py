@@ -45,6 +45,8 @@ class Lctlib_Item:
 
         self.name = pft.name
 
+        # number of landcover types
+        self.NLCT = 14
 
         # LctNumber: Landcover type index numbers (not used in the model)
         self.LctNumber = 0
@@ -52,6 +54,11 @@ class Lctlib_Item:
         self.growthform = Growthform.ITREE
         self.ps_pathway = PsPathway.IC3PHOT
         self.phenology_type = PhenologyType.ISUMMERGREEN
+
+        # lai_max: maximum leaf area index (--) only used for CANOPY mode
+        self.lai_max = 0.0
+        # vegetation_height: Vegetation height [m] only used for CANOPY mode
+        self.vegetation_height = 0.0
         # sla: specific leaf area (mm / mgDW)
         # From Kattge et al. 2011, Table 5, converted internally from (mm/mgDW) to (m2/mol C)
         self.sla = 0.0
@@ -144,6 +151,21 @@ class Lctlib_Item:
         # bnf_base: base nitrogen fixation rate (g N / m2 / year)
         # converted internally to mumol N m-2 s-1
         self.bnf_base = 0.0
+        
+        
+        #vmax_symb_bnf: maximum rate of N fixation (g N / g C fine root / yr )
+        # converted internally to mumol N / mol C fine root / s
+        # set C4 grass/pasture/crop as zero because they cannot fix N
+        # tuned based on T. Davies-Barnard and P. Friedlingstein 2020
+        self.vmax_symb_bnf = 0.0        
+        
+        #km_symb_bnf: half-saturating cost of the response of N fixation (g C / g N)
+        # converted internally to mol C / mol N
+        # tuned to fit the meta-analysis of T. Davies-Barnard and P. Friedlingstein 2020
+        self.km_symb_bnf = 0.0
+
+
+
 
         # Vegetation dynamics parameters
 
@@ -213,3 +235,48 @@ class Lctlib_Item:
         # tuned according to Jackson et al. 1996, Oecologia, to reproduce their cummulative root distribution profiles
         # only making use of the contrast sclerophyllic, tree, grass
         self.k_root_dist = 0.0
+        # k_som_fast_init: fast pools SOM init value, empirically calibrated values to equilibrium soil profiles (unitless)
+        self.k_som_fast_init = 0.0
+        # k_som_slow_init: slow pools SOM init value, empirically calibrated values to equilibrium soil profiles (unitless)
+        self.k_som_slow_init = 0.0
+
+
+        # Albedo parameters
+
+        # AlbedoLitterVIS: Albedo of litter in the visible range
+        self.AlbedoLitterVIS = 0.0
+        # AlbedoLitterNIR: Albedo of litter in the near infrared range
+        self.AlbedolitterNIR = 0.0
+
+        # Plant hydraulics
+
+        # (MPa)
+        self.psi50_xylem = 0.0
+        # (1)
+        self.slope50_xylem = 0.0
+        # (MPa)
+        self.psi50_leaf_close = 0.0
+        # (1)
+        self.slope_leaf_close = 0.0
+        # (mol m-1 s-1 MPa-1)
+        self.k_xylem_sat = 0.0
+        # (1)
+        self.root_area_index = 0.0
+        # (1?)
+        self.eta_stem = 0.0
+        # (mol m-2 MPa-1)
+        self.kappa_leaf = 0.0
+        # (mol m-3 MPa-1)
+        self.kappa_stem = 0.0
+        # Root scaler (1)
+        self.root_scale = 1.0
+        # Residual hydraulic conductivity (kg H2O m-2 s-1)
+        self.g_res = 0.0
+        
+        
+        # VegRoughness: Vegetation roughness length [m]; for non-vegetation value is arbitrary but should be larger than zero to avoid division by zero                     
+        self.VegRoughness = 0.0
+        # MinVegRoughness: Vegetation roughness length at LAI=1 [m]; for non-vegetation value is arbitrary but should be larger than zero to avoid division by zero
+        self.MinVegRoughness = 0.0
+        # MaxVegRoughness: Vegetation roughness length at LAI=LAI_max [m]; for non-vegetation value is arbitrary but should be larger than zero to avoid division by zero
+        self.MaxVegRoughness = 0.0

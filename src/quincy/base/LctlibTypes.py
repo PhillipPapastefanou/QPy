@@ -14,14 +14,17 @@ class LandcoverClass(Enum):
 class Growthform(Enum):
     ITREE                       = 1
     IGRASS                      = 2
+    ICROP                       = 3
 
 class PsPathway(Enum):
     IC3PHOT                     = 1
     IC4PHOT                     = 2
 
 class PhenologyType(Enum):
+    NONE                        = 0
     IEVERGREEN                  = 1
     ISUMMERGREEN                = 2
     IRAINGREEN                  = 3
     IPERENNIAL                  = 4
+    ICROP_PHENOLOGY             = 5
 

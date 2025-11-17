@@ -11,7 +11,7 @@ from enum import Enum
 
 
 class QNC_ncdf_reader:
-    def __init__(self, output_path, output_cats, output_identifier, output_time_res):
+    def __init__(self, output_path, output_cats, output_identifier, output_time_res, verbose = False):
 
         self.output_path = output_path
         self.output_time_res = output_time_res
@@ -22,6 +22,8 @@ class QNC_ncdf_reader:
         self.Second_dim =  Second_dim_type.Invalid
 
         self.SECONDS_IN_ONE_TIMESTEP = 1800
+        self.verbose = verbose
+
 
     def Parse_env_and_variables(self):
         self.files = {}
@@ -33,8 +35,9 @@ class QNC_ncdf_reader:
                 print(f'Could not open {filename}. HDF error')
                 return False
 
-        print(f"     Reading time variable... ", end='')
-        t1_start = perf_counter()
+        if self.verbose:
+            print(f"     Reading time variable... ", end='')
+            t1_start = perf_counter()
 
         # Get the time variable from the first output file
         time_steps = self.files[self.output_cat_names[0]]['time'].load().values.astype(int)
@@ -44,12 +47,13 @@ class QNC_ncdf_reader:
 
         time_units = self.files[self.output_cat_names[0]]['time'].attrs['units']
 
-
-        print(f"     Done! ({np.round(perf_counter()-t1_start, 1)} sec.)")
+        if self.verbose:
+            print(f"     Done! ({np.round(perf_counter()-t1_start, 1)} sec.)")
 
         # Parse time to calendar variable
-        print(f"     Parsing time variable... ", end='')
-        t1_start = perf_counter()
+        if self.verbose:
+            print(f"     Parsing time variable... ", end='')
+            t1_start = perf_counter()
 
         from src.postprocessing.cal_parsing.julian_arithmetics import JulianDate
         from src.postprocessing.cal_parsing.julian_arithmetics import JulianCalendarParser
@@ -77,11 +81,12 @@ class QNC_ncdf_reader:
         # for i in range(0, self.dF.shape[0]):
         #     self.times_np_64[i] = np.datetime64(self.dF['date'][i])
 
-        t_stop = perf_counter()
-        print(f"Done! ({np.round(t_stop-t1_start, 1)} sec.)")
+        if self.verbose:
+            t_stop = perf_counter()
+            print(f"Done! ({np.round(t_stop-t1_start, 1)} sec.)")
 
-
-        print(f"     Reading variable names and units... ", end='')
+        if self.verbose:
+            print(f"     Reading variable names and units... ", end='')
         self.Dataset_Names_2D = {}
         self.Dataset_Names_1D = {}
 
@@ -133,9 +138,10 @@ class QNC_ncdf_reader:
 
             self.Units_1D[name] = dict_units_1D
             self.Units_2D[name] = dict_units_2D
-
-        t_stop = perf_counter()
-        print(f"Done! ({np.round(t_stop - t1_start, 1)} sec.)")
+            
+        if self.verbose:
+            t_stop = perf_counter()
+            print(f"Done! ({np.round(t_stop - t1_start, 1)} sec.)")
         return True
 
 
@@ -156,12 +162,13 @@ class QNC_ncdf_reader:
             grp_var_target_found.append(var_target_found)
         return grp_var_target_found;
 
-    def read_1D_flat(self, cat_name, var_name):
+    def Read_1D_flat(self, cat_name, var_name):
 
         # Reading in all output data into dataframes.
         # This could be improved at one point...
-        print(f"Reading 1D variable... ", end='')
-        t1_start = perf_counter()
+        if self.verbose:
+            print(f"Reading 1D variable... ", end='')
+            t1_start = perf_counter()
 
         arr_1d = self.files[cat_name][var_name]
 
@@ -170,8 +177,9 @@ class QNC_ncdf_reader:
 
         df_1d = pd.concat([self.dF.reset_index(), df_1d], axis = 1)
 
-        t_stop = perf_counter()
-        print(f"Done! ({np.round(t_stop - t1_start, 1)} sec.)")
+        if self.verbose:
+            t_stop = perf_counter()
+            print(f"Done! ({np.round(t_stop - t1_start, 1)} sec.)")
 
         return df_1d
 
@@ -179,15 +187,15 @@ class QNC_ncdf_reader:
 
         # Reading in all output data into dataframes.
         # This could be improved at one point...
-        print(f"     Reading all 1D variables... ", end='')
-        t1_start = perf_counter()
+        if self.verbose:
+            print(f"     Reading all 1D variables... ", end='')
+            t1_start = perf_counter()
 
         self.Datasets_1D = {}
 
         for name in self.output_cat_names:
 
             vars = self.files[name].data_vars
-
             df_vars_1D = []
             names_vars_1D = []
 
@@ -202,9 +210,9 @@ class QNC_ncdf_reader:
             self.Datasets_1D[name].columns = names_vars_1D
             self.Datasets_1D[name] = pd.concat([self.dF.reset_index(), self.Datasets_1D[name].reset_index()], axis = 1)
 
-
-        t_stop = perf_counter()
-        print(f"Done! ({np.round(t_stop - t1_start, 1)} sec.)")
+        if self.verbose:
+            t_stop = perf_counter()
+            print(f"Done! ({np.round(t_stop - t1_start, 1)} sec.)")
 
     def read_2D(self, cat_name, var_name):
         arr_2d = self.files[cat_name][var_name]

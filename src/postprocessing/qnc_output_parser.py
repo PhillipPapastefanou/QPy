@@ -2,12 +2,13 @@ from enum import Enum
 import os
 from pathlib import Path
 from src.postprocessing.qnc_defintions import *
+from src.quincy.base.NamelistTypes import ForcingMode
 from src.postprocessing.qnc_basic_Information_parser import Basic_information_parser
 
 class Output:
     def __init__(self, identifier, simulation_type):
         self.Identifier = identifier
-        self.Simulation_type = simulation_type
+        self.forcing_mode = simulation_type
         self.Files = []
         self.Categories = []
         self.Target_categories = []
@@ -25,8 +26,6 @@ class QNC_output_parser:
         # Settings --------------------------
         self.sinfo_file = "binary_sinfo.txt"
         self.exp_info_file = "exp_info.txt"
-
-
         self.spinup_identifier = "spinup"
         self.scenario_identifier = "transient"
         self.static_identifier = "static"
@@ -35,10 +34,8 @@ class QNC_output_parser:
         # To be determind by diagnostic identifier
         # End of settings ------------------
 
-
-
         # Initialisation
-        self.simulation_type = Simuluation_type.Static
+        self.forcing_mode = ForcingMode.STATIC
         self.output_files_path = ""
         self.diagnostic_identifier = "unkown"
         self.folder_structure_type = Folder_structure_type.Invalid
@@ -72,17 +69,16 @@ class QNC_output_parser:
         # check which outputs are available and generate list entries
         for file in files:
             if '.nc' in file:
-                if self.simulation_type == Simuluation_type.Static:
-                    output = Output(self.static_identifier, Simuluation_type.Static)
+                if self.forcing_mode == ForcingMode.STATIC:
+                    output = Output(self.static_identifier, ForcingMode.STATIC)
                     self.Available_outputs[self.static_identifier] = output
 
-                elif self.simulation_type == Simuluation_type.Transient:
+                elif self.forcing_mode == ForcingMode.TRANSIENT:
                     for identifier in transient_var_list:
                         if identifier in file:
-                            output = Output(identifier, Simuluation_type.Transient)
+                            output = Output(identifier, ForcingMode.TRANSIENT)
                             self.Available_outputs[identifier] = output
                             transient_var_list.remove(identifier)
-
                 else:
                     print("Invalid simulation output type.")
                     exit(-1)
@@ -91,7 +87,6 @@ class QNC_output_parser:
         for file in files:
             if '.nc' in file:
                 identifier_list  =  [self.static_identifier, self.spinup_identifier, self.scenario_identifier, self.diagnostic_identifier]
-
                 for identifier in identifier_list:
                     if identifier in file:
                         parts = file.split('_')
@@ -134,24 +129,33 @@ class QNC_output_parser:
             for file in files_in_output:
                 if '.nc' in file:
                     if self.static_identifier in file:
-                        self.simulation_type = Simuluation_type.Static
+                        self.forcing_mode = ForcingMode.STATIC
                         return
 
                     if self.scenario_identifier in file:
-                        self.simulation_type = Simuluation_type.Transient
+                        self.forcing_mode = ForcingMode.TRANSIENT
                         return
 
                     #in case we only have spinup
                     if self.spinup_identifier in file:
-                        self.simulation_type = Simuluation_type.Transient
-
-        for file in files:
-            if '.nc' in file:
-                self.folder_structure_type = Folder_structure_type.Test_bed
-                self.output_files_path = self.root_path
-                self.post_processing_path = self.root_path
-                self.simulation_type = Simuluation_type.Static
-                return
+                        self.forcing_mode = ForcingMode.TRANSIENT
+        else:
+            for file in files:
+                if '.nc' in file:                             
+                    self.folder_structure_type = Folder_structure_type.Test_bed
+                    self.output_files_path = self.root_path
+                    self.post_processing_path = self.root_path
+                              
+                    if self.static_identifier in file:
+                        self.forcing_mode = ForcingMode.STATIC
+                        return
+                    if self.scenario_identifier in file:                                      
+                        self.forcing_mode = ForcingMode.TRANSIENT
+                        return
+                    for diag_inf in self.diagonstic_identifier_list:
+                        if diag_inf in file:                                      
+                            self.forcing_mode = ForcingMode.TRANSIENT
+                            return
 
         if self.folder_structure_type == Folder_structure_type.Invalid:
             print("Could not determine folder structure of Quincy output. Available files:")

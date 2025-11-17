@@ -9,10 +9,6 @@ class Folder_structure_type(Enum):
     Test_bed = 1
     Invalid = 2
 
-class Simuluation_type(Enum):
-    Static = 0
-    Transient = 1
-
 class Output_Time_Res(Enum):
     Timestep = 0
     Daily = 1

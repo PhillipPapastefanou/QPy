@@ -9,7 +9,8 @@ from src.postprocessing.qnc_obs_model_comparer import QNC_Obs_Model_Variable_Pai
 from src.postprocessing.qnc_output_parser import QNC_output_parser
 from src.postprocessing.qnc_ncdf_reader import QNC_ncdf_reader
 
-class QNC_Fluxnet_Diagnostics:
+
+class QNC_Std_Fluxnet_Diagnostics:
 
     def __init__(self, rt_path, target_variable_list : Obs_Model_Var_List):
         # Fluxnet output should always have this folder structure as it is not static
@@ -69,13 +70,13 @@ class QNC_Fluxnet_Diagnostics:
 
         model_plus = []
         for var in pair.model_vars_plus:
-            df = self.nc_output.read_1D_flat(var.cat, var.name)
+            df = self.nc_output.Read_1D_flat(var.cat, var.name)
             df.set_index('date', inplace=True)
             model_plus.append(df)
 
         model_minus = []
         for var in pair.model_vars_minus:
-            df = self.nc_output.read_1D_flat(var.cat, var.name)
+            df = self.nc_output.Read_1D_flat(var.cat, var.name)
             df.set_index('date', inplace=True)
             model_minus.append(df)
 
