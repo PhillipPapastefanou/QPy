@@ -17,11 +17,17 @@ class NamelistCategories(Enum):
     SOIL_BIOGEOCHEMISTRY_CTL = 8
     BASE_CTL            = 9
     JSB_FORCING_CTL     = 10
-    Q_SH_CTL            = 11
     JSB_RAD_NML         = 12
     ATMLAND_CTL         = 13 #For Paramlist
     SHARED_CTL          = 14 #For Paramlist
     SB_CTL              = 15 #For Paramlist
+    HYDRO_CTL           = 16
+    Q_SYL_CTL           = 17
+    Q_AGR_CTL           = 18
+    JSB_TURB_NML        = 19
+    JSB_HYDRO_NML       = 20
+    JSB_SSE_NML         = 21
+    JSB_SEB_NML         = 22
 
 class GsBetaType(Enum):
     PLANT = 0

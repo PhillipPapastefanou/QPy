@@ -144,12 +144,23 @@ class EnvironmentalInputSite:
         namelist.base_ctl.forcing_file_last_yr.value = df_config_site.loc[0, 'end']
 
         spq = namelist.spq_ctl
-        spq.soil_clay.value = df_config_site.loc[0, 'clay']
-        spq.soil_silt.value = df_config_site.loc[0, 'silt']
-        spq.soil_sand.value = df_config_site.loc[0, 'sand']
-        spq.bulk_density.value = df_config_site.loc[0, 'bd']
-        spq.soil_awc_prescribe.value =  df_config_site.loc[0, 'awc']
+        jsb_sse = namelist.jsb_sse_nml  
+        if namelist.base_ctl.use_soil_phys_jsbach.value:
+            spq.spq_deactivate_spq.value = True     
+        else:          
+            spq.spq_deactivate_spq.value = False    
         
+        spq.spq_soil_clay.value = df_config_site.loc[0, 'clay']
+        jsb_sse.qs_soil_clay.value = df_config_site.loc[0, 'clay']
+        spq.spq_soil_silt.value = df_config_site.loc[0, 'silt']
+        jsb_sse.qs_soil_silt.value = df_config_site.loc[0, 'silt']
+        spq.spq_soil_sand.value = df_config_site.loc[0, 'sand']
+        jsb_sse.qs_soil_sand.value = df_config_site.loc[0, 'sand']
+        spq.spq_bulk_density.value = df_config_site.loc[0, 'bd']
+        jsb_sse.qs_bulk_density.value = df_config_site.loc[0, 'bd']
+        spq.spq_soil_awc_prescribe.value =  df_config_site.loc[0, 'awc']
+        namelist.jsb_hydro_nml.qs_soil_awc_prescribe.value =  df_config_site.loc[0, 'awc']
+            
         namelist.phenology_ctl.lai_max.value = df_config_site.loc[0, 'LAI']
 
         sb = namelist.soil_biogeochemistry_ctl
@@ -163,7 +174,7 @@ class EnvironmentalInputSite:
         sb.soil_p_primary.value = df_config_site.loc[0, 'soilP_primary']
         sb.qmax_org_fine_particle.value = df_config_site.loc[0, 'Qmax_org_fp']
         
-        namelist.q_sh_ctl.stand_replacing_year.value = df_config_site.loc[0, 'PlantYear']
+        namelist.q_syl_ctl.stand_replacing_year.value = df_config_site.loc[0, 'PlantYear']
         
         begin = namelist.base_ctl.forcing_file_start_yr.value
         end = namelist.base_ctl.forcing_file_last_yr.value         

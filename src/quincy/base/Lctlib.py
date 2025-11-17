@@ -45,6 +45,8 @@ class Lctlib_Item:
 
         self.name = pft.name
 
+        # number of landcover types
+        self.NLCT = 14
 
         # LctNumber: Landcover type index numbers (not used in the model)
         self.LctNumber = 0
@@ -149,6 +151,21 @@ class Lctlib_Item:
         # bnf_base: base nitrogen fixation rate (g N / m2 / year)
         # converted internally to mumol N m-2 s-1
         self.bnf_base = 0.0
+        
+        
+        #vmax_symb_bnf: maximum rate of N fixation (g N / g C fine root / yr )
+        # converted internally to mumol N / mol C fine root / s
+        # set C4 grass/pasture/crop as zero because they cannot fix N
+        # tuned based on T. Davies-Barnard and P. Friedlingstein 2020
+        self.vmax_symb_bnf = 0.0        
+        
+        #km_symb_bnf: half-saturating cost of the response of N fixation (g C / g N)
+        # converted internally to mol C / mol N
+        # tuned to fit the meta-analysis of T. Davies-Barnard and P. Friedlingstein 2020
+        self.km_symb_bnf = 0.0
+
+
+
 
         # Vegetation dynamics parameters
 
@@ -251,7 +268,15 @@ class Lctlib_Item:
         self.kappa_leaf = 0.0
         # (mol m-3 MPa-1)
         self.kappa_stem = 0.0
-        # Root scaler
+        # Root scaler (1)
         self.root_scale = 1.0
         # Residual hydraulic conductivity (kg H2O m-2 s-1)
         self.g_res = 0.0
+        
+        
+        # VegRoughness: Vegetation roughness length [m]; for non-vegetation value is arbitrary but should be larger than zero to avoid division by zero                     
+        self.VegRoughness = 0.0
+        # MinVegRoughness: Vegetation roughness length at LAI=1 [m]; for non-vegetation value is arbitrary but should be larger than zero to avoid division by zero
+        self.MinVegRoughness = 0.0
+        # MaxVegRoughness: Vegetation roughness length at LAI=LAI_max [m]; for non-vegetation value is arbitrary but should be larger than zero to avoid division by zero
+        self.MaxVegRoughness = 0.0

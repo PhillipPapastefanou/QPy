@@ -18,12 +18,14 @@ class Basic_information_parser:
 
         if self.folder_structure_type == Folder_structure_type.Standard:
             self.postprocess_subdir = "postprocessing/"
+            self.output_dir = "output/"
         elif self.folder_structure_type == Folder_structure_type.Test_bed:
             self.postprocess_subdir = ""
+            self.output_dir = ""
         else:
             print("Invalid simulation type")
             exit(-1)
-
+        self.compiler_str = 'Unkown'
         try:
             info_filename = os.path.join(self.root_path, self.postprocess_subdir, self.sinfo_file)
             info_f = open(info_filename)
@@ -31,7 +33,7 @@ class Basic_information_parser:
             base_data = [line.rstrip('\n') for line in base_data]
 
             compiled_with_netcdf = False
-            self.compiler_str = 'Unkown'
+        
 
             for i in range(0, len(base_data)):
                 str_clean = re.sub('[^A-Za-z0-9]+', '', base_data[i])
@@ -43,6 +45,20 @@ class Basic_information_parser:
         except:
             print(f"Error while parsing file {self.sinfo_file}. Error:")
             traceback.print_exc()
+            
+            print("Trying to check if we have netcdf output")
+
+            
+            files = os.listdir(os.path.join(self.root_path, self.output_dir))
+            has_nc = any(f.endswith(".nc") for f in files)
+            
+            print(files)
+
+            if has_nc:            
+                compiled_with_netcdf = True
+            else:
+                compiled_with_netcdf = False
+                        
 
         # If we do not have the correct indication that the binaries were build with NetCDF we might
         # look at some old NetCDF files but new model output. Very dangerous. Abort! Help!

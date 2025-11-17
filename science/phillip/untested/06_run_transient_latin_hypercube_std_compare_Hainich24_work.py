@@ -34,7 +34,7 @@ from src.sens.auxil import rescale_mean
 from scipy.stats import qmc
 
 # Define the number of runs and variables
-number_of_runs = 5120
+number_of_runs = 64*16*12
 # Fluxnet3 forcing
 forcing = ForcingDataset.FLUXNET3
 # Fluxnet3 sites
@@ -42,12 +42,12 @@ site = "DE-Hai"
 # Use static forcing
 forcing_mode = ForcingMode.TRANSIENT
 # Number of cpu cores to be used
-NTASKS  = 512
-RAM_IN_GB = 600
-NNODES = 4
-PARTITION = 'big'
+NTASKS  = 64*16
+RAM_IN_GB = 300
+NNODES = 16
+PARTITION = 'work'
 # Path where all the simulation data will be saved
-RUN_DIRECTORY = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/18_transient_latin_hypercube_with_std_HAINICH_data_full_2024_rs"
+RUN_DIRECTORY = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/20_transient_latin_hypercube_with_std_HAINICH_data_full_2024_rs_work"
 
 # Path where to save the setup
 setup_root_path = os.path.join(THIS_DIR, RUN_DIRECTORY)
@@ -256,8 +256,6 @@ df_parameter_setup['root_scale']= np.round(10**root_scale_log,5)
 
 
 df_parameter_setup.to_csv(os.path.join(setup_root_path, "parameters.csv"), index=False)
-
-
 
 GenerateSlurmScript(path         = setup_root_path, 
                     ntasks       = NTASKS,

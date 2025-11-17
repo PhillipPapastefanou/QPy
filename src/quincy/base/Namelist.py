@@ -25,8 +25,18 @@ def Generate_CTL_Categories(ctl_category):
         return JSB_FORCING_CTL()
     elif ctl_category == NamelistCategories.JSB_RAD_NML:
         return JSB_RAD_NML()
-    elif ctl_category == NamelistCategories.Q_SH_CTL:
-        return Q_SH_CTL()
+    elif ctl_category == NamelistCategories.Q_SYL_CTL:
+        return Q_SYL_CTL()
+    elif ctl_category == NamelistCategories.Q_AGR_CTL:
+        return Q_AGR_CTL()
+    elif ctl_category == NamelistCategories.JSB_TURB_NML:
+        return JSB_TURB_NML()
+    elif ctl_category == NamelistCategories.JSB_HYDRO_NML:
+        return JSB_HYDRO_NML()
+    elif ctl_category == NamelistCategories.JSB_SSE_NML:
+        return JSB_SSE_NML()
+    elif ctl_category == NamelistCategories.JSB_SEB_NML:
+        return JSB_SEB_NML()
     else:
         print(f"Unknown CTL: {ctl_category}")
         return 0
@@ -43,6 +53,10 @@ class VEGETATION_CTL:
         self.flag_dynroots_h2o_n_limit  = NamelistItem(False)
         self.l_use_product_pools        = NamelistItem(False)
         self.flag_herbivory             = NamelistItem(False)
+        self.flag_veg_interactive_n     = NamelistItem(True)
+        self.flag_veg_interactive_p     = NamelistItem(False)
+        self.flag_log_negative_vegpool  = NamelistItem(True)
+        self.flag_log_c_conservation    = NamelistItem(True)
 
 class PHENOLOGY_CTL:
     def __init__(self):
@@ -53,9 +67,9 @@ class DIST_FIRE_CTL:
     def __init__(self):
         # flags for the disturbance fire process
         self.flag_dfire                 = NamelistItem(False)
-        self.lightning_frequency        = NamelistItem(0.1)
+        self.lightning_frequency        = NamelistItem(5.0)
         self.dfire_modelname            = NamelistItem(DfireModelname.SPITFIRE)
-        self.density_human_population   = NamelistItem(0.5)
+        self.density_human_population   = NamelistItem(10.0)
 
 class ASSIMILATION_CTL:
     def __init__(self):
@@ -64,7 +78,7 @@ class ASSIMILATION_CTL:
         self.flag_t_resp_acclimation = NamelistItem(False)
         self.flag_t_jmax_acclimation = NamelistItem(False)
         # number of canopy layers [int value, may default to 20]
-        self.ncanopy = NamelistItem(8)
+        self.ncanopy = NamelistItem(10)
         # canopy layer depth
         # calculation[standard = 0.5, fapar]
         self.canopy_layer_scheme        = NamelistItem(CanopyLayerScheme.FAPAR)
@@ -89,26 +103,30 @@ class GRID_CTL:
 
 class SPQ_CTL:
     def __init__(self):
+        self.spq_deactivate_spq = NamelistItem(False)
         self.flag_snow     = NamelistItem(False)
-        self.nsoil_energy  = NamelistItem(5)
-        self.nsoil_water   = NamelistItem(5)
-        self.soil_depth    = NamelistItem(5.7)
-        self.soil_awc_prescribe     = NamelistItem(300.0)
-        self.soil_theta_prescribe   = NamelistItem(1.0)
-        self.elevation = NamelistItem(0.0)
         
-        self.soil_sand    = NamelistItem(0.4)
-        self.soil_silt    = NamelistItem(0.3)
-        self.soil_clay    = NamelistItem(0.3)
+        self.spq_soil_depth    = NamelistItem(5.7)
+        self.spq_soil_awc_prescribe     = NamelistItem(300.0)
+        self.spq_soil_theta_prescribe   = NamelistItem(1.0)
+        self.spq_elevation = NamelistItem(0.0)
         
-        self.bulk_density = NamelistItem(1500.0)
+        self.spq_soil_sand    = NamelistItem(0.4)
+        self.spq_soil_silt    = NamelistItem(0.3)
+        self.spq_soil_clay    = NamelistItem(0.3)
         
-        self.saxtonA = NamelistItem(-0.2E-4)
-        self.saxtonB    = NamelistItem(-10.0)
-        self.kdiff_sat_sl    = NamelistItem(1E-6)
-        self.theta_sat_sl    = NamelistItem(0.5)
+        self.spq_bulk_density = NamelistItem(1500.0)
+        
+        # self.saxtonA = NamelistItem(-0.2E-4)
+        # self.saxtonB    = NamelistItem(-10.0)
+        # self.kdiff_sat_sl    = NamelistItem(1E-6)
+        # self.theta_sat_sl    = NamelistItem(0.5)
 
-class Q_SH_CTL:
+class Q_AGR_CTL:
+    def __init__(self):
+        self.active = NamelistItem(False)
+
+class Q_SYL_CTL:
     def __init__(self):
         self.active                = NamelistItem(True)
         self.flag_stand_harvest    = NamelistItem(False)
@@ -125,6 +143,8 @@ class SOIL_BIOGEOCHEMISTRY_CTL:
         self.flag_sb_prescribe_nh4 = NamelistItem(False)
         self.flag_sb_prescribe_no3 = NamelistItem(False)
         self.flag_sb_prescribe_po4 = NamelistItem(False)
+        self.flag_sb_interactive_n = NamelistItem(True)
+        self.flag_sb_interactive_p = NamelistItem(False)
         # mycorrhiza flags
         self.flag_mycorrhiza       = NamelistItem(False)
         self.flag_mycorrhiza_org   = NamelistItem(False)
@@ -151,6 +171,7 @@ class BASE_CTL:
         self.dtime_step_length_sec = NamelistItem(1800.0)
         #  QUINCY model: land plant soil canopy test_canopy test_radiation
         self.quincy_model_name = NamelistItem(QuincyModelName.LAND)
+        self.use_soil_phys_jsbach = NamelistItem(False)
         # git repository commit
         self.git_branch = NamelistItem("not_set")
         self.git_commit_SHA = NamelistItem("not_set")
@@ -226,6 +247,7 @@ class JSB_FORCING_CTL:
         self.transient_spinup_years          = NamelistItem(500)
         self.transient_simulation_start_year = NamelistItem(1901)
         self.flag_forcing_co2_const          = NamelistItem(False)
+        self.flag_forcing_with_snow_data     = NamelistItem(False)
 
 class JSB_RAD_NML:
     def __init__(self):
@@ -235,6 +257,33 @@ class JSB_RAD_NML:
         self.use_alb_mineralsoil_const  = NamelistItem(True)
         self.bc_filename                = NamelistItem('bc_land_phys.nc')
         self.ic_filename                = NamelistItem('ic_land_soil.nc')
+ 
+class JSB_TURB_NML:
+    def __init__(self):       
+        dummy =0
+
+class JSB_HYDRO_NML:
+    def __init__(self):
+        self.l_soil_texture = NamelistItem(True)
+        self.l_organic = NamelistItem(True)
+        self.quincy_nsoil_w = NamelistItem(15)
+        self.qs_soil_depth = NamelistItem(9.5)
+        self.qs_soil_awc_prescribe = NamelistItem(300.0)
+        self.qs_soil_theta_prescribe = NamelistItem(1.0)
+
+class JSB_SSE_NML:
+    def __init__(self):
+        self.l_soil_texture = NamelistItem(True)
+        self.quincy_nsoil_e = NamelistItem(15)
+        self.qs_soil_sand = NamelistItem(0.4)
+        self.qs_soil_silt = NamelistItem(0.3)
+        self.qs_soil_clay = NamelistItem(0.3)
+        self.qs_bulk_density = NamelistItem(1500.0)
+        
+        
+class JSB_SEB_NML:
+    def __init__(self):
+        self.l_skin_temp = NamelistItem(True)
 
 class Namelist:
     def __init__(self):
@@ -245,12 +294,17 @@ class Namelist:
         self.phenology_ctl             = PHENOLOGY_CTL()
         self.phyd_ctl                  = PHYD_CTL()
         self.grid_ctl                  = GRID_CTL()
-        self.spq_ctl                   = SPQ_CTL()
-        self.q_sh_ctl                  = Q_SH_CTL()
+        self.spq_ctl                   = SPQ_CTL()        
+        self.q_agr_ctl                 = Q_AGR_CTL()
+        self.q_syl_ctl                 = Q_SYL_CTL()
         self.soil_biogeochemistry_ctl  = SOIL_BIOGEOCHEMISTRY_CTL()
         self.base_ctl                  = BASE_CTL()
         self.jsb_forcing_ctl           = JSB_FORCING_CTL()
         self.jsb_rad_nml               = JSB_RAD_NML()
+        self.jsb_turb_nml              = JSB_TURB_NML()
+        self.jsb_hydro_nml             = JSB_HYDRO_NML()
+        self.jsb_sse_nml               = JSB_SSE_NML()
+        self.jsb_seb_nml               = JSB_SEB_NML()
 
 
     def check_if_parsed(self):

@@ -13,8 +13,6 @@ import pandas as pd
 from src.quincy.IO.NamelistReader import NamelistReader
 from src.quincy.IO.LctlibReader import LctlibReader
 from src.quincy.base.PFTTypes import PftQuincy, PftFluxnet
-from src.sens.base import Quincy_Setup
-from src.sens.base import Quincy_Single_Run
 from src.quincy.base.EnvironmentalInputTypes import *
 from src.quincy.base.NamelistTypes import *
 
@@ -30,7 +28,7 @@ else:
 
 
 # Path where all the simulation data will be saved
-RUN_DIRECTORY = "output/01_transient_fluxnet"
+RUN_DIRECTORY = "output/03_transient_fluxnet/output/0"
 
 
 if not os.path.exists(os.path.join(THIS_DIR, RUN_DIRECTORY)):

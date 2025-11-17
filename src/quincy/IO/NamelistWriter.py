@@ -33,8 +33,10 @@ class NamelistWriter:
         # Beginning string
         cat_name = type(instance).__name__
         
-        if cat_name == "JSB_RAD_NML":
-            cat_name = cat_name.lower()
+        if "JSB" in cat_name:
+            cat_name = cat_name.lower()              
+            if cat_name == "JSB_FORCING_CTL":
+                cat_name = cat_name.upper()
         
         str_start = f"&{cat_name}"
         self.lines.append(str_start)

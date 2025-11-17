@@ -15,6 +15,7 @@ from src.quincy.IO.LctlibReader import LctlibReader
 from src.quincy.base import Namelist
 from src.sens.base import Quincy_Setup
 from src.sens.base import Quincy_Single_Run
+from src.quincy.auxil.find_quincy_paths import QuincyPathFinder
 from src.quincy.base.EnvironmentalInputTypes import *
 from src.quincy.base.NamelistTypes import ForcingMode
 from src.quincy.base.EnvironmentalInput import EnvironmentalInputSite
@@ -24,13 +25,9 @@ from time import perf_counter
 
 class Test_Test_Bed(unittest.TestCase):
     
-    def init(self):
-        if 'QUINCY' in os.environ:        
-            self.QUINCY_ROOT_PATH = os.environ.get("QUINCY")
-        else:
-            print("Environmental variable QUINCY is not defined")
-            print("Please set QUINCY to the directory of your quincy root path")
-            exit(99)
+    def init(self):        
+        self.qpf = QuincyPathFinder()
+        self.QUINCY_ROOT_PATH = self.qpf.quincy_root_path
         self.OUTPUT_DIR = 'output'
         self.org_delta = 0.0
         self.qpy_delta = 0.0        
@@ -42,8 +39,8 @@ class Test_Test_Bed(unittest.TestCase):
         # Classic sensitivity analysis where we are apply differnt Namelist or Lctlib files to ONE climate file
         # The basic forcing path
         # We need a base namelist and lctlib which we then modify accordingly
-        namelist_root_path = os.path.join(self.QUINCY_ROOT_PATH,'contrib', 'namelist' ,'namelist.slm')
-        lctlib_root_path = os.path.join(self.QUINCY_ROOT_PATH,'data', 'lctlib_quincy_nlct14.def')
+        namelist_root_path = self.qpf.namelist_root_path
+        lctlib_root_path = self.qpf.lctlib_root_path
         # Path where to save the setup
         setup_root_path = os.path.join(THIS_DIR, self.OUTPUT_DIR)
 
@@ -149,7 +146,7 @@ class Test_Test_Bed(unittest.TestCase):
         returncode = p.returncode
         
         try:
-            # ... (Quincy execution)
+            # Run QUINCY
             if returncode == 0:
                 q.put((True, stdout, stderr)) # Put results in the queue
             else:
@@ -188,12 +185,11 @@ class Test_Test_Bed(unittest.TestCase):
         
         print("Comparing Vegetation output...")
         
-        ds_org = xr.open_dataset(os.path.join(self.QUINCY_ROOT_PATH, "contrib", "test_bed", "land", "VEG_static_timestep.nc"), decode_times=True)
-        
+        ds_org = xr.open_dataset(os.path.join(self.QUINCY_ROOT_PATH, "contrib", "test_bed", "land", "VEG_static_daily.nc"), decode_times=True)
         org_time = ds_org['time'][:]
         org_veg_c = ds_org['total_veg_c'][:]
         
-        ds_new = xr.open_dataset(os.path.join(THIS_DIR, self.OUTPUT_DIR, "VEG_static_timestep.nc"), decode_times=True)
+        ds_new = xr.open_dataset(os.path.join(THIS_DIR, self.OUTPUT_DIR, "VEG_static_daily.nc"), decode_times=True)
         new_time = ds_new['time'][:]
         new_veg_c = ds_new['total_veg_c'][:]
         
@@ -201,7 +197,9 @@ class Test_Test_Bed(unittest.TestCase):
         
         self.assertEqual(org_time[-1], new_time[-1], "Last time point does not match")
         
-        min_diff = np.min(new_veg_c[:] - org_veg_c[:])  
+       
+        diff = new_veg_c[:] - org_veg_c[:]
+        min_diff = float(diff.min())
         
         self.assertAlmostEqual(min_diff, 0.0, 16)  
         
