@@ -1,9 +1,9 @@
 from enum import Enum
 import os
 from pathlib import Path
-from src.postprocessing.qnc_defintions import *
+from src.postprocessing.py.qnc_defintions import *
 from src.quincy.base.NamelistTypes import ForcingMode
-from src.postprocessing.qnc_basic_Information_parser import Basic_information_parser
+from src.postprocessing.py.qnc_basic_Information_parser import Basic_information_parser
 
 class Output:
     def __init__(self, identifier, simulation_type):

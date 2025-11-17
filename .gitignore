@@ -2,7 +2,7 @@ __pycache__/
 .idea/
 .DS_Store
 src/weather_generator/build
-src/postprocessing/cal_parsing/build
+src/postprocessing/py/cal_parsing/build
 /forcing/
 app/*
 examples/sens/output

@@ -2,9 +2,9 @@ import os
 import pandas as pd
 import numpy as np
 
-from src.postprocessing.qnc_obs_reader import QNC_obs_reader
-from src.postprocessing.qnc_ncdf_reader import QNC_ncdf_reader
-from src.postprocessing.qnc_defintions import Time_Reduction_Type
+from src.postprocessing.py.qnc_obs_reader import QNC_obs_reader
+from src.postprocessing.py.qnc_ncdf_reader import QNC_ncdf_reader
+from src.postprocessing.py.qnc_defintions import Time_Reduction_Type
 
 class QNC_Rescaler:
 

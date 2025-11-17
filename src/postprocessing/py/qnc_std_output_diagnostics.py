@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from src.postprocessing.qnc_defintions import  *
+from src.postprocessing.py.qnc_defintions import  *
 
 class QNC_diagnostics:
 

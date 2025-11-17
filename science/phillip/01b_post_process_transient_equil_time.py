@@ -16,8 +16,8 @@ from src.quincy.base.PFTTypes import PftQuincy, PftFluxnet
 from src.quincy.base.EnvironmentalInputTypes import *
 from src.quincy.base.NamelistTypes import *
 
-from src.postprocessing.qnc_std_output_factory import Output_format
-from src.postprocessing.qnc_std_output_factory import QNC_std_output_factory
+from src.postprocessing.py.qnc_std_output_factory import Output_format
+from src.postprocessing.py.qnc_std_output_factory import QNC_std_output_factory
 
 if 'QUINCY' in os.environ:        
     QUINCY_ROOT_PATH = os.environ.get("QUINCY")

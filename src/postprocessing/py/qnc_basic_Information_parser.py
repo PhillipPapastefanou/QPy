@@ -2,7 +2,7 @@ import os
 import pandas as pd
 import traceback
 import re
-from src.postprocessing.qnc_defintions import *
+from src.postprocessing.py.qnc_defintions import *
 
 
 class Basic_information_parser:

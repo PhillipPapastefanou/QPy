@@ -2,11 +2,11 @@ import os
 import pandas as pd
 import numpy as np
 
-from src.postprocessing.qnc_obs_reader import QNC_obs_reader
-from src.postprocessing.qnc_obs_model_comparer import Obs_Model_Var_List
-from src.postprocessing.qnc_obs_model_comparer import QNC_Obs_Model_Variable_Pair
-from src.postprocessing.qnc_obs_model_comparer import QNC_Variable 
-from src.postprocessing.qnc_ncdf_reader import QNC_ncdf_reader
+from src.postprocessing.py.qnc_obs_reader import QNC_obs_reader
+from src.postprocessing.py.qnc_obs_model_comparer import Obs_Model_Var_List
+from src.postprocessing.py.qnc_obs_model_comparer import QNC_Obs_Model_Variable_Pair
+from src.postprocessing.py.qnc_obs_model_comparer import QNC_Variable 
+from src.postprocessing.py.qnc_ncdf_reader import QNC_ncdf_reader
 
 
 class QNC_Multi_Fluxnet_Comparer:

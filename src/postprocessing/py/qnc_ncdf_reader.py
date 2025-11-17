@@ -3,8 +3,8 @@ import pandas as pd
 import xarray as xr
 import numpy as np
 from time import perf_counter
-from src.postprocessing.qnc_defintions import Output_Time_Res
-from src.postprocessing.qnc_defintions import Second_dim_type
+from src.postprocessing.py.qnc_defintions import Output_Time_Res
+from src.postprocessing.py.qnc_defintions import Second_dim_type
 from enum import Enum
 
 
@@ -55,8 +55,8 @@ class QNC_ncdf_reader:
             print(f"     Parsing time variable... ", end='')
             t1_start = perf_counter()
 
-        from src.postprocessing.cal_parsing.julian_arithmetics import JulianDate
-        from src.postprocessing.cal_parsing.julian_arithmetics import JulianCalendarParser
+        from src.postprocessing.py.cal_parsing.julian_arithmetics import JulianDate
+        from src.postprocessing.py.cal_parsing.julian_arithmetics import JulianCalendarParser
 
         jcp = JulianCalendarParser(output_time_res=self.output_time_res,
                                    output_identifier=self.output_identifier)
