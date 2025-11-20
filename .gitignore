@@ -15,3 +15,5 @@ tests/post_process/output
 src/cal_parsing/build/
 science/phillip/output
 local
+examples/post_process/julia/multi/plots
+examples/post_process/julia/single/plots

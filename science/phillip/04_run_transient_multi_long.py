@@ -24,6 +24,11 @@ from src.quincy.auxil.find_quincy_paths import QuincyPathFinder
 from src.quincy.run_scripts.default import ApplyDefaultSiteLevel
 from src.quincy.run_scripts.submit import GenerateSlurmScript
 
+from src.sens.auxil import Subslicer
+from scipy.stats import qmc
+from src.sens.auxil import rescale
+
+
 # Fluxnet3 forcing
 forcing = ForcingDataset.FLUXNET3
 # Fluxnet3 sites
@@ -31,12 +36,12 @@ site = "DE-Hai"
 # Use static forcing
 forcing_mode = ForcingMode.TRANSIENT
 # Number of cpu cores to be used
-NTASKS  = 2
+NTASKS  = 64
 # Path where all the simulation data will be saved
-RAM_IN_GB = 10*NTASKS
+RAM_IN_GB = 300
 NNODES = 1
 PARTITION = 'work'
-RUN_DIRECTORY = "output/03_transient_fluxnet"
+RUN_DIRECTORY = "output/04_transient_fluxnet"
 
 qpf = QuincyPathFinder()
 QUINCY_ROOT_PATH = qpf.quincy_root_path
@@ -82,8 +87,7 @@ namelist_base.soil_biogeochemistry_ctl.flag_sb_prescribe_po4.value = True
 namelist_base.soil_biogeochemistry_ctl.sb_bnf_scheme.value = SbBnfScheme.UNLIMITED
 namelist_base.base_ctl.flag_slow_sb_pool_spinup_accelerator.value = False
 
-
-namelist_base.jsb_forcing_ctl.transient_spinup_years.value = 200
+namelist_base.jsb_forcing_ctl.transient_spinup_years.value = 100
 
 namelist_base.base_ctl.output_end_last_day_year.value = 124
 namelist_base.base_ctl.output_start_first_day_year.value = 1
@@ -111,52 +115,96 @@ pft = PftQuincy(pft_id)
 # We create a single quincy setup
 quincy_multi_run = Quincy_Multi_Run(setup_root_path)
 
-number_of_runs = NTASKS
+number_of_runs = 100
+number_of_soil_samples = int(number_of_runs/2)
 
-# We loop through the number of slice
-for i in range(0, number_of_runs):
-    
-    # We create a copy of the lctlibfile...
-    lctlib = deepcopy(lctlib_base)
-    nlm = deepcopy(namelist_base)
+# If we speicify more variables that we use we do NOT have a problem
+number_of_variables = 2
+
+# Create a latin hypercube sample that is distributed between 0-1
+seed   = 123456789
+sampler = qmc.LatinHypercube(d = number_of_variables, seed= seed)
+sample = sampler.random(n = number_of_soil_samples)
+sample = sample.T
+
+# Create a subslicer to make rescaling easier
+slicer = Subslicer(array=sample)
+
+# Parameter sand 
+sand_min = 0.16
+sand_max = 0.25
+
+# Parameter silt 
+silt_min = 0.28
+silt_max = 0.38
+
+silts = rescale(slicer.get(), min = silt_min, max = silt_max)
+sands = rescale(slicer.get(), min = sand_min, max = sand_max)
+
+
+silt_list = []
+sand_list = []
+soil_phys_list = []
+
+h = 0
+for j in range(0, 2):
+    # We loop through the number of soil samples
+    for i in range(0, number_of_soil_samples):
         
-    
-    if i ==0 :
-        nlm.base_ctl.use_soil_phys_jsbach.value = True
-        nlm.spq_ctl.spq_deactivate_spq.value = True
-    else:
-        nlm.base_ctl.use_soil_phys_jsbach.value = False
-        nlm.spq_ctl.spq_deactivate_spq.value = False
-    
-    
-    #lctlib[pft].psi50_xylem = -3.8        
-    # lctlib[pft].slope_leaf_close = float(slope_leaf_closes[i])
-    # lctlib[pft].g_res = float(10**g_res_logs[i])
-    
-    # nlm.spq_ctl.soil_silt.value = float(silts[i])
-    # nlm.spq_ctl.soil_sand.value = float(sands[i])
-    #nlm.spq_ctl.soil_clay.value = 1.0 - nlm.spq_ctl.soil_silt.value - nlm.spq_ctl.soil_sand.value
-    
-    user_git_info = UserGitInformation(QUINCY_ROOT_PATH, 
-                                        os.path.join(setup_root_path, "output", str(i)), 
-                                        site)  
-    
-    #Create one QUINCY setup
-    quincy_setup = Quincy_Setup(folder = os.path.join(setup_root_path, "output", str(i)), 
-                                namelist = nlm, 
-                                lctlib = lctlib, 
-                                forcing_path= forcing_file,
-                                user_git_info= user_git_info)
-    # Add to the setup creation
-    quincy_multi_run.add_setup(quincy_setup)  
+        # We create a copy of the lctlibfile...
+        lctlib = deepcopy(lctlib_base)
+        nlm = deepcopy(namelist_base)        
+        
+        if j ==0 :
+            nlm.base_ctl.use_soil_phys_jsbach.value = False
+            nlm.spq_ctl.spq_deactivate_spq.value = False
+        else:
+            nlm.base_ctl.use_soil_phys_jsbach.value = True
+            nlm.spq_ctl.spq_deactivate_spq.value = True
+        
+        
+        #lctlib[pft].psi50_xylem = -3.8        
+        # lctlib[pft].slope_leaf_close = float(slope_leaf_closes[i])
+        # lctlib[pft].g_res = float(10**g_res_logs[i])
+        
+        nlm.spq_ctl.spq_soil_silt.value = float(silts[i])
+        nlm.spq_ctl.spq_soil_sand.value = float(sands[i])
+        nlm.spq_ctl.spq_soil_clay.value = 1.0 - nlm.spq_ctl.spq_soil_silt.value - nlm.spq_ctl.spq_soil_sand.value
+        
+        
+        nlm.jsb_sse_nml.qs_soil_silt.value = float(silts[i])
+        nlm.jsb_sse_nml.qs_soil_sand.value = float(sands[i])
+        nlm.jsb_sse_nml.qs_soil_clay.value = 1.0 - nlm.jsb_sse_nml.qs_soil_silt.value - nlm.jsb_sse_nml.qs_soil_sand.value
+        
+        user_git_info = UserGitInformation(QUINCY_ROOT_PATH, 
+                                            os.path.join(setup_root_path, "output", str(h)), 
+                                            site)  
+        
+        #Create one QUINCY setup
+        quincy_setup = Quincy_Setup(folder = os.path.join(setup_root_path, "output", str(h)), 
+                                    namelist = nlm, 
+                                    lctlib = lctlib, 
+                                    forcing_path= forcing_file,
+                                    user_git_info= user_git_info)
+        # Add to the setup creation
+        quincy_multi_run.add_setup(quincy_setup)  
       
+        soil_phys_list.append(j)
+        h += 1
+
+    silt_list.append(silts)
+    sand_list.append(sands)
+    
 # Generate quincy setups
 quincy_multi_run.generate_files()
+
 
 df_parameter_setup = pd.DataFrame({
     'id': np.arange(number_of_runs),
     'fid': np.arange(number_of_runs),
-    'use_jsb_physics': [1,0]
+    'use_jsb_physics': soil_phys_list, 
+    'sand': np.array(sand_list).flatten(),
+    'silt': np.array(silt_list).flatten()
 })
 
 # df_parameter_setup['silt']= np.round(silts ,5)
