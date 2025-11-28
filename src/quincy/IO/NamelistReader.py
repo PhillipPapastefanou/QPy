@@ -140,6 +140,9 @@ class NamelistReader:
                         self.iparse_enum(item, OutputIntervalPool,  value)
                     elif var_type == OutputIntervalFlux:
                         self.iparse_enum(item, OutputIntervalFlux,  value)
+                        
+                    elif var_type == JSBSoilHydModelType:
+                        self.iparse_enum(item, JSBSoilHydModelType,  value)
 
                     else:
                         print(f"Could not determine type {var_type} of {name} in class {ctl_class}")

@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 
 from src.quincy.IO.NamelistReader import NamelistReader
+from src.quincy.IO.ParamlistWriter import ParamlistWriter, Paramlist
 from src.quincy.IO.LctlibReader import LctlibReader
 from src.quincy.base.PFTTypes import PftQuincy, PftFluxnet
 from src.sens.base import Quincy_Setup
@@ -22,11 +23,13 @@ from src.quincy.base.user_git_information import UserGitInformation
 from src.quincy.auxil.find_quincy_paths import QuincyPathFinder
 
 from src.quincy.run_scripts.default import ApplyDefaultSiteLevel
-from src.quincy.run_scripts.submit import GenerateSlurmScript
+from src.quincy.run_scripts.submit import GenerateSlurmScriptArrayBased
 
 from src.sens.auxil import Subslicer
 from scipy.stats import qmc
 from src.sens.auxil import rescale
+import time
+
 
 
 # Fluxnet3 forcing
@@ -36,13 +39,14 @@ site = "DE-Hai"
 # Use static forcing
 forcing_mode = ForcingMode.TRANSIENT
 # Number of cpu cores to be used
-NNODES = 8
-NTASKS  = 64* NNODES
+NMAXTASKS  = 512
 # Path where all the simulation data will be saved
-RAM_IN_GB = 300
+RAM_IN_GB = 4
+
+number_of_runs = 1024*4
 
 PARTITION = 'work'
-RUN_DIRECTORY = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/05_transient_fluxnet_finer"
+RUN_DIRECTORY =  "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/09_transient_slurm_array/"
 
 qpf = QuincyPathFinder()
 QUINCY_ROOT_PATH = qpf.quincy_root_path
@@ -88,7 +92,7 @@ namelist_base.soil_biogeochemistry_ctl.flag_sb_prescribe_po4.value = True
 namelist_base.soil_biogeochemistry_ctl.sb_bnf_scheme.value = SbBnfScheme.UNLIMITED
 namelist_base.base_ctl.flag_slow_sb_pool_spinup_accelerator.value = False
 
-namelist_base.jsb_forcing_ctl.transient_spinup_years.value = 100
+namelist_base.jsb_forcing_ctl.transient_spinup_years.value = 200
 
 namelist_base.base_ctl.output_end_last_day_year.value = 124
 namelist_base.base_ctl.output_start_first_day_year.value = 1
@@ -97,7 +101,7 @@ namelist_base.jsb_forcing_ctl.transient_spinup_start_year.value = 1901
 namelist_base.jsb_forcing_ctl.transient_spinup_end_year.value = 1930
 namelist_base.jsb_forcing_ctl.simulation_length_number.value = 124
 namelist_base.base_ctl.fluxnet_type_transient_timestep_output.value = True
-namelist_base.base_ctl.fluxnet_static_forc_start_yr.value = 2000
+namelist_base.base_ctl.fluxnet_static_forc_start_yr.value = 1901
 namelist_base.base_ctl.fluxnet_static_forc_last_yr.value = 2024
 
 
@@ -109,6 +113,12 @@ lctlib_base = lctlib_reader.parse()
 pft_id = namelist_base.vegetation_ctl.plant_functional_type_id.value
 pft = PftQuincy(pft_id)
 
+# Generate empty paramlist
+paramlist_base = Paramlist()
+
+# This line is important so QUINCY know it is expecting a paramlist
+namelist_base.base_ctl.set_parameter_values_from_file.value = True
+
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 # Main code to be modified
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
@@ -116,11 +126,11 @@ pft = PftQuincy(pft_id)
 # We create a single quincy setup
 quincy_multi_run = Quincy_Multi_Run(setup_root_path)
 
-number_of_runs = 5120
-number_of_soil_samples = int(number_of_runs/2)
+
+number_of_soil_samples = int(number_of_runs/4)
 
 # If we speicify more variables that we use we do NOT have a problem
-number_of_variables = 12
+number_of_variables = 15
 
 # Create a latin hypercube sample that is distributed between 0-1
 seed   = 123456789
@@ -179,6 +189,19 @@ root_scale_max = 500.0
 slope_leaf_close_min = 2.0
 slope_leaf_close_max = 4.0
 
+
+# 13. Parameter silt 
+gdd_t_air_thres_min  = 7.0
+gdd_t_air_thres_max = 11.0
+
+# 14. Parameter silt 
+gdd_t_air_req_min  = 300
+gdd_t_air_req_max = 500
+
+# 15. Parameter silt 
+k_gdd_min  = 0.011
+k_gdd_max  = 0.019
+
 k_xylem_sats = rescale(slicer.get(), min = k_xylem_sat_min, max = k_xylem_sat_max)
 kappa_stems = rescale(slicer.get(), min = kappa_stem_min, max = kappa_stem_max)
 kappa_leaves = rescale(slicer.get(), min = kappa_leaf_min, max = kappa_leaf_max)
@@ -192,18 +215,25 @@ root_dists = rescale(slicer.get(), min = root_dist_min, max = root_dist_max)
 root_scale_log= rescale(slicer.get(), min = np.log10(root_scale_min), max = np.log10(root_scale_max))
 slope_leaf_closes = rescale(slicer.get(), min = slope_leaf_close_min, max = slope_leaf_close_max)
 
+gdd_t_air_thresholds = rescale(slicer.get(), min = gdd_t_air_thres_min, max = gdd_t_air_thres_max)
+gdd_t_air_reqs = rescale(slicer.get(), min = gdd_t_air_req_min, max = gdd_t_air_req_max)
+k_gdd_s = rescale(slicer.get(), min = k_gdd_min, max = k_gdd_max)
 
 soil_phys_list = []
+soil_phys_mod_list = []
 
 h = 0
-for j in range(0, 2):
+for j in range(0, 4):
     # We loop through the number of soil samples
     for i in range(0, number_of_soil_samples):
               
-        
+
         # We create a copy of the lctlibfile...
         lctlib = deepcopy(lctlib_base)
         nlm = deepcopy(namelist_base) 
+        
+        # Duplicate the paramlist
+        paramlist = deepcopy(paramlist_base)
         
         # Write one standard simulation without plant hydraulics  
         if i == 0:
@@ -214,15 +244,38 @@ for j in range(0, 2):
             nlm.assimilation_ctl.gs_beta_type.value = GsBetaType.PLANT
             nlm.phyd_ctl.use_plant_hydraulics.value = True    
                
+        soil_model_str = ""
         
         if j ==0 :
             nlm.base_ctl.use_soil_phys_jsbach.value = False
             nlm.spq_ctl.spq_deactivate_spq.value = False
+            soil_model_str = "Saxton"
+            
         else:
             nlm.base_ctl.use_soil_phys_jsbach.value = True
             nlm.spq_ctl.spq_deactivate_spq.value = True
+            
+            if j == 1:
+                nlm.jsb_hydro_nml.soilhydmodel.value = JSBSoilHydModelType.VanGenuchten
+                soil_model_str = "VanGenuchten"       
+            elif j == 2:
+                nlm.jsb_hydro_nml.soilhydmodel.value = JSBSoilHydModelType.BrooksCorey
+                soil_model_str = "BrooksCorey"   
+            elif j == 3:
+                nlm.jsb_hydro_nml.soilhydmodel.value = JSBSoilHydModelType.Campbell
+                soil_model_str = "Campbell"           
+            else:
+                print("Invalid soil model")
+                exit(99)
+                
         
+        # Set GDD air temperature according from array
+        paramlist.phenology_ctl.gdd_t_air_threshold.value = float(gdd_t_air_thresholds[i])
+        paramlist.phenology_ctl.gdd_t_air_threshold.parsed = True
         
+        lctlib[pft].gdd_req_max = float(gdd_t_air_reqs[i])
+        lctlib[pft].k_gdd_dormance = float(k_gdd_s[i])
+       
         lctlib[pft].k_xylem_sat = float(k_xylem_sats[i])
         lctlib[pft].kappa_stem = float(kappa_stems[i])
         lctlib[pft].kappa_leaf = float(kappa_leaves[i])
@@ -252,11 +305,13 @@ for j in range(0, 2):
                                     namelist = nlm, 
                                     lctlib = lctlib, 
                                     forcing_path= forcing_file,
-                                    user_git_info= user_git_info)
+                                    user_git_info= user_git_info,
+                                    paramlist = paramlist)
         # Add to the setup creation
         quincy_multi_run.add_setup(quincy_setup)  
       
         soil_phys_list.append(j)
+        soil_phys_mod_list.append(soil_model_str)
         h += 1
 
 # Generate quincy setups
@@ -266,53 +321,45 @@ quincy_multi_run.generate_files()
 df_parameter_setup = pd.DataFrame({
     'id': np.arange(number_of_runs),
     'fid': np.arange(number_of_runs),
-    'use_jsb_physics': soil_phys_list
+    'use_jsb_physics': soil_phys_list,
+    'soil_pyhs_ret': soil_phys_mod_list
 })
 
-df_parameter_setup['k_xylem_sats'] = np.round(np.tile(k_xylem_sats, 2),5)
-df_parameter_setup['kappa_stem'] = np.round(np.tile(kappa_stems, 2),5)
-df_parameter_setup['kappa_leaf'] = np.round(np.tile(kappa_leaves, 2),5)
-df_parameter_setup['k_latosa']=np.round(np.tile(k_latosas, 2),5)
-df_parameter_setup['g0']= np.round(np.tile(g0s, 2),5)
-df_parameter_setup['g1']=np.round(np.tile(g1s, 2),5)
-df_parameter_setup['psi50_close']= np.round(np.tile(psi_close50s, 2),5)
-df_parameter_setup['root_dist']= np.round(np.tile(root_dists, 2),5)
-df_parameter_setup['silt']= np.round(np.tile(silts, 2),5)
-df_parameter_setup['sand']= np.round(np.tile(sands, 2),5)
-df_parameter_setup['root_scale']= np.round(10**np.tile(root_scale_log, 2),5)
-df_parameter_setup['slope_leaf_close']= np.round(np.tile(slope_leaf_closes, 2) ,5)
+df_parameter_setup['k_xylem_sats'] = np.round(np.tile(k_xylem_sats, 4),5)
+df_parameter_setup['kappa_stem'] = np.round(np.tile(kappa_stems, 4),5)
+df_parameter_setup['kappa_leaf'] = np.round(np.tile(kappa_leaves, 4),5)
+df_parameter_setup['k_latosa']=np.round(np.tile(k_latosas, 4),5)
+df_parameter_setup['g0']= np.round(np.tile(g0s, 4),5)
+df_parameter_setup['g1']=np.round(np.tile(g1s, 4),5)
+df_parameter_setup['psi50_close']= np.round(np.tile(psi_close50s, 4),5)
+df_parameter_setup['root_dist']= np.round(np.tile(root_dists, 4),5)
+df_parameter_setup['silt']= np.round(np.tile(silts, 4),5)
+df_parameter_setup['sand']= np.round(np.tile(sands, 4),5)
+df_parameter_setup['root_scale']= np.round(10**np.tile(root_scale_log, 4),5)
+df_parameter_setup['slope_leaf_close']= np.round(np.tile(slope_leaf_closes, 4) ,5)
 
-
+df_parameter_setup['gdd_t_air_threshold']= np.round(np.tile(gdd_t_air_thresholds,4), 5)
+df_parameter_setup['gdd_t_air_req']= np.round(np.tile(gdd_t_air_reqs,4), 5)
+df_parameter_setup['k_gdd']= np.round(np.tile(k_gdd_s,4), 5)
 
 df_parameter_setup.to_csv(os.path.join(setup_root_path, "parameters.csv"), index=False)
 
-GenerateSlurmScript(path         = setup_root_path, 
-                    ntasks       = NTASKS,
-                    ram_in_gb    = RAM_IN_GB, 
-                    nnodes       = NNODES, 
-                    partition    = PARTITION)
+quincy_binary_path = os.path.join(QUINCY_ROOT_PATH, "x86_64-gfortran", "bin", "land.x")
 
-shutil.copyfile(os.path.join(THIS_DIR, os.pardir, os.pardir,'src', 'quincy', 'run_scripts', 'run_mpi.py'), 
-                             os.path.join(setup_root_path, 'run_mpi.py'))
+GenerateSlurmScriptArrayBased(
+                    ntasks        = number_of_runs,
+                    path          = setup_root_path,
+                    quincy_binary = quincy_binary_path,
+                    ram_in_gb     = RAM_IN_GB, 
+                    ntasksmax     = NMAXTASKS, 
+                    partition     = PARTITION)
 
-import time
+shutil.copyfile(os.path.join(THIS_DIR, os.pardir, os.pardir,'src', 'quincy', 'run_scripts', 'run_quincy_array.py'), 
+                             os.path.join(setup_root_path, 'run_quincy_array.py'))
+
 time.sleep(1.0)
 
 import subprocess
 scriptpath = os.path.join(setup_root_path, 'submit.sh')
 p = subprocess.Popen(f'/usr/bin/sbatch {scriptpath}', shell=True, cwd=setup_root_path)       
 stdout, stderr = p.communicate()
-
-
-# t1 = perf_counter()
-
-# quincy_binary_path = os.path.join(QUINCY_ROOT_PATH, "x86_64-gfortran", "bin", "land.x")
-
-# p = subprocess.Popen(quincy_binary_path,
-#                         cwd=setup_root_path)
-
-# stdout, stderr = p.communicate()
-# returncode = p.returncode
-
-# t2 = perf_counter()
-# print(f"Elapsed: {t2-t1} seconds.")

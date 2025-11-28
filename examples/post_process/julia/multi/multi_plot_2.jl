@@ -43,7 +43,7 @@ end
 PyPlot.savefig(joinpath(plt_dir,"$pltname.png"))
 PyPlot.close(fig)
 
-h  = run_collections.output[1]._var_names
+h  = run_collections.output[1].var_names
 run_collections.output[1]
 
 

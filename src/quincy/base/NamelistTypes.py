@@ -87,3 +87,8 @@ class OutputIntervalFlux(Enum):
 class QuincyModelName(Enum):
     LAND = 0
     CANOPY = 1
+
+class JSBSoilHydModelType(Enum):
+    VanGenuchten = 0
+    BrooksCorey = 1
+    Campbell = 2

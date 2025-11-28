@@ -1,5 +1,6 @@
 include("qtypes.jl")
 using Dates 
+import Base: getindex
 
 mutable struct QOutputVariable
     ndim::Int 
@@ -30,10 +31,10 @@ end
 mutable struct QOutputCollection
     data::Dict{String, Dict{String, QOutputFile}}
     root_folder::String
-    _var_names::Vector{String}
-    _var_cats::Vector{String}
-    _var_sim_types::Vector{QOutputSimulationType}
-    _var_time_types::Vector{QOutputTimeDim}
+    var_names::Vector{String}
+    var_cats::Vector{String}
+    var_sim_types::Vector{QOutputSimulationType}
+    var_time_types::Vector{QOutputTimeDim}
     sim_type_times::Vector{String}
     cats::Vector{String}
 
@@ -41,10 +42,10 @@ mutable struct QOutputCollection
         new(
             Dict{String, Dict{String, QOutputFile}}(), # data
             "",                                        # root_folder
-            String[],                                  # _var_names
-            String[],                                  # _var_cats
-            QOutputSimulationType[],                   # _var_sim_types
-            QOutputTimeDim[],                          # _var_time_types
+            String[],                                  # var_names
+            String[],                                  # var_cats
+            QOutputSimulationType[],                   # var_sim_types
+            QOutputTimeDim[],                          # var_time_types
             String[],                                  # sim_type_times
             String[],                                  # cats  
         )
@@ -55,5 +56,17 @@ mutable struct QMultiRunCollections
     idstr::Vector{String}
 end
 
+function getindex(m::QMultiRunCollections, ids::AbstractVector{<:AbstractString})
+    
+    pos = Dict(s => i for (i, s) in pairs(m.idstr))  # String -> index
+    idx = Vector{Int}(undef, length(ids))
 
+    for (k, id) in pairs(ids)
+        i = get(pos, id, 0)
+        i == 0 && error("Unknown id: $id")
+        idx[k] = i
+    end
+
+    return QMultiRunCollections(m.output[idx], m.idstr[idx])
+end
 

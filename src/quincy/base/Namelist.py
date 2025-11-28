@@ -270,6 +270,7 @@ class JSB_HYDRO_NML:
         self.qs_soil_depth = NamelistItem(9.5)
         self.qs_soil_awc_prescribe = NamelistItem(300.0)
         self.qs_soil_theta_prescribe = NamelistItem(1.0)
+        self.soilhydmodel = NamelistItem(JSBSoilHydModelType.VanGenuchten)
 
 class JSB_SSE_NML:
     def __init__(self):
@@ -279,6 +280,7 @@ class JSB_SSE_NML:
         self.qs_soil_silt = NamelistItem(0.3)
         self.qs_soil_clay = NamelistItem(0.3)
         self.qs_bulk_density = NamelistItem(1500.0)
+        
         
         
 class JSB_SEB_NML:

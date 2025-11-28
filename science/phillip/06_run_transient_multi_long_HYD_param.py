@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 
 from src.quincy.IO.NamelistReader import NamelistReader
+from src.quincy.IO.ParamlistWriter import ParamlistWriter, Paramlist
 from src.quincy.IO.LctlibReader import LctlibReader
 from src.quincy.base.PFTTypes import PftQuincy, PftFluxnet
 from src.sens.base import Quincy_Setup
@@ -37,12 +38,12 @@ site = "DE-Hai"
 forcing_mode = ForcingMode.TRANSIENT
 # Number of cpu cores to be used
 NNODES = 8
-NTASKS  = 64* NNODES
+NTASKS  = 64 * NNODES
 # Path where all the simulation data will be saved
 RAM_IN_GB = 300
 
 PARTITION = 'work'
-RUN_DIRECTORY = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/05_transient_fluxnet_finer"
+RUN_DIRECTORY = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/07s_transient_fluxnet_finer"
 
 qpf = QuincyPathFinder()
 QUINCY_ROOT_PATH = qpf.quincy_root_path
@@ -109,6 +110,12 @@ lctlib_base = lctlib_reader.parse()
 pft_id = namelist_base.vegetation_ctl.plant_functional_type_id.value
 pft = PftQuincy(pft_id)
 
+# Generate empty paramlist
+paramlist_base = Paramlist()
+
+# This line is important so QUINCY know it is expecting a paramlist
+namelist_base.base_ctl.set_parameter_values_from_file.value = True
+
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 # Main code to be modified
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
@@ -116,11 +123,11 @@ pft = PftQuincy(pft_id)
 # We create a single quincy setup
 quincy_multi_run = Quincy_Multi_Run(setup_root_path)
 
-number_of_runs = 5120
+number_of_runs = 8192
 number_of_soil_samples = int(number_of_runs/2)
 
 # If we speicify more variables that we use we do NOT have a problem
-number_of_variables = 12
+number_of_variables = 15
 
 # Create a latin hypercube sample that is distributed between 0-1
 seed   = 123456789
@@ -179,6 +186,19 @@ root_scale_max = 500.0
 slope_leaf_close_min = 2.0
 slope_leaf_close_max = 4.0
 
+
+# 13. Parameter silt 
+gdd_t_air_thres_min  = 7.0
+gdd_t_air_thres_max = 11.0
+
+# 14. Parameter silt 
+gdd_t_air_req_min  = 300
+gdd_t_air_req_max = 500
+
+# 15. Parameter silt 
+k_gdd_min  = 0.011
+k_gdd_max  = 0.019
+
 k_xylem_sats = rescale(slicer.get(), min = k_xylem_sat_min, max = k_xylem_sat_max)
 kappa_stems = rescale(slicer.get(), min = kappa_stem_min, max = kappa_stem_max)
 kappa_leaves = rescale(slicer.get(), min = kappa_leaf_min, max = kappa_leaf_max)
@@ -192,6 +212,9 @@ root_dists = rescale(slicer.get(), min = root_dist_min, max = root_dist_max)
 root_scale_log= rescale(slicer.get(), min = np.log10(root_scale_min), max = np.log10(root_scale_max))
 slope_leaf_closes = rescale(slicer.get(), min = slope_leaf_close_min, max = slope_leaf_close_max)
 
+gdd_t_air_thresholds = rescale(slicer.get(), min = gdd_t_air_thres_min, max = gdd_t_air_thres_max)
+gdd_t_air_reqs = rescale(slicer.get(), min = gdd_t_air_req_min, max = gdd_t_air_req_max)
+k_gdd_s = rescale(slicer.get(), min = k_gdd_min, max = k_gdd_max)
 
 soil_phys_list = []
 
@@ -204,6 +227,9 @@ for j in range(0, 2):
         # We create a copy of the lctlibfile...
         lctlib = deepcopy(lctlib_base)
         nlm = deepcopy(namelist_base) 
+        
+        # Duplicate the paramlist
+        paramlist = deepcopy(paramlist_base)
         
         # Write one standard simulation without plant hydraulics  
         if i == 0:
@@ -221,6 +247,15 @@ for j in range(0, 2):
         else:
             nlm.base_ctl.use_soil_phys_jsbach.value = True
             nlm.spq_ctl.spq_deactivate_spq.value = True
+        
+        
+        
+        # Set GDD air temperature according from array
+        paramlist.phenology_ctl.gdd_t_air_threshold.value = float(gdd_t_air_thresholds[i])
+        paramlist.phenology_ctl.gdd_t_air_threshold.parsed = True
+        
+        lctlib[pft].gdd_req_max = float(gdd_t_air_reqs[i])
+        lctlib[pft].k_gdd_dormance = float(k_gdd_s[i])
         
         
         lctlib[pft].k_xylem_sat = float(k_xylem_sats[i])
@@ -252,7 +287,8 @@ for j in range(0, 2):
                                     namelist = nlm, 
                                     lctlib = lctlib, 
                                     forcing_path= forcing_file,
-                                    user_git_info= user_git_info)
+                                    user_git_info= user_git_info,
+                                    paramlist = paramlist)
         # Add to the setup creation
         quincy_multi_run.add_setup(quincy_setup)  
       
@@ -282,7 +318,9 @@ df_parameter_setup['sand']= np.round(np.tile(sands, 2),5)
 df_parameter_setup['root_scale']= np.round(10**np.tile(root_scale_log, 2),5)
 df_parameter_setup['slope_leaf_close']= np.round(np.tile(slope_leaf_closes, 2) ,5)
 
-
+df_parameter_setup['gdd_t_air_threshold']= np.round(np.tile(gdd_t_air_thresholds,2), 5)
+df_parameter_setup['gdd_t_air_req']= np.round(np.tile(gdd_t_air_reqs,2), 5)
+df_parameter_setup['k_gdd']= np.round(np.tile(k_gdd_s,2), 5)
 
 df_parameter_setup.to_csv(os.path.join(setup_root_path, "parameters.csv"), index=False)
 

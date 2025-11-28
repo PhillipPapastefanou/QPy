@@ -43,7 +43,7 @@ for i in indexes_spq
     println(i)
 end
 
-print(run_collections_spq.output[1]._var_names)
+print(run_collections_spq.output[1].var_names)
 
 
 fig = PyPlot.figure(figsize=(8, 6), layout="constrained")
@@ -86,8 +86,6 @@ yi = 1
 end
 PyPlot.savefig(joinpath(plt_dir,"$pltname.png"))
 PyPlot.close(fig)
-
-
 
 
 

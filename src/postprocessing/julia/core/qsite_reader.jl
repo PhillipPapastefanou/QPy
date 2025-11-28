@@ -91,10 +91,10 @@ function read_quincy_site_output(folder)
                 unit = ds[varname].attrib["units"]      
                 push!(qvariables, QOutputVariable(ndim, unit, varname))   
                 
-                push!(qcollection._var_names, varname)  
-                push!(qcollection._var_cats, cat)  
-                push!(qcollection._var_sim_types, simtype_enum) 
-                push!(qcollection._var_time_types, time_enum) 
+                push!(qcollection.var_names, varname)  
+                push!(qcollection.var_cats, cat)  
+                push!(qcollection.var_sim_types, simtype_enum) 
+                push!(qcollection.var_time_types, time_enum) 
                 
             end
             outputfile = QOutputFile(time_enum, simtype_enum, cat, filename, time_data, qvariables)
@@ -109,18 +109,18 @@ function read_quincy_site_output(folder)
 end
 
 function get_variables(qcollection::QOutputCollection)
-    return unique(qcollection._var_names)
+    return unique(qcollection.var_names)
 end
 
 function get_data(qcollection::QOutputCollection, varname::String, sim_type::QOutputSimulationType)
     
-    indexes_var = findall(isequal(varname), qcollection._var_names)
+    indexes_var = findall(isequal(varname), qcollection.var_names)
     if indexes_var === nothing
         println("$varname not found in output variables")
         return
     end
 
-    indexes_sim_type = findall(isequal(sim_type), qcollection._var_sim_types)
+    indexes_sim_type = findall(isequal(sim_type), qcollection.var_sim_types)
     if indexes_sim_type === nothing
         println("$varname not found in output variables")
         return
@@ -138,9 +138,9 @@ function get_data(qcollection::QOutputCollection, varname::String, sim_type::QOu
     end
     index = index[1]
 
-    cat = qcollection._var_cats[index]
-    sim_type = qcollection._var_sim_types[index]
-    time_type = qcollection._var_time_types[index]
+    cat = qcollection.var_cats[index]
+    sim_type = qcollection.var_sim_types[index]
+    time_type = qcollection.var_time_types[index]
 
     
 
