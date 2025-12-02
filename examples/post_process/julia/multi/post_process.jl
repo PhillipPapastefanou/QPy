@@ -1,7 +1,5 @@
 include("../../../../src/postprocessing/julia/core/qslicer.jl")
 using PyPlot
-
-
 using CSV
 
 
@@ -70,8 +68,14 @@ PyPlot.close(fig)
 
 rt_path_hyd = "/Net/Groups/BSI/work_scratch/ppapastefanou/src/QPy/science/phillip/output/05_transient_fluxnet"
 rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/06s_transient_fluxnet_finer"
+rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/11_transient_slurm_array"
 run_collections = QMultiRunCollections(QOutputCollection[], String[])
-indexes_all = 0:(5120-1)
+
+full_dir_paths = filter(isdir, readdir("$rt_path_hyd/output", join=true))
+postdir = joinpath(rt_path_hyd, "post")
+plt_dir = postdir
+
+indexes_all = 0:(length(full_dir_paths)-1)
 indexes_all[end]
 
 start_time = time()
@@ -199,7 +203,7 @@ df_param
 selids = ["4726", "1150"]
 run_sel = run_collections[selids];
 
-run_sel.idstr
+
 
 d1, d2 =     DateTime("2023-05-01"), DateTime("2023-10-30")
 
@@ -235,58 +239,103 @@ PyPlot.close(fig)
 
 
 
+selids = ["0", 
+    "4002",
+    "2339",
+    "154",
+    "3629",
+    "3772"]
+
+
+# selids = ["0", "8098",
+#  "4250",
+#  "5931",
+#  "7527",
+#  "4731"]
 
 
 
-selids = ["5070", "500"]
+
+
 run_sel = run_collections[selids];
 
 run_sel.idstr
 
-d1, d2 =     DateTime("2023-05-01"), DateTime("2023-9-30")
+for year in ["2003", "2018", "2023"]
 
-fig = PyPlot.figure(figsize=(8, 6), layout="constrained")
-pltname = "fluxes"
-varname ="gpp_avg"
-series = DailySeries
-list_gpp = get_multi_file_slice(run_sel, varname, 
-Fluxnetdata, series,
-0.1, 0.9, slice_dates, d1, d2); 
-varname ="qle_avg"
-list_le = get_multi_file_slice(run_sel, varname, 
-Fluxnetdata, series,
-0.1, 0.9, slice_dates, d1, d2); 
+    d1, d2 =     DateTime("$year-05-01"), DateTime("$year-9-30")
 
-df_obs_gpp_slice = get_single_file_slice(df_fnet_24, "GPP", series, 0.05, 0.95,
-slice_dates, 
-   d1, d2)
-   
-df_obs_le_slice = get_single_file_slice(df_fnet_24, "LE", series, 0.05, 0.95,
-slice_dates, 
-   d1, d2)
+    fig = PyPlot.figure(figsize=(8, 6), layout="constrained")
+    pltname = "fluxes"
+    varname ="gpp_avg"
+    series = DailySeries
+    list_gpp = get_multi_file_slice(run_sel, varname, 
+    Fluxnetdata, series,
+    0.1, 0.9, slice_dates, d1, d2); 
+    varname ="qle_avg"
+    list_le = get_multi_file_slice(run_sel, varname, 
+    Fluxnetdata, series,
+    0.1, 0.9, slice_dates, d1, d2); 
 
-ax = fig.add_subplot(2,1,1)
-for i in 1:length(list_gpp)
-    ax.plot(list_gpp[i][!,:DateTime], list_gpp[i][!,:mean], label=selids[i])
+    if parse(Int, year) < 2023
+        df_obs_gpp_slice = get_single_file_slice(df_fnet_22, "GPP", series, 0.05, 0.95,
+        slice_dates, 
+        d1, d2)
+
+        df_obs_le_slice = get_single_file_slice(df_fnet_22, "LE", series, 0.05, 0.95,
+        slice_dates, 
+        d1, d2)
+    else
+        df_obs_gpp_slice = get_single_file_slice(df_fnet_24, "GPP", series, 0.05, 0.95,
+        slice_dates, 
+        d1, d2)
+
+        df_obs_le_slice = get_single_file_slice(df_fnet_24, "LE", series, 0.05, 0.95,
+        slice_dates, 
+        d1, d2)
+    end
+
+
+    
+
+
+    ax = fig.add_subplot(2,1,1)
+    for i in 1:length(list_gpp)
+        col = ""
+        if selids[i] == "0"
+            col = "blue"
+        else
+            col = "red"
+        end
+        ax.plot(list_gpp[i][!,:DateTime], list_gpp[i][!,:mean], label=selids[i], color = col, alpha= 0.3)
+    end
+    ax.plot(df_obs_gpp_slice[!,:DateTime], df_obs_gpp_slice[!,:mean], label = "obs", color = "black", alpha= 0.7)
+    ax.set_ylim((0, 16))
+
+    ax.legend()
+
+    ax = fig.add_subplot(2,1,2)
+    for i in 1:length(list_gpp)
+        col = ""
+        if selids[i] == "0"
+            col = "blue"
+        else
+            col = "red"
+        end
+        ax.plot(list_le[i][!,:DateTime], -list_le[i][!,:mean], label=selids[i], color = col, alpha= 0.3)
+    end
+    ax.plot(df_obs_le_slice[!,:DateTime], df_obs_le_slice[!,:mean], label = "obs", color = "black", alpha= 0.7)
+    ax.set_ylim((0, 120))
+
+    ax.legend()
+    PyPlot.savefig(joinpath(plt_dir,"$(pltname)_$year.png"))
+    PyPlot.close(fig)
+
 end
-ax.plot(df_obs_gpp_slice[!,:DateTime], df_obs_gpp_slice[!,:mean], label = "obs", color = "black", alpha= 0.3)
-
-ax.legend()
-
-ax = fig.add_subplot(2,1,2)
-for i in 1:length(list_gpp)
-    ax.plot(list_le[i][!,:DateTime], -list_le[i][!,:mean], label=selids[i])
-end
-ax.plot(df_obs_le_slice[!,:DateTime], df_obs_le_slice[!,:mean], label = "obs", color = "black", alpha= 0.3)
-
-ax.legend()
-PyPlot.savefig(joinpath(plt_dir,"$pltname.png"))
-PyPlot.close(fig)
 
 
 
-
-d1, d2 =     DateTime("2023-07-07"), DateTime("2023-8-1")
+d1, d2 =     DateTime("2023-07-09"), DateTime("2023-07-27")
 
 
 pltname = "psi_stem"
@@ -300,12 +349,17 @@ df_obs_psi_stem_slice = get_single_file_slice(df_psi_stem_obs, "FAG", series, 0.
    d1, d2)   
    
 fig = PyPlot.figure(figsize=(8, 6), layout="constrained")
-
 ax = fig.add_subplot(1,1,1)
 for i in 1:length(list_psi_stem)
-    ax.plot(list_psi_stem[i][!,:DateTime], list_psi_stem[i][!,:mean], label=selids[i], alpha= 0.5)
+    col = ""
+    if selids[i] == "0"
+        col = "blue"
+    else
+        col = "red"
+    end
+    ax.plot(list_psi_stem[i][!,:DateTime], list_psi_stem[i][!,:mean], label=selids[i],color = col, alpha= 0.5)
 end
-ax.plot(df_obs_psi_stem_slice[!,:DateTime], df_obs_psi_stem_slice[!,:mean], label = "obs", color = "black", alpha= 0.5)
+ax.plot(df_obs_psi_stem_slice[!,:DateTime], df_obs_psi_stem_slice[!,:mean], label = "obs", color = "black", alpha= 0.7)
 
 ax.legend()
 PyPlot.savefig(joinpath(plt_dir,"$pltname.png"))
@@ -315,12 +369,11 @@ PyPlot.close(fig)
 
 
 
-d1, d2 =     DateTime("2023-01-01"), DateTime("2023-8-1")
+d1, d2 =     DateTime("2023-04-01"), DateTime("2023-8-1")
 
 pltname = "stem_flow"
 varname ="stem_flow_avg"
-run_sel
-series = ThirtyMinSeries
+series = DailySeries
 list_stemflow= get_multi_file_slice(run_sel, varname, 
 Fluxnetdata, series,
 0.1, 0.9, slice_dates, d1, d2);
@@ -332,12 +385,20 @@ fig = PyPlot.figure(figsize=(8, 6), layout="constrained")
 
 ax = fig.add_subplot(1,1,1)
 for i in 1:length(list_stemflow)
-    #smax = maximum(list_stemflow[i][!,:mean])
-    #ax.plot(list_stemflow[i][!,:DateTime], list_stemflow[i][!,:mean]/smax, label=selids[i], alpha= 0.5)
 
-    ax.plot(list_stemflow[i][!,:DateTime], list_stemflow[i][!,:mean], label=selids[i], alpha= 0.5)
+    col = ""
+    if selids[i] == "0"
+        col = "blue"
+    else
+        col = "red"
+    end
+
+    smax = maximum(list_stemflow[i][!,:mean])
+    ax.plot(list_stemflow[i][!,:DateTime], list_stemflow[i][!,:mean]/smax, label=selids[i], alpha= 0.3, color= col)
+
+    #ax.plot(list_stemflow[i][!,:DateTime], list_stemflow[i][!,:mean], label=selids[i], alpha= 0.5)
 end
-#ax.plot(df_obs_sapflow_slice[!,:DateTime], df_obs_sapflow_slice[!,:mean_norm], label = "obs", color = "black", alpha= 0.5)
+ax.plot(df_obs_sapflow_slice[!,:DateTime], df_obs_sapflow_slice[!,:mean_norm], label = "obs", color = "black", alpha= 0.5)
 
 ax.legend()
 PyPlot.savefig(joinpath(plt_dir,"$pltname.png"))
@@ -346,13 +407,6 @@ maximum(list_stemflow[1][!,:mean])
 maximum(list_stemflow[2][!,:mean])
 
 list_stemflow[1]
-
-
-
-
-list_stemflow
-
-
 
 
 d1, d2 =     DateTime("2023-01-01"), DateTime("2023-8-1")
@@ -382,22 +436,98 @@ PyPlot.close(fig)
 
 
 
+for year in ["2003", "2018", "2023"]
+    pltname = "psi_leaf"
+    varname ="psi_leaf_avg"
 
-pltname = "psi_leaf"
-varname ="psi_leaf_avg"
-series = ThirtyMinSeries
-list_psi_stem = get_multi_file_slice(run_sel, varname, 
-Fluxnetdata, series,
-0.1, 0.9, slice_dates, d1, d2);
+    d1, d2 =     DateTime("$year-05-01"), DateTime("$year-9-30")
+    series = ThirtyMinSeries
+    list_psi_stem = get_multi_file_slice(run_sel, varname, 
+    Fluxnetdata, series,
+    0.1, 0.9, slice_dates, d1, d2);
 
-   
-fig = PyPlot.figure(figsize=(8, 6), layout="constrained")
+    
+    fig = PyPlot.figure(figsize=(8, 6), layout="constrained")
 
-ax = fig.add_subplot(1,1,1)
-for i in 1:length(list_psi_stem)
-    ax.plot(list_psi_stem[i][!,:DateTime], list_psi_stem[i][!,:mean], label=selids[i], alpha= 0.5)
+    ax = fig.add_subplot(1,1,1)
+    for i in 1:length(list_psi_stem)
+        col = ""
+        if selids[i] == "0"
+            col = "blue"
+        else
+            col = "red"
+    end
+        ax.plot(list_psi_stem[i][!,:DateTime], list_psi_stem[i][!,:mean], label=selids[i], alpha= 0.5, color = col)
+    end
+
+    ax.legend()
+    PyPlot.savefig(joinpath(plt_dir,"$(pltname)_$year.png"))
+    PyPlot.close(fig)
 end
 
-ax.legend()
-PyPlot.savefig(joinpath(plt_dir,"$pltname.png"))
-PyPlot.close(fig)
+
+
+for year in ["2003", "2018", "2023"]
+
+    varname ="psi_leaf_avg"
+    pltname = var
+
+    d1, d2 =     DateTime("$year-05-01"), DateTime("$year-9-30")
+    series = ThirtyMinSeries
+    list_psi_stem = get_multi_file_slice(run_sel, varname, 
+    Fluxnetdata, series,
+    0.1, 0.9, slice_dates, d1, d2);
+
+    
+    fig = PyPlot.figure(figsize=(8, 6), layout="constrained")
+
+    ax = fig.add_subplot(1,1,1)
+    for i in 1:length(list_psi_stem)
+        col = ""
+        if selids[i] == "0"
+            col = "blue"
+        else
+            col = "red"
+        end
+        ax.plot(list_psi_stem[i][!,:DateTime], list_psi_stem[i][!,:mean], label=selids[i], alpha= 0.5, color = col)
+    end
+
+    ax.legend()
+    PyPlot.savefig(joinpath(plt_dir,"$(pltname)_$year.png"))
+    PyPlot.close(fig)
+end
+
+
+
+
+for year in ["2003", "2018", "2023"]
+
+    varname ="beta_gs"
+    pltname = varname
+
+    d1, d2 =     DateTime("$year-05-01"), DateTime("$year-9-30")
+    series = ThirtyMinSeries
+    list_psi_stem = get_multi_file_slice(run_sel, varname, 
+    Fluxnetdata, series,
+    0.1, 0.9, slice_dates, d1, d2);
+
+    
+    fig = PyPlot.figure(figsize=(8, 6), layout="constrained")
+
+    ax = fig.add_subplot(1,1,1)
+    for i in 1:length(list_psi_stem)
+        col = ""
+        if selids[i] == "0"
+            col = "blue"
+        else
+            col = "red"
+        end
+        ax.plot(list_psi_stem[i][!,:DateTime], list_psi_stem[i][!,:mean], label=selids[i], color = col, alpha= 0.5)
+    end
+
+    ax.legend()
+    PyPlot.savefig(joinpath(plt_dir,"$(pltname)_$year.png"))
+    PyPlot.close(fig)
+end
+
+
