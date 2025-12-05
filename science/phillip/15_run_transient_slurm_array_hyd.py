@@ -39,12 +39,16 @@ site = "DE-Hai"
 # Use static forcing
 forcing_mode = ForcingMode.TRANSIENT
 # Number of cpu cores to be used
-NMAXTASKS  = 4
+NMAXTASKS  = 512
 # Path where all the simulation data will be saved
-RAM_IN_GB = 20
+RAM_IN_GB = 4
+
+number_of_runs = 1024*8
+
+n_soil_combs = 2
 
 PARTITION = 'work'
-RUN_DIRECTORY =  "output/08_transient_slurm_array/"
+RUN_DIRECTORY =  "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/15_transient_slurm_array/"
 
 qpf = QuincyPathFinder()
 QUINCY_ROOT_PATH = qpf.quincy_root_path
@@ -90,7 +94,7 @@ namelist_base.soil_biogeochemistry_ctl.flag_sb_prescribe_po4.value = True
 namelist_base.soil_biogeochemistry_ctl.sb_bnf_scheme.value = SbBnfScheme.UNLIMITED
 namelist_base.base_ctl.flag_slow_sb_pool_spinup_accelerator.value = False
 
-namelist_base.jsb_forcing_ctl.transient_spinup_years.value = 100
+namelist_base.jsb_forcing_ctl.transient_spinup_years.value = 200
 
 namelist_base.base_ctl.output_end_last_day_year.value = 124
 namelist_base.base_ctl.output_start_first_day_year.value = 1
@@ -124,8 +128,8 @@ namelist_base.base_ctl.set_parameter_values_from_file.value = True
 # We create a single quincy setup
 quincy_multi_run = Quincy_Multi_Run(setup_root_path)
 
-number_of_runs = 8
-number_of_soil_samples = int(number_of_runs/2)
+
+number_of_soil_samples = int(number_of_runs/n_soil_combs)
 
 # If we speicify more variables that we use we do NOT have a problem
 number_of_variables = 15
@@ -144,61 +148,66 @@ k_xylem_sat_min = 2.0
 k_xylem_sat_max = 8.0
 
 # 2. Parameter kappa_stem
-kappa_stem_min = 40
-kappa_stem_max = 180
+kappa_stem_min = 50
+kappa_stem_max = 200
 
 # 3. Parameter kappa_leaf 
 kappa_leaf_min      = 0.01
-kappa_leaf_max      = 0.05
+kappa_leaf_max      = 0.06
 
 # 4. Parameter klatosa 
-k_latosa_min = 2000
+k_latosa_min = 3000
 k_latosa_max = 5000
 
 # 5. Parameter klatosa 
-g1_min = 3.5
-g1_max = 4.5
+g1_min = 2.5
+g1_max = 3.0
 
 # 6. Parameter klatosa 
-g0_min = 0.0015
-g0_max = 0.0035
+g0_min = 0.0023
+g0_max = 0.0027
 
 # 7. Parameter klatosa 
-psi_close50_min = -0.8
+psi_close50_min = -0.7
 psi_close50_max = -1.5
 
 # 8. Parameter sand 
-sand_min = 0.16
+# sand_min = 0.16
+# sand_max = 0.25
+sand_min = 0.23
 sand_max = 0.25
 
+
 # 9. Parameter silt 
-silt_min = 0.28
-silt_max = 0.38
+# silt_min = 0.28
+# silt_max = 0.38
+
+silt_min = 0.33
+silt_max = 0.35
 
 # 10. root dist
-root_dist_min = 3.5
-root_dist_max = 6.5
+root_dist_min = 4.0
+root_dist_max = 6.0
 
 # 11. Parameter kappa_leaf 
 root_scale_min = 10.0
-root_scale_max = 500.0
+root_scale_max = 100.0
 
 # 12. Parameter kappa_leaf 
-slope_leaf_close_min = 2.0
-slope_leaf_close_max = 4.0
-
+slope_leaf_close_min = 2.5
+slope_leaf_close_max = 2.5
 
 # 13. Parameter silt 
-gdd_t_air_thres_min  = 7.0
-gdd_t_air_thres_max = 11.0
+gdd_t_air_thres_min  = 8.0
+gdd_t_air_thres_max = 8.0
 
 # 14. Parameter silt 
-gdd_t_air_req_min  = 300
-gdd_t_air_req_max = 500
+gdd_t_air_req_min  = 425
+gdd_t_air_req_max = 425
 
 # 15. Parameter silt 
-k_gdd_min  = 0.011
-k_gdd_max  = 0.019
+k_gdd_min  = 0.016
+k_gdd_max  = 0.016
 
 k_xylem_sats = rescale(slicer.get(), min = k_xylem_sat_min, max = k_xylem_sat_max)
 kappa_stems = rescale(slicer.get(), min = kappa_stem_min, max = kappa_stem_max)
@@ -218,9 +227,10 @@ gdd_t_air_reqs = rescale(slicer.get(), min = gdd_t_air_req_min, max = gdd_t_air_
 k_gdd_s = rescale(slicer.get(), min = k_gdd_min, max = k_gdd_max)
 
 soil_phys_list = []
+soil_phys_mod_list = []
 
 h = 0
-for j in range(0, 2):
+for j in range(0, n_soil_combs):
     # We loop through the number of soil samples
     for i in range(0, number_of_soil_samples):
               
@@ -241,15 +251,21 @@ for j in range(0, 2):
             nlm.assimilation_ctl.gs_beta_type.value = GsBetaType.PLANT
             nlm.phyd_ctl.use_plant_hydraulics.value = True    
                
+        soil_model_str = ""
         
-        if j ==0 :
-            nlm.base_ctl.use_soil_phys_jsbach.value = False
-            nlm.spq_ctl.spq_deactivate_spq.value = False
+        nlm.base_ctl.use_soil_phys_jsbach.value = True
+        nlm.spq_ctl.spq_deactivate_spq.value = True
+            
+        if j == 0:
+            nlm.jsb_hydro_nml.soilhydmodel.value = JSBSoilHydModelType.VanGenuchten
+            soil_model_str = "VanGenuchten"       
+        elif j == 1:
+            nlm.jsb_hydro_nml.soilhydmodel.value = JSBSoilHydModelType.Campbell
+            soil_model_str = "Campbell"           
         else:
-            nlm.base_ctl.use_soil_phys_jsbach.value = True
-            nlm.spq_ctl.spq_deactivate_spq.value = True
-        
-        
+            print("Invalid soil model")
+            exit(99)
+                
         
         # Set GDD air temperature according from array
         paramlist.phenology_ctl.gdd_t_air_threshold.value = float(gdd_t_air_thresholds[i])
@@ -257,8 +273,7 @@ for j in range(0, 2):
         
         lctlib[pft].gdd_req_max = float(gdd_t_air_reqs[i])
         lctlib[pft].k_gdd_dormance = float(k_gdd_s[i])
-        
-        
+       
         lctlib[pft].k_xylem_sat = float(k_xylem_sats[i])
         lctlib[pft].kappa_stem = float(kappa_stems[i])
         lctlib[pft].kappa_leaf = float(kappa_leaves[i])
@@ -270,6 +285,8 @@ for j in range(0, 2):
         lctlib[pft].root_scale = float(10**root_scale_log[i])
         lctlib[pft].psi50_xylem = -3.8        
         lctlib[pft].slope_leaf_close = float(slope_leaf_closes[i])
+        
+        lctlib[pft].vmax_uptake_p = 0.012 #Ten times higher
         
         nlm.spq_ctl.spq_soil_silt.value = float(silts[i])
         nlm.spq_ctl.spq_soil_sand.value = float(sands[i])
@@ -294,8 +311,9 @@ for j in range(0, 2):
         quincy_multi_run.add_setup(quincy_setup)  
       
         soil_phys_list.append(j)
+        soil_phys_mod_list.append(soil_model_str)
         h += 1
-
+        
 # Generate quincy setups
 quincy_multi_run.generate_files()
 
@@ -303,25 +321,26 @@ quincy_multi_run.generate_files()
 df_parameter_setup = pd.DataFrame({
     'id': np.arange(number_of_runs),
     'fid': np.arange(number_of_runs),
-    'use_jsb_physics': soil_phys_list
+    'use_jsb_physics': soil_phys_list,
+    'soil_pyhs_ret': soil_phys_mod_list
 })
 
-df_parameter_setup['k_xylem_sats'] = np.round(np.tile(k_xylem_sats, 2),5)
-df_parameter_setup['kappa_stem'] = np.round(np.tile(kappa_stems, 2),5)
-df_parameter_setup['kappa_leaf'] = np.round(np.tile(kappa_leaves, 2),5)
-df_parameter_setup['k_latosa']=np.round(np.tile(k_latosas, 2),5)
-df_parameter_setup['g0']= np.round(np.tile(g0s, 2),5)
-df_parameter_setup['g1']=np.round(np.tile(g1s, 2),5)
-df_parameter_setup['psi50_close']= np.round(np.tile(psi_close50s, 2),5)
-df_parameter_setup['root_dist']= np.round(np.tile(root_dists, 2),5)
-df_parameter_setup['silt']= np.round(np.tile(silts, 2),5)
-df_parameter_setup['sand']= np.round(np.tile(sands, 2),5)
-df_parameter_setup['root_scale']= np.round(10**np.tile(root_scale_log, 2),5)
-df_parameter_setup['slope_leaf_close']= np.round(np.tile(slope_leaf_closes, 2) ,5)
+df_parameter_setup['k_xylem_sats'] = np.round(np.tile(k_xylem_sats, n_soil_combs),5)
+df_parameter_setup['kappa_stem'] = np.round(np.tile(kappa_stems, n_soil_combs),5)
+df_parameter_setup['kappa_leaf'] = np.round(np.tile(kappa_leaves, n_soil_combs),5)
+df_parameter_setup['k_latosa']=np.round(np.tile(k_latosas, n_soil_combs),5)
+df_parameter_setup['g0']= np.round(np.tile(g0s, n_soil_combs),5)
+df_parameter_setup['g1']=np.round(np.tile(g1s, n_soil_combs),5)
+df_parameter_setup['psi50_close']= np.round(np.tile(psi_close50s, n_soil_combs),5)
+df_parameter_setup['root_dist']= np.round(np.tile(root_dists, n_soil_combs),5)
+df_parameter_setup['silt']= np.round(np.tile(silts, n_soil_combs),5)
+df_parameter_setup['sand']= np.round(np.tile(sands, n_soil_combs),5)
+df_parameter_setup['root_scale']= np.round(10**np.tile(root_scale_log, n_soil_combs),5)
+df_parameter_setup['slope_leaf_close']= np.round(np.tile(slope_leaf_closes, n_soil_combs) ,5)
 
-df_parameter_setup['gdd_t_air_threshold']= np.round(np.tile(gdd_t_air_thresholds,2), 5)
-df_parameter_setup['gdd_t_air_req']= np.round(np.tile(gdd_t_air_reqs,2), 5)
-df_parameter_setup['k_gdd']= np.round(np.tile(k_gdd_s,2), 5)
+df_parameter_setup['gdd_t_air_threshold']= np.round(np.tile(gdd_t_air_thresholds,n_soil_combs), 5)
+df_parameter_setup['gdd_t_air_req']= np.round(np.tile(gdd_t_air_reqs,n_soil_combs), 5)
+df_parameter_setup['k_gdd']= np.round(np.tile(k_gdd_s,n_soil_combs), 5)
 
 df_parameter_setup.to_csv(os.path.join(setup_root_path, "parameters.csv"), index=False)
 

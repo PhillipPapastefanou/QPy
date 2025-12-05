@@ -101,7 +101,7 @@ namelist_base.jsb_forcing_ctl.transient_spinup_start_year.value = 1901
 namelist_base.jsb_forcing_ctl.transient_spinup_end_year.value = 1930
 namelist_base.jsb_forcing_ctl.simulation_length_number.value = 124
 namelist_base.base_ctl.fluxnet_type_transient_timestep_output.value = True
-namelist_base.base_ctl.fluxnet_static_forc_start_yr.value = 1901
+namelist_base.base_ctl.fluxnet_static_forc_start_yr.value = 2000
 namelist_base.base_ctl.fluxnet_static_forc_last_yr.value = 2024
 
 
