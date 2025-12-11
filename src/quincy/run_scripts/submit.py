@@ -41,12 +41,14 @@ mpirun -n {ntasks} /Net/Groups/BSI/work_scratch/ppapastefanou/envs/QPy_gnu_mpich
         f.write(script_content)
 
 
+
 def GenerateSlurmScriptArrayBased(ntasks,
                                   path,
                                   quincy_binary,
                                   ram_in_gb = 300,
                                   ntasksmax = 256,
-                                  partition = 'work'):  
+                                  partition = 'work',
+                                  python = "python"):  
     
       
     script_content = f"""#!/bin/bash
@@ -77,7 +79,7 @@ SETUP_DIR=\"${{SETUPS_OUTPUT}}/${{SLURM_ARRAY_TASK_ID}}"
 
 export FI_PROVIDER=tcp
 
-python run_quincy_array.py "${{SETUP_DIR}}" "{quincy_binary}" "{ntasks}"
+{python} run_quincy_array.py "${{SETUP_DIR}}" "{quincy_binary}" "{ntasks}"
 """
     
     with open(os.path.join(path, 'submit.sh'), 'w') as f:

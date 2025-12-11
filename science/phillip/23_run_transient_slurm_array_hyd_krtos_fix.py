@@ -31,7 +31,6 @@ from src.sens.auxil import rescale
 import time
 
 
-
 # Fluxnet3 forcing
 forcing = ForcingDataset.FLUXNET3
 # Fluxnet3 sites
@@ -39,16 +38,16 @@ site = "DE-Hai"
 # Use static forcing
 forcing_mode = ForcingMode.TRANSIENT
 # Number of cpu cores to be used
-NMAXTASKS  = 16
+NMAXTASKS  = 512
 # Path where all the simulation data will be saved
 RAM_IN_GB = 4
 
-number_of_runs = 10000
+number_of_runs = 1024*10
 
-n_soil_combs = 2
+n_soil_combs = 1
 
 PARTITION = 'work'
-RUN_DIRECTORY =  "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/16_transient_slurm_array/"
+RUN_DIRECTORY =  "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/23_transient_slurm_array_krtos/"
 
 qpf = QuincyPathFinder()
 QUINCY_ROOT_PATH = qpf.quincy_root_path
@@ -132,7 +131,7 @@ quincy_multi_run = Quincy_Multi_Run(setup_root_path)
 number_of_soil_samples = int(number_of_runs/n_soil_combs)
 
 # If we speicify more variables that we use we do NOT have a problem
-number_of_variables = 15
+number_of_variables = 17
 
 # Create a latin hypercube sample that is distributed between 0-1
 seed   = 123456789
@@ -144,32 +143,32 @@ sample = sample.T
 slicer = Subslicer(array=sample)
 
 # 1. Parameter k_xylem_sat
-k_xylem_sat_min = 1.0
-k_xylem_sat_max = 8.0
+k_xylem_sat_min = 4.0
+k_xylem_sat_max = 12.0
 
-# 2. Parameter kappa_stem
-kappa_stem_min = 50
-kappa_stem_max = 200
+# 2. Parameter kappa_stem kg m-3 MPa-1
+kappa_stem_min = 100
+kappa_stem_max = 250
 
-# 3. Parameter kappa_leaf 
-kappa_leaf_min      = 0.01
+# 3. Parameter kappa_leaf kg m-2 MPa-1
+kappa_leaf_min      = 0.03
 kappa_leaf_max      = 0.06
 
 # 4. Parameter klatosa 
-k_latosa_min = 3000
-k_latosa_max = 5000
+k_latosa_min = 4000
+k_latosa_max = 6000
 
 # 5. Parameter klatosa 
-g1_min = 1.5
-g1_max = 3.0
+g1_min = 1.75
+g1_max = 2.5
 
 # 6. Parameter klatosa 
 g0_min = 0.0023
 g0_max = 0.0027
 
 # 7. Parameter klatosa 
-psi_close50_min = -0.7
-psi_close50_max = -1.5
+psi_close50_min = -0.6
+psi_close50_max = -1.7
 
 # 8. Parameter sand 
 # sand_min = 0.16
@@ -187,11 +186,11 @@ silt_max = 0.35
 
 # 10. root dist
 root_dist_min = 4.0
-root_dist_max = 6.0
+root_dist_max = 5.5
 
 # 11. Parameter kappa_leaf 
 root_scale_min = 50.0
-root_scale_max = 100.0
+root_scale_max = 200.0
 
 # 12. Parameter kappa_leaf 
 slope_leaf_close_min = 2.5
@@ -209,6 +208,11 @@ gdd_t_air_req_max = 425
 k_gdd_min  = 0.016
 k_gdd_max  = 0.016
 
+# 16. Parameter k_rtos
+# default is around 4.2
+rtos_min  = 4.0
+rtos_mmax  = 6.0
+
 k_xylem_sats = rescale(slicer.get(), min = k_xylem_sat_min, max = k_xylem_sat_max)
 kappa_stems = rescale(slicer.get(), min = kappa_stem_min, max = kappa_stem_max)
 kappa_leaves = rescale(slicer.get(), min = kappa_leaf_min, max = kappa_leaf_max)
@@ -225,6 +229,8 @@ slope_leaf_closes = rescale(slicer.get(), min = slope_leaf_close_min, max = slop
 gdd_t_air_thresholds = rescale(slicer.get(), min = gdd_t_air_thres_min, max = gdd_t_air_thres_max)
 gdd_t_air_reqs = rescale(slicer.get(), min = gdd_t_air_req_min, max = gdd_t_air_req_max)
 k_gdd_s = rescale(slicer.get(), min = k_gdd_min, max = k_gdd_max)
+rtos_s = rescale(slicer.get(), min = rtos_min, max = rtos_mmax)
+
 
 soil_phys_list = []
 soil_phys_mod_list = []
@@ -259,9 +265,9 @@ for j in range(0, n_soil_combs):
         if j == 0:
             nlm.jsb_hydro_nml.soilhydmodel.value = JSBSoilHydModelType.VanGenuchten
             soil_model_str = "VanGenuchten"       
-        elif j == 1:
-            nlm.jsb_hydro_nml.soilhydmodel.value = JSBSoilHydModelType.Campbell
-            soil_model_str = "Campbell"           
+        # elif j == 1:
+        #     nlm.jsb_hydro_nml.soilhydmodel.value = JSBSoilHydModelType.Campbell
+        #     soil_model_str = "Campbell"           
         else:
             print("Invalid soil model")
             exit(99)
@@ -270,6 +276,8 @@ for j in range(0, n_soil_combs):
         # Set GDD air temperature according from array
         paramlist.phenology_ctl.gdd_t_air_threshold.value = float(gdd_t_air_thresholds[i])
         paramlist.phenology_ctl.gdd_t_air_threshold.parsed = True
+        
+
         
         lctlib[pft].gdd_req_max = float(gdd_t_air_reqs[i])
         lctlib[pft].k_gdd_dormance = float(k_gdd_s[i])
@@ -287,6 +295,7 @@ for j in range(0, n_soil_combs):
         lctlib[pft].slope_leaf_close = float(slope_leaf_closes[i])
         
         lctlib[pft].vmax_uptake_p = 0.012 #Ten times higher
+        lctlib[pft].k_rtos = float(rtos_s[i])
         
         nlm.spq_ctl.spq_soil_silt.value = float(silts[i])
         nlm.spq_ctl.spq_soil_sand.value = float(sands[i])
@@ -315,7 +324,7 @@ for j in range(0, n_soil_combs):
         h += 1
         
 # Generate quincy setups
-# quincy_multi_run.generate_files()
+quincy_multi_run.generate_files()
 
 
 df_parameter_setup = pd.DataFrame({
@@ -337,13 +346,17 @@ df_parameter_setup['silt']= np.round(np.tile(silts, n_soil_combs),5)
 df_parameter_setup['sand']= np.round(np.tile(sands, n_soil_combs),5)
 df_parameter_setup['root_scale']= np.round(10**np.tile(root_scale_log, n_soil_combs),5)
 df_parameter_setup['slope_leaf_close']= np.round(np.tile(slope_leaf_closes, n_soil_combs) ,5)
+
 df_parameter_setup['gdd_t_air_threshold']= np.round(np.tile(gdd_t_air_thresholds,n_soil_combs), 5)
 df_parameter_setup['gdd_t_air_req']= np.round(np.tile(gdd_t_air_reqs,n_soil_combs), 5)
 df_parameter_setup['k_gdd']= np.round(np.tile(k_gdd_s,n_soil_combs), 5)
+df_parameter_setup['rtos_s']= np.round(np.tile(rtos_s,n_soil_combs), 5)
 
 df_parameter_setup.to_csv(os.path.join(setup_root_path, "parameters.csv"), index=False)
 
 quincy_binary_path = os.path.join(QUINCY_ROOT_PATH, "x86_64-gfortran", "bin", "land.x")
+
+python_ex = "/Net/Groups/BSI/work_scratch/ppapastefanou/envs/QPy_gnu_mpich/bin/python"
 
 GenerateSlurmScriptArrayBased(
                     ntasks        = number_of_runs,
@@ -351,9 +364,10 @@ GenerateSlurmScriptArrayBased(
                     quincy_binary = quincy_binary_path,
                     ram_in_gb     = RAM_IN_GB, 
                     ntasksmax     = NMAXTASKS, 
-                    partition     = PARTITION)
+                    partition     = PARTITION,
+                    python        = python_ex)
 
-shutil.copyfile(os.path.join(THIS_DIR, os.pardir, os.pardir,'src', 'quincy', 'run_scripts',
+shutil.copyfile(os.path.join(THIS_DIR, os.pardir, os.pardir,'src', 'quincy', 'run_scripts', 
                              'run_quincy_array_psi_post_process.py'), 
                              os.path.join(setup_root_path, 'run_quincy_array.py'))
 

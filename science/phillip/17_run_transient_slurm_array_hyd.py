@@ -39,16 +39,16 @@ site = "DE-Hai"
 # Use static forcing
 forcing_mode = ForcingMode.TRANSIENT
 # Number of cpu cores to be used
-NMAXTASKS  = 16
+NMAXTASKS  = 512
 # Path where all the simulation data will be saved
 RAM_IN_GB = 4
 
-number_of_runs = 10000
+number_of_runs = 1024*8
 
 n_soil_combs = 2
 
 PARTITION = 'work'
-RUN_DIRECTORY =  "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/16_transient_slurm_array/"
+RUN_DIRECTORY =  "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/17_transient_slurm_array/"
 
 qpf = QuincyPathFinder()
 QUINCY_ROOT_PATH = qpf.quincy_root_path
@@ -315,7 +315,7 @@ for j in range(0, n_soil_combs):
         h += 1
         
 # Generate quincy setups
-# quincy_multi_run.generate_files()
+quincy_multi_run.generate_files()
 
 
 df_parameter_setup = pd.DataFrame({
@@ -337,6 +337,7 @@ df_parameter_setup['silt']= np.round(np.tile(silts, n_soil_combs),5)
 df_parameter_setup['sand']= np.round(np.tile(sands, n_soil_combs),5)
 df_parameter_setup['root_scale']= np.round(10**np.tile(root_scale_log, n_soil_combs),5)
 df_parameter_setup['slope_leaf_close']= np.round(np.tile(slope_leaf_closes, n_soil_combs) ,5)
+
 df_parameter_setup['gdd_t_air_threshold']= np.round(np.tile(gdd_t_air_thresholds,n_soil_combs), 5)
 df_parameter_setup['gdd_t_air_req']= np.round(np.tile(gdd_t_air_reqs,n_soil_combs), 5)
 df_parameter_setup['k_gdd']= np.round(np.tile(k_gdd_s,n_soil_combs), 5)
@@ -353,8 +354,7 @@ GenerateSlurmScriptArrayBased(
                     ntasksmax     = NMAXTASKS, 
                     partition     = PARTITION)
 
-shutil.copyfile(os.path.join(THIS_DIR, os.pardir, os.pardir,'src', 'quincy', 'run_scripts',
-                             'run_quincy_array_psi_post_process.py'), 
+shutil.copyfile(os.path.join(THIS_DIR, os.pardir, os.pardir,'src', 'quincy', 'run_scripts', 'run_quincy_array.py'), 
                              os.path.join(setup_root_path, 'run_quincy_array.py'))
 
 time.sleep(1.0)

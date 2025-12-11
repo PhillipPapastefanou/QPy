@@ -39,16 +39,16 @@ site = "DE-Hai"
 # Use static forcing
 forcing_mode = ForcingMode.TRANSIENT
 # Number of cpu cores to be used
-NMAXTASKS  = 16
+NMAXTASKS  = 512
 # Path where all the simulation data will be saved
 RAM_IN_GB = 4
 
-number_of_runs = 10000
+number_of_runs = 1024*4
 
-n_soil_combs = 2
+n_soil_combs = 1
 
 PARTITION = 'work'
-RUN_DIRECTORY =  "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/16_transient_slurm_array/"
+RUN_DIRECTORY =  "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/19_transient_slurm_array_vj/"
 
 qpf = QuincyPathFinder()
 QUINCY_ROOT_PATH = qpf.quincy_root_path
@@ -132,7 +132,7 @@ quincy_multi_run = Quincy_Multi_Run(setup_root_path)
 number_of_soil_samples = int(number_of_runs/n_soil_combs)
 
 # If we speicify more variables that we use we do NOT have a problem
-number_of_variables = 15
+number_of_variables = 17
 
 # Create a latin hypercube sample that is distributed between 0-1
 seed   = 123456789
@@ -157,11 +157,11 @@ kappa_leaf_max      = 0.06
 
 # 4. Parameter klatosa 
 k_latosa_min = 3000
-k_latosa_max = 5000
+k_latosa_max = 6000
 
 # 5. Parameter klatosa 
 g1_min = 1.5
-g1_max = 3.0
+g1_max = 4.0
 
 # 6. Parameter klatosa 
 g0_min = 0.0023
@@ -209,6 +209,15 @@ gdd_t_air_req_max = 425
 k_gdd_min  = 0.016
 k_gdd_max  = 0.016
 
+# 16. Parameter silt 
+jmax2n_min  = 8.0
+jmax2n_max  = 9.0
+
+# 17. Parameter silt 
+vcmax2n_min  = 2.6
+vcmax2n_max  = 3.0
+
+
 k_xylem_sats = rescale(slicer.get(), min = k_xylem_sat_min, max = k_xylem_sat_max)
 kappa_stems = rescale(slicer.get(), min = kappa_stem_min, max = kappa_stem_max)
 kappa_leaves = rescale(slicer.get(), min = kappa_leaf_min, max = kappa_leaf_max)
@@ -225,6 +234,8 @@ slope_leaf_closes = rescale(slicer.get(), min = slope_leaf_close_min, max = slop
 gdd_t_air_thresholds = rescale(slicer.get(), min = gdd_t_air_thres_min, max = gdd_t_air_thres_max)
 gdd_t_air_reqs = rescale(slicer.get(), min = gdd_t_air_req_min, max = gdd_t_air_req_max)
 k_gdd_s = rescale(slicer.get(), min = k_gdd_min, max = k_gdd_max)
+jmax2n_s = rescale(slicer.get(), min = jmax2n_min, max = jmax2n_max)
+vcmax2n_s = rescale(slicer.get(), min = vcmax2n_min, max = vcmax2n_max)
 
 soil_phys_list = []
 soil_phys_mod_list = []
@@ -259,9 +270,9 @@ for j in range(0, n_soil_combs):
         if j == 0:
             nlm.jsb_hydro_nml.soilhydmodel.value = JSBSoilHydModelType.VanGenuchten
             soil_model_str = "VanGenuchten"       
-        elif j == 1:
-            nlm.jsb_hydro_nml.soilhydmodel.value = JSBSoilHydModelType.Campbell
-            soil_model_str = "Campbell"           
+        # elif j == 1:
+            # nlm.jsb_hydro_nml.soilhydmodel.value = JSBSoilHydModelType.Campbell
+            # soil_model_str = "Campbell"           
         else:
             print("Invalid soil model")
             exit(99)
@@ -270,6 +281,11 @@ for j in range(0, n_soil_combs):
         # Set GDD air temperature according from array
         paramlist.phenology_ctl.gdd_t_air_threshold.value = float(gdd_t_air_thresholds[i])
         paramlist.phenology_ctl.gdd_t_air_threshold.parsed = True
+        
+        paramlist.assimilation_ctl.vcmax2n.value = float(vcmax2n_s[i])
+        paramlist.assimilation_ctl.vcmax2n.parsed =  True
+        paramlist.assimilation_ctl.jmax2n.value = float(jmax2n_s[i])
+        paramlist.assimilation_ctl.jmax2n.parsed =  True
         
         lctlib[pft].gdd_req_max = float(gdd_t_air_reqs[i])
         lctlib[pft].k_gdd_dormance = float(k_gdd_s[i])
@@ -315,7 +331,7 @@ for j in range(0, n_soil_combs):
         h += 1
         
 # Generate quincy setups
-# quincy_multi_run.generate_files()
+quincy_multi_run.generate_files()
 
 
 df_parameter_setup = pd.DataFrame({
@@ -337,13 +353,19 @@ df_parameter_setup['silt']= np.round(np.tile(silts, n_soil_combs),5)
 df_parameter_setup['sand']= np.round(np.tile(sands, n_soil_combs),5)
 df_parameter_setup['root_scale']= np.round(10**np.tile(root_scale_log, n_soil_combs),5)
 df_parameter_setup['slope_leaf_close']= np.round(np.tile(slope_leaf_closes, n_soil_combs) ,5)
+
 df_parameter_setup['gdd_t_air_threshold']= np.round(np.tile(gdd_t_air_thresholds,n_soil_combs), 5)
 df_parameter_setup['gdd_t_air_req']= np.round(np.tile(gdd_t_air_reqs,n_soil_combs), 5)
 df_parameter_setup['k_gdd']= np.round(np.tile(k_gdd_s,n_soil_combs), 5)
 
+df_parameter_setup['jmax2n']= np.round(np.tile(jmax2n_s,n_soil_combs), 5)
+df_parameter_setup['vcmax2n']= np.round(np.tile(vcmax2n_s,n_soil_combs), 5)
+
 df_parameter_setup.to_csv(os.path.join(setup_root_path, "parameters.csv"), index=False)
 
 quincy_binary_path = os.path.join(QUINCY_ROOT_PATH, "x86_64-gfortran", "bin", "land.x")
+
+python_ex = "/Net/Groups/BSI/work_scratch/ppapastefanou/envs/QPy_gnu_mpich/bin/python"
 
 GenerateSlurmScriptArrayBased(
                     ntasks        = number_of_runs,
@@ -351,9 +373,10 @@ GenerateSlurmScriptArrayBased(
                     quincy_binary = quincy_binary_path,
                     ram_in_gb     = RAM_IN_GB, 
                     ntasksmax     = NMAXTASKS, 
-                    partition     = PARTITION)
+                    partition     = PARTITION,
+                    python        = python_ex)
 
-shutil.copyfile(os.path.join(THIS_DIR, os.pardir, os.pardir,'src', 'quincy', 'run_scripts',
+shutil.copyfile(os.path.join(THIS_DIR, os.pardir, os.pardir,'src', 'quincy', 'run_scripts', 
                              'run_quincy_array_psi_post_process.py'), 
                              os.path.join(setup_root_path, 'run_quincy_array.py'))
 

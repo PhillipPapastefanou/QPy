@@ -34,7 +34,6 @@ df_sap_flow_2023[df_sap_flow_2023[:,"J0.5"] .< 0.0, "J0.5"] .= 0.0
 rename!(df_sap_flow_2023, :date => :DateTime)
 
 
-
 varn = "LE"
 
 fig = PyPlot.figure(figsize = (12,6))
@@ -64,11 +63,11 @@ ax.legend()
 PyPlot.savefig(joinpath(plt_dir, "$varn.png"))
 PyPlot.close(fig)
 
-
-
 rt_path_hyd = "/Net/Groups/BSI/work_scratch/ppapastefanou/src/QPy/science/phillip/output/05_transient_fluxnet"
 rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/06s_transient_fluxnet_finer"
 rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/11_transient_slurm_array"
+rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/13_transient_slurm_array"
+
 run_collections = QMultiRunCollections(QOutputCollection[], String[])
 
 full_dir_paths = filter(isdir, readdir("$rt_path_hyd/output", join=true))
@@ -256,7 +255,7 @@ selids = ["0",
 
 
 
-
+selids = ["15", "25"]
 run_sel = run_collections[selids];
 
 run_sel.idstr
@@ -296,7 +295,8 @@ for year in ["2003", "2018", "2023"]
     end
 
 
-    
+
+
 
 
     ax = fig.add_subplot(2,1,1)
@@ -403,6 +403,9 @@ ax.plot(df_obs_sapflow_slice[!,:DateTime], df_obs_sapflow_slice[!,:mean_norm], l
 ax.legend()
 PyPlot.savefig(joinpath(plt_dir,"$pltname.png"))
 PyPlot.close(fig)
+
+
+
 maximum(list_stemflow[1][!,:mean])
 maximum(list_stemflow[2][!,:mean])
 
@@ -435,7 +438,8 @@ PyPlot.savefig(joinpath(plt_dir,"$pltname.png"))
 PyPlot.close(fig)
 
 
-
+selids = ["15", "25"]
+run_sel = run_collections[selids];
 for year in ["2003", "2018", "2023"]
     pltname = "psi_leaf"
     varname ="psi_leaf_avg"
@@ -531,3 +535,99 @@ for year in ["2003", "2018", "2023"]
 end
 
 
+for year in ["2003", "2018", "2023"]
+
+    varname ="frac_cav_xylem"
+    pltname = varname
+
+    d1, d2 =     DateTime("$year-05-01"), DateTime("$year-9-30")
+    series = ThirtyMinSeries
+    list_psi_stem = get_multi_file_slice(run_sel, varname, 
+    Fluxnetdata, series,
+    0.1, 0.9, slice_dates, d1, d2);
+
+    
+    fig = PyPlot.figure(figsize=(8, 6), layout="constrained")
+
+    ax = fig.add_subplot(1,1,1)
+    for i in 1:length(list_psi_stem)
+        col = ""
+        if selids[i] == "0"
+            col = "blue"
+        else
+            col = "red"
+        end
+        ax.plot(list_psi_stem[i][!,:DateTime], list_psi_stem[i][!,:mean], label=selids[i], color = col, alpha= 0.5)
+    end
+
+    ax.set_yscale("log")
+    ax.legend()
+    PyPlot.savefig(joinpath(plt_dir,"$(pltname)_$year.png"))
+    PyPlot.close(fig)
+end
+
+
+for year in ["2003", "2018", "2023"]
+
+    varname ="psi_stem_avg"
+    pltname = varname
+
+    d1, d2 =     DateTime("$year-05-01"), DateTime("$year-9-30")
+    series = ThirtyMinSeries
+    list_psi_stem = get_multi_file_slice(run_sel, varname, 
+    Fluxnetdata, series,
+    0.1, 0.9, slice_dates, d1, d2);
+
+    
+    fig = PyPlot.figure(figsize=(8, 6), layout="constrained")
+
+    ax = fig.add_subplot(1,1,1)
+    for i in 1:length(list_psi_stem)
+        col = ""
+        if selids[i] == "0"
+            col = "blue"
+        else
+            col = "red"
+        end
+        ax.plot(list_psi_stem[i][!,:DateTime], list_psi_stem[i][!,:mean], label=selids[i], color = col, alpha= 0.5)
+    end
+
+    ax.legend()
+    PyPlot.savefig(joinpath(plt_dir,"$(pltname)_$year.png"))
+    PyPlot.close(fig)
+end
+
+
+for year in ["2003", "2018", "2023"]
+
+    varname ="psi_stem_avg"
+    pltname = varname
+
+    d1, d2 =     DateTime("$year-07-01"), DateTime("$year-7-05")
+    series = ThirtyMinSeries
+    list_psi_stem = get_multi_file_slice(run_sel, varname, 
+    Fluxnetdata, series,
+    0.1, 0.9, slice_dates, d1, d2);
+
+    
+    fig = PyPlot.figure(figsize=(8, 6), layout="constrained")
+
+    ax = fig.add_subplot(1,1,1)
+    for i in 1:length(list_psi_stem)
+        col = ""
+        if selids[i] == "0"
+            col = "blue"
+        else
+            col = "red"
+        end
+        ax.plot(list_psi_stem[i][!,:DateTime], list_psi_stem[i][!,:mean], label=selids[i], color = col, alpha= 0.5)
+    end
+
+    ax.legend()
+    PyPlot.savefig(joinpath(plt_dir,"$(pltname)_($year)_short.png"))
+    PyPlot.close(fig)
+end
+
+
+
+plt_dir

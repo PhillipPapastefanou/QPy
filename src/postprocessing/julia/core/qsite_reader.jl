@@ -141,8 +141,7 @@ function get_data(qcollection::QOutputCollection, varname::String, sim_type::QOu
     cat = qcollection.var_cats[index]
     sim_type = qcollection.var_sim_types[index]
     time_type = qcollection.var_time_types[index]
-
-    
+   
 
     simtime_type = lowercase(string(sim_type))*"_"*lowercase(string(time_type))
     fname = qcollection.data[simtime_type][cat].filename

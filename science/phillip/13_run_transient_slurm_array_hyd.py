@@ -39,11 +39,11 @@ site = "DE-Hai"
 # Use static forcing
 forcing_mode = ForcingMode.TRANSIENT
 # Number of cpu cores to be used
-NMAXTASKS  = 512
+NMAXTASKS  = 128
 # Path where all the simulation data will be saved
 RAM_IN_GB = 4
 
-number_of_runs = 1024*8
+number_of_runs = 128
 
 n_soil_combs = 2
 
