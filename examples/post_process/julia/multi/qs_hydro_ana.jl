@@ -7,6 +7,7 @@ using Makie
 
 rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/14_transient_slurm_array"
 rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/20_transient_slurm_array_krtos"
+rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/26_transient_slurm_array"
 
 rmse_data_path = joinpath(rt_path_hyd, "post", "params_rmse.csv")
 
@@ -31,7 +32,7 @@ print(size(dh))
 dh = filter(row -> (row.psi_stem_rmse_23 < 0.1) & (row.stem_flow_rmse_23 < 0.28) & (row.le_rmse_18 < 33)&(row.gpp_rmse_18 < 3.5) , df);
 print(size(dh))
 dh = filter(row -> (row.
-psi_stem_rmse_23 < 0.1) & (row.stem_flow_rmse_23 < 0.28) & (row.le_rmse_03 < 40)&(row.gpp_rmse_03 < 3.9) , df);
+psi_stem_rmse_23 < 0.12) & (row.stem_flow_rmse_23 < 0.28) & (row.le_rmse_03 < 40)&(row.gpp_rmse_03 < 3.9) , df);
 print(size(dh))  
 
 fids = [string(s) for s in dh[!,:fid]]

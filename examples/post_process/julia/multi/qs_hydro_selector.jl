@@ -8,7 +8,7 @@ using CairoMakie
 using StatsBase  
 
 rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/14_transient_slurm_array"
-rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/22_transient_slurm_array_krtos"
+rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/26_transient_slurm_array_dyn_roots_off"
 
 rmse_data_path = joinpath(rt_path_hyd, "post", "params_rmse.csv")
 ana_path = joinpath(rt_path_hyd, "post", "ana")
@@ -67,7 +67,7 @@ df_psi_stem_stem_flow_03_18 = filter(row -> (row.psi_stem_rmse_23 < psi_stem_err
     (row.gpp_rmse_03 < 4.0) & (row.le_rmse_03 < 40) , df);
 print(size(df_psi_stem_stem_flow_03_18))
 
-vscodedisplay(df_psi_stem_stem_flow_03_18) 
+#vscodedisplay(df_psi_stem_stem_flow_03_18) 
 
 # gpp only
 gpp_full = filter(row -> (row.gpp_rmse_full < 3.3) , df);
@@ -84,7 +84,7 @@ print(size(gpp_le_full))
 
 
 # 1. Select columns that do NOT contain "RMSE" 
-cols = names(dh) .|> String
+cols = names(df) .|> String
 
 exclude = ["RMSE", "ID", "FID", "USE_JSB_PHYSICS"]   # patterns to exclude (uppercase for matching)
 
@@ -100,7 +100,7 @@ nplots = length(cols_no_rmse)
 
 function plot_histograms(df::DataFrame, cols)
 
-    fig = Figure(size = (1200, 1000));
+    fig = Makie.Figure(size = (1200, 1000));
 
     for (i, col) in enumerate(cols)
         row   = div(i - 1, ncols) + 1
@@ -169,7 +169,7 @@ function correlation_heatmap(df::DataFrame, cols)
     # --------------------------------------------------------------
     # 4. Makie heatmap
     # --------------------------------------------------------------
-    fig = Figure(size = (900, 900))
+    fig = Makie.Figure(size = (900, 900))
 
     ax = Axis(fig[1, 1],
         title = "Correlation matrix",

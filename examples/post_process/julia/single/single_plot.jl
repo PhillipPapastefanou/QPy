@@ -1,10 +1,10 @@
-# using Pkg
+using Pkg
 # Pkg.add("NCDatasets")
 # Pkg.add("Dates")
 # Pkg.add("CFTime")
 # Pkg.add("DataFrames")
 # Pkg.add("Statistics")
-# Pkg.add("ColorSchemes")
+Pkg.add("ColorSchemes")
 # Pkg.add("PyCall")
 # Pkg.add("PyPlot")
 
@@ -17,6 +17,7 @@ using Statistics
 script_dir = dirname(@__FILE__)
 
 folder_data = "/Net/Groups/BSI/work_scratch/ppapastefanou/src/QPy/science/phillip/output/03_transient_fluxnet/output/0"
+folder_data = "/Net/Groups/BSI/work_scratch/ppapastefanou/src/QPy/science/phillip/output/01_transient_isi/output/0"
 
 
 include("../../../../src/postprocessing/julia/plt/qstd_plt_pyplot.jl")

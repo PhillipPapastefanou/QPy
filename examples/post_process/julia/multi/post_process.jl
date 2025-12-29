@@ -350,6 +350,7 @@ df_obs_psi_stem_slice = get_single_file_slice(df_psi_stem_obs, "FAG", series, 0.
    
 fig = PyPlot.figure(figsize=(8, 6), layout="constrained")
 ax = fig.add_subplot(1,1,1)
+
 for i in 1:length(list_psi_stem)
     col = ""
     if selids[i] == "0"
