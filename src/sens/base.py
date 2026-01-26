@@ -49,16 +49,20 @@ class Quincy_Multi_Run:
     def __init__(self, root_path):
         self.setups = []
         self.root_path = root_path
+        self.cwds = []
     def add_setup(self, setup: Quincy_Setup):
         self.setups.append(setup)
+        self.cwds.append(setup.folder)
     def generate_files(self):
         if os.path.exists(self.root_path):
             shutil.rmtree(self.root_path)
-
         os.makedirs(self.root_path, exist_ok=True)
-
         for setup in self.setups:
-            setup.export()
+            setup.export()        
+        with open(os.path.join(self.root_path, "wd.txt"), "w") as f:
+            for p in self.cwds:
+                f.write(f"{p}\n")    
+        
 
 class Quincy_Single_Run:
     def __init__(self, root_path):

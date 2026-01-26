@@ -53,8 +53,10 @@ def GenerateSlurmScriptArrayBased(ntasks,
       
     script_content = f"""#!/bin/bash
 #SBATCH -J QUINCY_QPY
-#SBATCH --error={path}output/%a/%A_%a.err
-#SBATCH --output={path}output/%a/%A_%a.log
+##SBATCH --error={path}%A_%a.err
+##SBATCH --output={path}%A_%a.log
+#SBATCH --output=/dev/null
+#SBATCH --error=/dev/null
 #SBATCH -D ./
 #SBATCH --get-user-env
 #SBATCH --export=NONE
@@ -72,16 +74,34 @@ ml netcdf/4.9.0
 
 ml all/Miniconda3
 
-# Setup root directory pattern
-SETUPS_OUTPUT="{path}output"
-SETUP_DIR=\"${{SETUPS_OUTPUT}}/${{SLURM_ARRAY_TASK_ID}}"
 
+# --- Per-task output/error directory based on SLURM_ARRAY_TASK_ID ---
+PATHS_FILE="{path}wd.txt"
+
+mapfile -t PATHS < "$PATHS_FILE"
+
+i="${{SLURM_ARRAY_TASK_ID}}"
+base="${{PATHS[$i]:-}}"
+
+if [[ -z "${{base}}" ]]; then
+  echo "ERROR: No path found for SLURM_ARRAY_TASK_ID=${{i}} in $PATHS_FILE" >&2
+  exit 1
+fi
+
+# Put logs under: <base>/output/<task_id>/
+outdir="${{base%/}}/output/${{i}}"
+mkdir -p "$outdir"
+
+log="${{base}}/slurm.log"
+err="${{base}}/slurm.err"
+
+# Redirect all subsequent stdout/stderr into those files
+exec 1>>"$log" 2>>"$err"
 
 export FI_PROVIDER=tcp
 
-{python} run_quincy_array.py "${{SETUP_DIR}}" "{quincy_binary}" "{ntasks}"
+{python} run_quincy_array.py "{path}" "${{SLURM_ARRAY_TASK_ID}}" "{quincy_binary}" "{ntasks}"
 """
-    
     with open(os.path.join(path, 'submit.sh'), 'w') as f:
         f.write(script_content)
 

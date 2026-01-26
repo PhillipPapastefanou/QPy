@@ -92,6 +92,7 @@ function read_quincy_site_output(folder)
                 push!(qvariables, QOutputVariable(ndim, unit, varname))   
                 
                 push!(qcollection.var_names, varname)  
+                push!(qcollection.unit_names, unit)  
                 push!(qcollection.var_cats, cat)  
                 push!(qcollection.var_sim_types, simtype_enum) 
                 push!(qcollection.var_time_types, time_enum) 
@@ -110,6 +111,16 @@ end
 
 function get_variables(qcollection::QOutputCollection)
     return unique(qcollection.var_names)
+end
+
+function get_unit(qcollection::QOutputCollection, var_name)
+
+    index = findfirst(x -> x == var_name, qcollection.var_names)
+
+    if isnothing(index)
+        error("Variable '$var_name' not found in collection.")
+    end
+    return qcollection.unit_names[index]
 end
 
 function get_data(qcollection::QOutputCollection, varname::String, sim_type::QOutputSimulationType)

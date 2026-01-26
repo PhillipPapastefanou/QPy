@@ -8,7 +8,8 @@ using CairoMakie
 using StatsBase  
 
 rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/14_transient_slurm_array"
-rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/26_transient_slurm_array_dyn_roots_off"
+rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/27_transient_slurm_array_dyn_roots_off"
+rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/29_transient_slurm_array_dyn_roots_off"
 
 rmse_data_path = joinpath(rt_path_hyd, "post", "params_rmse.csv")
 ana_path = joinpath(rt_path_hyd, "post", "ana")
@@ -23,6 +24,8 @@ df = df[:, .!map(col -> all(x -> ismissing(x) || (x isa Number && isnan(x)), col
 df = df[.!isnan.(df.psi_stem_rmse_23), :]
 
 
+
+
 psi_stem_err_ref = 0.13 
 stem_flow_err_ref = 0.23 
 
@@ -35,11 +38,22 @@ print(size(df_psi_stem))
 df_psi_stem_stem_flow = filter(row -> (row.psi_stem_rmse_23 < psi_stem_err_ref) & (row.stem_flow_rmse_23 < stem_flow_err_ref), df);
 print(size(df_psi_stem_stem_flow))
 
+
 # Psi_stem and stem flow with gpp and le constrain
 df_psi_stem_stem_flow_23 = filter(row -> (row.psi_stem_rmse_23 < psi_stem_err_ref) & 
     (row.stem_flow_rmse_23 < stem_flow_err_ref) &
-    (row.gpp_rmse_23 < 3.3) & (row.le_rmse_23 < 34) , df);
+    (row.gpp_rmse_23 < 3.4) & (row.le_rmse_23 < 35) , df);
 print(size(df_psi_stem_stem_flow_23))
+
+
+df_psi_stem_stem_flow_23 = filter(row -> 2.0 < row.k_xylem_sats < 6.0, df_psi_stem_stem_flow_23)
+print(quantile(df_psi_stem_stem_flow_23.k_latosa, 0.2))
+print(quantile(df_psi_stem_stem_flow_23.k_latosa, 0.8))
+
+std_out_display("psi_stem_stem_flow_23", df_psi_stem_stem_flow_23, cols_no_rmse)
+
+CSV.write(joinpath(rt_path_hyd, "post", "ismip_selection_29_const.csv"), df_psi_stem_stem_flow_23)
+
 
 # Psi_stem and stem flow with gpp and le constrain
 df_psi_stem_stem_flow_full = filter(row -> (row.psi_stem_rmse_23 < psi_stem_err_ref) & 
@@ -63,10 +77,18 @@ print(size(df_psi_stem_stem_flow_03))
 # Psi_stem and stem flow with gpp and le constrain
 df_psi_stem_stem_flow_03_18 = filter(row -> (row.psi_stem_rmse_23 < psi_stem_err_ref) & 
     (row.stem_flow_rmse_23 < stem_flow_err_ref) &
-    (row.gpp_rmse_18 < 3.5) & (row.le_rmse_18 < 35) &
-    (row.gpp_rmse_03 < 4.0) & (row.le_rmse_03 < 40) , df);
-print(size(df_psi_stem_stem_flow_03_18))
+    (row.gpp_rmse_18 < 3.7) & (row.le_rmse_18 < 35) &
+    (row.gpp_rmse_03 < 4.2) & (row.le_rmse_03 < 45) , df);
 
+df_psi_stem_stem_flow_03_18 = filter(row -> 2 < row.k_xylem_sats < 5, df_psi_stem_stem_flow_03_18)
+print(quantile(df_psi_stem_stem_flow_03_18.k_latosa, 0.2))
+print(quantile(df_psi_stem_stem_flow_03_18.k_latosa, 0.8))
+
+CSV.write(joinpath(rt_path_hyd, "post", "ismip_selection_29_df_psi_stem_stem_flow_03_18.csv"), df_psi_stem_stem_flow_03_18)
+
+print(size(df_psi_stem_stem_flow_03_18))
+print(quantile(df_psi_stem_stem_flow_03_18.k_latosa, 0.2))
+print(quantile(df_psi_stem_stem_flow_03_18.k_latosa, 0.8))
 #vscodedisplay(df_psi_stem_stem_flow_03_18) 
 
 # gpp only

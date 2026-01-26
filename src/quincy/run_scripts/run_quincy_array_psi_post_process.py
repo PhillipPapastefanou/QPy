@@ -7,16 +7,16 @@ import datetime
 import fcntl  # file locking on HPC Linux
 
 
-def run_quincy(setup_root_path: str, quincy_binary_path: str, total_runs: int ):
-    print(f"[INFO] Running Quincy in: {setup_root_path}")
+def run_quincy(quincy_run_path:str, setup_root_path: str, quincy_binary_path: str, total_runs: int ):
+    print(f"[INFO] Running Quincy in: {quincy_run_path}")
     print(f"[INFO] Binary: {quincy_binary_path}")
 
     start = time.monotonic()
 
-    # Launch QUINCY
+    # Launch Quincy
     p = subprocess.Popen(
         [quincy_binary_path],
-        cwd=setup_root_path,
+        cwd=quincy_run_path,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
@@ -197,18 +197,19 @@ def log_run(setup_root_path: str, returncode: int, duration: float,
 
 
 def main():
-    # Usage: run_quincy.py SETUP_DIR QUINCY_BINARY_PATH [TOTAL_RUNS]
-    if len(sys.argv) not in (3, 4):
-        print("Usage: run_quincy.py SETUP_DIR QUINCY_BINARY_PATH [TOTAL_RUNS]", file=sys.stderr)
+    # Usage: run_quincy.py ROOT_OUTPUT_DIR RUN_ID QUINCY_BINARY_PATH [TOTAL_RUNS]
+    if len(sys.argv) not in (4, 5):
+        print("Usage: run_quincy.py ROOT_OUTPUT_DIR RUN_ID QUINCY_BINARY_PATH [TOTAL_RUNS]", file=sys.stderr)
         sys.exit(1)
 
     setup_root_path = sys.argv[1]
-    quincy_binary_path = sys.argv[2]
+    id = int(sys.argv[2])
+    quincy_binary_path = sys.argv[3]
     total_runs = None
 
-    if len(sys.argv) == 4:
+    if len(sys.argv) == 5:
         try:
-            total_runs = int(sys.argv[3])
+            total_runs = int(sys.argv[4])
         except ValueError:
             print(f"[WARN] TOTAL_RUNS is not a valid integer: {sys.argv[3]}", file=sys.stderr)
 
@@ -220,8 +221,20 @@ def main():
         print(f"[ERROR] Quincy binary not found: {quincy_binary_path}", file=sys.stderr)
         sys.exit(3)
 
-    returncode = run_quincy(setup_root_path, quincy_binary_path, total_runs=total_runs)
+    wdir_file_list = os.path.join(setup_root_path,"wd.txt")
+    if not os.path.isfile(wdir_file_list):
+        print(f"[ERROR] Working directory paths not founds: {wdir_file_list}", file=sys.stderr)
+        sys.exit(4)
+
+    cwds = []
+    with open(os.path.join(setup_root_path,"wd.txt")) as f:
+        cwds = [line.strip() for line in f]
+
+    quincy_run_path = cwds[id]
+
+    returncode = run_quincy(quincy_run_path, setup_root_path, quincy_binary_path, total_runs=total_runs)
     sys.exit(returncode)
+
 
 if __name__ == "__main__":
     main()

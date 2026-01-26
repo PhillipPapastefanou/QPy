@@ -270,7 +270,7 @@ class JSB_HYDRO_NML:
         self.qs_soil_depth = NamelistItem(9.5)
         self.qs_soil_awc_prescribe = NamelistItem(300.0)
         self.qs_soil_theta_prescribe = NamelistItem(1.0)
-        self.soilhydmodel = NamelistItem(JSBSoilHydModelType.VanGenuchten)
+        self.soilhydmodel = NamelistItem(JSBSoilHydModelType.VANGENUCHTEN)
 
 class JSB_SSE_NML:
     def __init__(self):

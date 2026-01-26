@@ -47,7 +47,7 @@ number_of_runs = 1024*40
 n_soil_combs = 1
 
 PARTITION = 'work'
-RUN_DIRECTORY =  "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/27b_transient_slurm_array_dyn_roots_off/"
+RUN_DIRECTORY =  "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/30_run_transient_slurm_array_mort_hyd_fail_mort/"
 
 qpf = QuincyPathFinder()
 QUINCY_ROOT_PATH = qpf.quincy_root_path
@@ -144,8 +144,8 @@ sample = sample.T
 slicer = Subslicer(array=sample)
 
 # 1. Parameter k_xylem_sat
-k_xylem_sat_min = 5.0
-k_xylem_sat_max = 50.0
+k_xylem_sat_min = 1.0
+k_xylem_sat_max = 10.0
 
 # 2. Parameter kappa_stem kg m-3 MPa-1
 kappa_stem_min = 50
@@ -156,8 +156,8 @@ kappa_leaf_min      = 0.03
 kappa_leaf_max      = 0.06
 
 # 4. Parameter klatosa 
-k_latosa_min = 2000
-k_latosa_max = 10000
+k_latosa_min = 3000
+k_latosa_max = 7000
 
 # 5. Parameter klatosa 
 g1_min = 1.75
@@ -264,7 +264,7 @@ for j in range(0, n_soil_combs):
         nlm.spq_ctl.spq_deactivate_spq.value = True
             
         if j == 0:
-            nlm.jsb_hydro_nml.soilhydmodel.value = JSBSoilHydModelType.VanGenuchten
+            nlm.jsb_hydro_nml.soilhydmodel.value = JSBSoilHydModelType.VANGENUCHTEN
             soil_model_str = "VanGenuchten"       
         # elif j == 1:
         #     nlm.jsb_hydro_nml.soilhydmodel.value = JSBSoilHydModelType.Campbell

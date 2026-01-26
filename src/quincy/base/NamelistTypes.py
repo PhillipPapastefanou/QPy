@@ -89,6 +89,6 @@ class QuincyModelName(Enum):
     CANOPY = 1
 
 class JSBSoilHydModelType(Enum):
-    VanGenuchten = 0
-    BrooksCorey = 1
-    Campbell = 2
+    VANGENUCHTEN = 0
+    BROOKSCOREY = 1
+    CAMPBELL = 2

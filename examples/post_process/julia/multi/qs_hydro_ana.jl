@@ -4,10 +4,14 @@ using CairoMakie
 using Dates
 using DataFrames
 using Makie
+using CSV
 
 rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/14_transient_slurm_array"
 rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/20_transient_slurm_array_krtos"
 rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/26_transient_slurm_array"
+#rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/28_run_transient_slurn_array_constrained"
+rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/27_transient_slurm_array_dyn_roots_off"
+rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/29_transient_slurm_array_dyn_roots_off"
 
 rmse_data_path = joinpath(rt_path_hyd, "post", "params_rmse.csv")
 
@@ -19,6 +23,7 @@ df = df[.!isnan.(df.psi_stem_rmse_23), :]
 
 
 # print(names(df))
+
 dh = filter(row -> (row.psi_stem_rmse_23 < 0.1) & (row.stem_flow_rmse_23 < 0.25), df);
 print(size(dh))
 dh = filter(row -> (row.psi_stem_rmse_23 < 0.1) & (row.stem_flow_rmse_23 < 0.30) & (row.gpp_rmse_23 < 3.2), df);
@@ -27,15 +32,29 @@ dh = filter(row -> (row.psi_stem_rmse_23 < 0.1) & (row.stem_flow_rmse_23 < 0.30)
 print(size(dh))
 dh = filter(row -> (row.psi_stem_rmse_23 < 0.12) & (row.stem_flow_rmse_23 < 0.30)&(row.le_rmse_23 < 34) , df);
 print(size(dh))
-dh = filter(row -> (row.psi_stem_rmse_23 < 0.1) & (row.stem_flow_rmse_23 < 0.28)&(row.le_rmse_full < 35)&(row.gpp_rmse_full < 3.4) , df);
+dh = filter(row -> (row.psi_stem_rmse_23 < 0.09) & (row.stem_flow_rmse_23 < 0.24)&(row.le_rmse_full < 33.1)&(row.gpp_rmse_full < 3.3) , df);
 print(size(dh))
-dh = filter(row -> (row.psi_stem_rmse_23 < 0.1) & (row.stem_flow_rmse_23 < 0.28) & (row.le_rmse_18 < 33)&(row.gpp_rmse_18 < 3.5) , df);
-print(size(dh))
-dh = filter(row -> (row.
-psi_stem_rmse_23 < 0.12) & (row.stem_flow_rmse_23 < 0.28) & (row.le_rmse_03 < 40)&(row.gpp_rmse_03 < 3.9) , df);
-print(size(dh))  
+#27 selections
+print(dh[!,:fid])
+#CSV.write(joinpath(rt_path_hyd, "post", "ismip_selection_27.csv"), dh)
 
+
+# dh = filter(row -> (row.psi_stem_rmse_23 < 0.1) & (row.stem_flow_rmse_23 < 0.28) & (row.le_rmse_18 < 33)&(row.gpp_rmse_18 < 3.5) , df);
+# print(size(dh))
+# dh = filter(row -> (row.
+# psi_stem_rmse_23 < 0.12) & (row.stem_flow_rmse_23 < 0.28) & (row.le_rmse_03 < 40)&(row.gpp_rmse_03 < 3.9) , df);
+# print(size(dh))  
+
+# #28 selections
+# dh = filter(row -> (row.le_rmse_full < 33.1)&(row.gpp_rmse_full < 3.3) , df);
+# print(size(dh)) 
+# print(dh[!,:fid])
+# CSV.write(joinpath(rt_path_hyd, "post", "ismip_selection_28.csv"), dh)
+
+#vscodedisplay(dh)
 fids = [string(s) for s in dh[!,:fid]]
+
+
 
 function run_prep(full_dir_paths, short_dir_paths )
 

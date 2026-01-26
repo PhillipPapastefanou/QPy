@@ -32,6 +32,7 @@ mutable struct QOutputCollection
     data::Dict{String, Dict{String, QOutputFile}}
     root_folder::String
     var_names::Vector{String}
+    unit_names::Vector{String}
     var_cats::Vector{String}
     var_sim_types::Vector{QOutputSimulationType}
     var_time_types::Vector{QOutputTimeDim}
@@ -43,7 +44,8 @@ mutable struct QOutputCollection
             Dict{String, Dict{String, QOutputFile}}(), # data
             "",                                        # root_folder
             String[],                                  # var_names
-            String[],                                  # var_cats
+            String[],                                  # unit names
+            String[],                                   # var_cats
             QOutputSimulationType[],                   # var_sim_types
             QOutputTimeDim[],                          # var_time_types
             String[],                                  # sim_type_times
