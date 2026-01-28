@@ -175,7 +175,7 @@ def main():
 
     plt.tight_layout()
     plt.savefig(SAVE_PATH, dpi=150)
-    print(f"Success: Report generated at {SAVE_PATH}")
+    #print(f"Success: Report generated at {SAVE_PATH}")
 
 if __name__ == "__main__":
     main()

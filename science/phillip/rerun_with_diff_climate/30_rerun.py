@@ -38,7 +38,7 @@ site = "DE-Hai"
 # Use static forcing
 forcing_mode = ForcingMode.TRANSIENT
 # Number of cpu cores to be used
-NMAXTASKS  = 800
+NMAXTASKS  = 256
 # Path where all the simulation data will be saved
 RAM_IN_GB = 4
 
@@ -47,8 +47,8 @@ qpf = QuincyPathFinder()
 QUINCY_ROOT_PATH = qpf.quincy_root_path
 
 PARTITION = 'work'
-INPUT_DIRECTORY =  "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/29_transient_slurm_array_dyn_roots_off/"
-RUN_DIRECTORY =  "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/isimip/ismip_selection_29_const/"
+INPUT_DIRECTORY =  "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/30_run_transient_slurm_array_mort_hyd_fail_mort/"
+RUN_DIRECTORY =  "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/isimip/ismip_selection_30_df_psi_stem_stem_flow_03_18/"
 
 setup_root_path = os.path.join(THIS_DIR, RUN_DIRECTORY)
 
@@ -57,7 +57,7 @@ LOCATION = "DE-Hai"
 MODELS = ["mri-esm2-0","mpi-esm1-2", "ipsl-cm6a", "gfdl-esm4" ,"ukesm1-0"]
 SCENARIOS = ['ssp126', 'ssp370', 'ssp585']
 
-df_run = pd.read_csv(os.path.join(INPUT_DIRECTORY, "post", "ismip_selection_29_const.csv"))
+df_run = pd.read_csv(os.path.join(INPUT_DIRECTORY, "post", "ismip_selection_30_df_psi_stem_stem_flow_03_18.csv"))
 run_ids = df_run['fid'].values
 
 print(run_ids)
