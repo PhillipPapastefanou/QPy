@@ -90,6 +90,7 @@ class ASSIMILATION_CTL:
 class PHYD_CTL:
     def __init__(self):
         self.use_plant_hydraulics = NamelistItem(False)
+        self.use_hydaulic_failure_mort = NamelistItem(False)
 
 class RADIATION_CTL:
     def __init__(self):

@@ -89,8 +89,8 @@ if [[ -z "${{base}}" ]]; then
 fi
 
 # Put logs under: <base>/output/<task_id>/
-outdir="${{base%/}}/output/${{i}}"
-mkdir -p "$outdir"
+# outdir="${{base%/}}/output/${{i}}"
+# mkdir -p "$outdir"
 
 log="${{base}}/slurm.log"
 err="${{base}}/slurm.err"

@@ -17,16 +17,14 @@ from src.quincy.base.EnvironmentalInputTypes import *
 from src.quincy.base.NamelistTypes import ForcingMode
 from src.quincy.base.EnvironmentalInput import EnvironmentalInputSite
 from src.quincy.base.user_git_information import UserGitInformation
-
+from src.quincy.auxil.find_quincy_paths import QuincyPathFinder
 from src.quincy.run_scripts.default import ApplyDefaultTestbed
-from src.quincy.run_scripts.submit import GenerateSlurmScript
 
-if 'QUINCY' in os.environ:        
-    QUINCY_ROOT_PATH = os.environ.get("QUINCY")
-else:
-    print("Environmental variable QUINCY is not defined")
-    print("Please set QUINCY to the directory of your quincy root path")
-    exit(99)
+from src.quincy.run_scripts.submit import GenerateSlurmScriptArrayBased
+
+qpf = QuincyPathFinder()
+QUINCY_ROOT_PATH = qpf.quincy_root_path
+
 
 # Fluxnet3 forcing
 forcing = ForcingDataset.FLUXNET3
@@ -35,9 +33,9 @@ site = "DE-Hai"
 # Use static forcing
 forcing_mode = ForcingMode.STATIC
 # Number of cpu cores to be used
-NTASKS  = 4
+NTASKS  = 8
 # Path where all the simulation data will be saved
-RUN_DIRECTORY = "output/01_oaat_test_bed_example"
+RUN_DIRECTORY = "output/01_oaat_test_bed_example/"
 
 
 # Classic sensitivity analysis where we are apply differnt Namelist or Lctlib files to ONE climate file
@@ -89,7 +87,7 @@ psi50_xylem_min = -6.0
 psi50_xylem_max = -0.5
 
 # Define the number of steps we want to slice
-nslice = 4
+nslice = 8
 # Now we can use numpy to create and array
 psi50s = np.linspace(psi50_xylem_min, psi50_xylem_max, num=nslice)
 
@@ -134,11 +132,24 @@ df_parameter_setup['id'] = np.arange(0, nslice)
 df_parameter_setup['fid'] = np.arange(0, nslice)
 df_parameter_setup.to_csv(os.path.join(setup_root_path, "parameters.csv"), index=False)
 
+quincy_binary_path = os.path.join(QUINCY_ROOT_PATH, "x86_64-gfortran", "bin", "land.x")
+python_ex = "/Net/Groups/BSI/work_scratch/ppapastefanou/envs/QPy_gnu_mpich/bin/python"
 
-GenerateSlurmScript(path = setup_root_path, ntasks=NTASKS)
+GenerateSlurmScriptArrayBased(
+                    ntasks        = NTASKS,
+                    path          = setup_root_path,
+                    quincy_binary = quincy_binary_path,
+                    ram_in_gb     = 4, 
+                    ntasksmax     = 4, 
+                    partition     = "big",
+                    python        = python_ex)
 
-shutil.copyfile(os.path.join(THIS_DIR, os.pardir, os.pardir,'src', 'quincy', 'run_scripts', 'run_mpi.py'), 
-                             os.path.join(setup_root_path, 'run_mpi.py'))
+shutil.copyfile(os.path.join(THIS_DIR, os.pardir, os.pardir,'src', 'quincy', 'run_scripts', 
+                             'run_quincy_array_psi_post_process.py'), 
+                             os.path.join(setup_root_path, 'run_quincy_array.py'))
+
+
+
 
 import time
 time.sleep(1.0)

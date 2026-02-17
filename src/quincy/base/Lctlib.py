@@ -265,9 +265,15 @@ class Lctlib_Item:
         # (1?)
         self.eta_stem = 0.0
         # (mol m-2 MPa-1)
-        self.kappa_leaf = 0.0
+        self.gamma_leaf = 0.0
         # (mol m-3 MPa-1)
-        self.kappa_stem = 0.0
+        self.gamma_stem_max = 0.0
+        # (mol m-3 MPa-1)
+        self.gamma_stem_res = 0.0
+        # (MPa)
+        self.psi50_stem_tlp = 0.0
+        # (1)
+        self.slope_stem_tlp = 0.0
         # Root scaler (1)
         self.root_scale = 1.0
         # Residual hydraulic conductivity (kg H2O m-2 s-1)

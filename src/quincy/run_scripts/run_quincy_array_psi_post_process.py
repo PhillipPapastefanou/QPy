@@ -52,10 +52,10 @@ def run_quincy(quincy_run_path:str, setup_root_path: str, quincy_binary_path: st
         from src.postprocessing.py.qnc_output_parser import QNC_output_parser
         from src.postprocessing.py.qnc_ncdf_reader import QNC_ncdf_reader
         
-        parser = QNC_output_parser(setup_root_path)
+        parser = QNC_output_parser(quincy_run_path)
         parser.Read()
         output = parser.Available_outputs['fluxnetdata']
-        nc_output = QNC_ncdf_reader(setup_root_path,
+        nc_output = QNC_ncdf_reader(quincy_run_path,
                                                 output.Categories,
                                                 output.Identifier,
                                                 output.Time_resolution
@@ -76,8 +76,7 @@ def run_quincy(quincy_run_path:str, setup_root_path: str, quincy_binary_path: st
         
         if rmse > 0.13:
             rejected = 1
-            shutil.rmtree(setup_root_path)
-            
+            shutil.rmtree(quincy_run_path)
             
                 
     except Exception as e:
@@ -101,7 +100,7 @@ def log_run(setup_root_path: str, returncode: int, duration: float,
     - elapsed_s: time since earliest run started
     - node: short node name
     """
-    logfile = os.path.join(setup_root_path, os.pardir, os.pardir, "progress.txt")
+    logfile = os.path.join(setup_root_path, "progress.txt")
     logfile = os.path.abspath(logfile)
     logdir = os.path.dirname(logfile)
     os.makedirs(logdir, exist_ok=True)

@@ -123,6 +123,22 @@ function create_std_plt_file(qout_collection::QOutputCollection, file::QOutputFi
 
                     data = get_data(qout_collection, var.name, file.simulation_type)
 
+
+                    y_vals = data[2]
+
+                    # --- NEW: Count Missing Datapoints ---
+                    # Checks for standard `missing` (NCDatasets default) or `NaN` (PyPlot safe)
+                    n_missing = count(x -> ismissing(x) || (x isa Number && isnan(x)), y_vals)
+                    
+                    # --- NEW: Add Text to Plot ---
+                    # transform=ax.transAxes places text relative to axes (0,0 is bottom-left, 1,1 is top-right)
+                    ax.text(0.95, 0.90, "Missing: $n_missing", 
+                            transform=ax.transAxes, 
+                            horizontalalignment="right", 
+                            verticalalignment="top", 
+                            fontsize=8, 
+                            color="red")
+
                     if var.ndim == 1
                         ax.plot(data[1], data[2], lw=1)
                     end

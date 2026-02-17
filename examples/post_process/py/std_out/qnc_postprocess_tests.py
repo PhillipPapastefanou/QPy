@@ -7,7 +7,6 @@ import sys
 import glob
 import subprocess
 
-sys.path.append("/Users/pp/Documents/Repos/qn-lib")
 # sys.path.append("/Users/pp/Documents/Repos/qn-lib/src/cal_parsing/build")
 # so_paths = glob.glob('/Users/pp/Documents/Repos/qn-lib/src/cal_parsing/build/*.so')
 # if len(so_paths) > 0:

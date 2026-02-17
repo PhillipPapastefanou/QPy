@@ -29,6 +29,7 @@ else:
 
 # Path where all the simulation data will be saved
 RUN_DIRECTORY = "output/03_transient_fluxnet/output/0"
+RUN_DIRECTORY = "/Net/Groups/BSI/work_scratch/ppapastefanou/src/quincy_develop_only/contrib/test_bed/land"
 
 
 if not os.path.exists(os.path.join(THIS_DIR, RUN_DIRECTORY)):

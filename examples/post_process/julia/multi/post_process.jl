@@ -30,7 +30,7 @@ full_path_sap_flow_2023 = joinpath(rtobspath, "Sapflow2023.csv");
 df_sap_flow_2023 = CSV.read(full_path_sap_flow_2023, DataFrame, dateformat = Dict(:date => "yyyy-mm-dd HH:MM:SS"));
 df_sap_flow_2023 = filter(row -> !ismissing(row["J0.5"]), df_sap_flow_2023);
 df_sap_flow_2023[!,"J0.5"]= convert(Vector{Float64}, df_sap_flow_2023[:,"J0.5"]);
-df_sap_flow_2023[df_sap_flow_2023[:,"J0.5"] .< 0.0, "J0.5"] .= 0.0
+#df_sap_flow_2023[df_sap_flow_2023[:,"J0.5"] .< 0.0, "J0.5"] .= 0.0
 rename!(df_sap_flow_2023, :date => :DateTime)
 
 
@@ -130,7 +130,7 @@ df_obs_psi_stem_slice = get_single_file_slice(df_psi_stem_obs, "FAG", series, 0.
    d1, d2)    
 
 df_obs_sapflow_slice = get_single_file_slice(df_sap_flow_2023, "J0.5", series, 0.1, 0.9, slice_dates, DateTime("2023-06-01"), DateTime("2023-08-01"))  
-df_obs_sapflow_slice[!,:mean_norm]= df_obs_sapflow_slice[!,:mean]/ maximum(df_obs_sapflow_slice[!,:mean])
+#df_obs_sapflow_slice[!,:mean_norm]= df_obs_sapflow_slice[!,:mean]/ maximum(df_obs_sapflow_slice[!,:mean])
 
 
 vec_mod_gpp = get_multi_file_slice(run_collections, "gpp_avg", 

@@ -24,18 +24,18 @@ function seasonal_yearly(df)
     return df_yearly
 end
 
-rt_path_in = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/27_transient_slurm_array_dyn_roots_off"
-rt_path_out_new = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/isimip/on27_df_psi_stem_stem_flow_03_18"
-path_selected_new = joinpath(rt_path_in, "post", "ismip_selection_27_df_psi_stem_stem_flow_03_18.csv")
+# rt_path_in = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/27_transient_slurm_array_dyn_roots_off"
+# rt_path_out_new = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/isimip/on27_df_psi_stem_stem_flow_03_18"
+# path_selected_new = joinpath(rt_path_in, "post", "ismip_selection_27_df_psi_stem_stem_flow_03_18.csv")
 
 rt_path_in = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/28_run_transient_slurn_array_constrained"
 rt_path_out_old = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/isimip/on28_all_f"
 path_selected_old = joinpath(rt_path_in, "post", "ismip_selection_28.csv")
 
 
-rt_path_in = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/29_transient_slurm_array_dyn_roots_off"
-rt_path_out_new = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/isimip/ismip_selection_29_const"
-path_selected_new = joinpath(rt_path_in, "post", "ismip_selection_29_const.csv")
+rt_path_in = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/30_run_transient_slurm_array_mort_hyd_fail_mort"
+rt_path_out_new = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/isimip/ismip_selection_30_df_psi_stem_stem_flow_03_18"
+path_selected_new = joinpath(rt_path_in, "post", "ismip_selection_30_df_psi_stem_stem_flow_03_18.csv")
 
 df_selected_old  = CSV.read(path_selected_old, DataFrame)
 indexes_old = df_selected_old[!,:fid]

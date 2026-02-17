@@ -1,6 +1,6 @@
-include("../../../../src/postprocessing/julia/core/qcomparer.jl")
+include("../../../../src/postprocessing/julia/core/qcomparer_2024.jl")
+#include("../../../../src/postprocessing/julia/core/qcomparer_2023.jl")
 
-using PyPlot
 using CSV
 using DataFrames
 
@@ -25,7 +25,17 @@ rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/
 rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/28_run_transient_slurn_array_constrained"
 rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/29_transient_slurm_array_dyn_roots_off"
 rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/30_run_transient_slurm_array_mort_hyd_fail_mort"
+rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/2026_31_run_transient_slurm_array_mort_hyd_fail_mort"
+rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/2026_32_run_transient_slurm_array_mort_hyd_fail_mort"
+rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/2026_33_run_transient_slurm_array_mort_hyd_fail_mort"
+rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/2026_35b_run_transient_slurm_array_mort_hyd_fail_mort_g1"
+rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2024_bench/37_rerun_for_test"
+rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2024_bench/38_rerun_for_test"
+rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2024_bench/42_run_transient_slurm_array_mort_hyd_fail_mort_g1"
+rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2024_bench/43_run_transient_slurm_array_mort_hyd_fail_mort_g1"
+#rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/2026_36_run_transient_slurm_array_mort_hyd_fail_mort_g1"
 
-calculate_mod_obs_rmse(rt_path_hyd, hainich_obs)
+
+calculate_mod_obs_rmse_2024(rt_path_hyd, hainich_obs)                                     
+#calculate_mod_obs_rmse_2023(rt_path_hyd, hainich_obs)                                     
 #calculate_mod_obs_rmse_parallel(rt_path_hyd, hainich_obs)
-

@@ -72,7 +72,7 @@ rtobspath = "/Net/Groups/BSI/work_scratch/ppapastefanou/data/Fluxnet_detail/eval
 
 end
 
-function calculate_mod_obs_rmse(quincy_output::String, hainich_obs::HainichObs; check_all = false)
+function calculate_mod_obs_rmse_2023(quincy_output::String, hainich_obs::HainichObs; check_all = false)
     df_fnet_22 = hainich_obs.df_fnet_22
     df_fnet_24 = hainich_obs.df_fnet_24
     df_psi_stem_obs = hainich_obs.df_psi_stem_obs
@@ -122,7 +122,6 @@ function calculate_mod_obs_rmse(quincy_output::String, hainich_obs::HainichObs; 
         d1, d2)    
 
         df_obs_sapflow_slice = get_single_file_slice(df_sap_flow_2023, "J0.5", series, 0.1, 0.9, slice_dates, DateTime("2023-06-01"), DateTime("2023-08-01"))  
-        df_obs_sapflow_slice[!,:mean_norm]= df_obs_sapflow_slice[!,:mean]/ maximum(df_obs_sapflow_slice[!,:mean])
 
         start_time = time()
         last_report = start_time
@@ -131,6 +130,9 @@ function calculate_mod_obs_rmse(quincy_output::String, hainich_obs::HainichObs; 
         df_param[!, Symbol("le_rmse_$ystr")] .= NaN
         df_param[!, Symbol("psi_stem_rmse_$ystr")] .= NaN
         df_param[!, Symbol("stem_flow_rmse_$ystr")] .= NaN
+        df_param[!, Symbol("stem_flow_rmse_05_$ystr")] .= NaN
+        df_param[!, Symbol("stem_flow_rmse_2_$ystr")] .= NaN
+        df_param[!, Symbol("stem_flow_rmse_025_$ystr")] .= NaN
 
         qoutput = nothing
         cats = nothing
@@ -138,6 +140,8 @@ function calculate_mod_obs_rmse(quincy_output::String, hainich_obs::HainichObs; 
 
 
         for (i, (full, short)) in enumerate(zip(full_dir_paths, short_dir_paths))
+
+            println(i)
 
             if i == 1 
                 qoutput = read_quincy_site_output(full)
@@ -156,7 +160,7 @@ function calculate_mod_obs_rmse(quincy_output::String, hainich_obs::HainichObs; 
             df_mod_gpp = get_single_file_slice(qoutput, "gpp_avg", Fluxnetdata,  series, 0.1, 0.9, slice_dates, d1 ,d2);
             df_mod_le = get_single_file_slice(qoutput, "qle_avg", Fluxnetdata, series, 0.1, 0.9, slice_dates, d1, d2);
             df_mod_psi_stem = get_single_file_slice(qoutput, "psi_stem_avg", Fluxnetdata, series, 0.1, 0.9, slice_dates, d1, d2);
-            df_mod_stem_flow = get_single_file_slice(qoutput, "stem_flow_avg", Fluxnetdata, series, 0.1, 0.9, slice_dates, d1, d2);
+            df_mod_stem_flow = get_single_file_slice(qoutput, "stem_flow_per_sap_area_avg", Fluxnetdata, series, 0.1, 0.9, slice_dates, d1, d2);
 
             index = findfirst(==(parse(Int,short)), df_param.fid)
 
@@ -173,11 +177,23 @@ function calculate_mod_obs_rmse(quincy_output::String, hainich_obs::HainichObs; 
             rmse = sqrt(mean((df_join.mean .- df_join.mean_1).^2))
             df_param[index, Symbol("psi_stem_rmse_$ystr")] = rmse
 
-            max_mod = maximum(df_mod_stem_flow[!,:mean])
-            df_mod_stem_flow[!,:mean_norm] = df_mod_stem_flow[!,:mean]/max_mod
+      
             df_join = innerjoin(df_mod_stem_flow, df_obs_sapflow_slice, on = :DateTime, makeunique=true)
-            rmse = sqrt(mean((df_join.mean_norm .- df_join.mean_norm_1).^2))
+            #print(names(df_join))
+            #print(df_join.mean * 1000.0)
+            #print(df_join.mean_1)
+            rmse = sqrt(mean((df_join.mean * 1000.0 .- df_join.mean_1).^2))
             df_param[index,Symbol("stem_flow_rmse_$ystr")] = rmse
+
+            rmse = sqrt(mean((0.5 * df_join.mean * 1000.0 .- df_join.mean_1).^2))
+            df_param[index,Symbol("stem_flow_rmse_05_$ystr")] = rmse
+
+            rmse = sqrt(mean((0.25 * df_join.mean * 1000.0 .- df_join.mean_1).^2))
+            df_param[index,Symbol("stem_flow_rmse_025_$ystr")] = rmse
+
+            rmse = sqrt(mean((2.0 * df_join.mean * 1000.0 .- df_join.mean_1).^2))
+            df_param[index,Symbol("stem_flow_rmse_2_$ystr")] = rmse
+
 
             last_report = progress_report(i, length(short_dir_paths), start_time, last_report)
         end
