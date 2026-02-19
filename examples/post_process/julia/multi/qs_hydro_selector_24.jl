@@ -16,7 +16,7 @@ rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/
 rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2024_bench/37_rerun_for_test"
 rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2024_bench/39_rerun_for_test"
 rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2024_bench/40_run_transient_slurm_array_mort_hyd_fail_mort_g1"
-rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2024_bench/43_run_transient_slurm_array_mort_hyd_fail_mort_g1"
+rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2024_bench/42_run_transient_slurm_array_mort_hyd_fail_mort_g1"
 
 rmse_data_path = joinpath(rt_path_hyd, "post", "params_rmse_2024.csv")
 ana_path = joinpath(rt_path_hyd, "post", "ana")

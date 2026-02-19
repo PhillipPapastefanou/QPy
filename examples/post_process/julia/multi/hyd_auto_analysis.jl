@@ -32,7 +32,7 @@ rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/
 rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2024_bench/37_rerun_for_test"
 rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2024_bench/38_rerun_for_test"
 rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2024_bench/42_run_transient_slurm_array_mort_hyd_fail_mort_g1"
-rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2024_bench/43_run_transient_slurm_array_mort_hyd_fail_mort_g1"
+rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2024_bench/44_run_transient_slurm_array_mort_hyd_fail_mort_g1"
 #rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/2026_36_run_transient_slurm_array_mort_hyd_fail_mort_g1"
 
 

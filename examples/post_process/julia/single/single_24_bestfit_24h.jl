@@ -36,8 +36,10 @@ function calculate_mod_obs_rmse_2024(quincy_output::String, hainich_obs::Hainich
 
     full_dir_paths = [quincy_output]
     short_dir_paths = basename.(full_dir_paths)
-    
+
+    println("A")
     println(full_dir_paths)
+    println("B")
     println(post_process_dir)
 
 
@@ -67,32 +69,30 @@ function calculate_mod_obs_rmse_2024(quincy_output::String, hainich_obs::Hainich
             ax_stem  = Axis(fig[3, j], ylabel = "Psi Stem")
             ax_leaf  = Axis(fig[4, j], ylabel = "Psi Leaf")
             ax_flow  = Axis(fig[5, j], ylabel = "Stem Flow", xlabel = "Time")
+            ax_G  = Axis(fig[6, j], ylabel = "Lateral Flow", xlabel = "Time")
 
 
         if j == 1
             series = DailySeries
         else
-            series = HourlyAvg
+            series = ThirtyMinSeries
         end
-        println(j)
         df_obs_gpp_slice = get_single_file_slice(df_fnet, "GPP", series, 0.05, 0.95,
         slice_dates, 
         d1_gpp, d2_gpp )
         df_obs_le_slice = get_single_file_slice(df_fnet, "LE", series, 0.05, 0.95,
         slice_dates, 
         d1_gpp, d2_gpp) 
+        df_obs_sapflow_slice = get_single_file_slice(df_sap_flow_2023, "Ji_Fasy", series, 0.1, 0.9, slice_dates,
+         d1_sap, d2_sap )
 
-        if j == 1
-            series = ThirtyMinSeries
-        else
-            series = HourlyAvg
-        end
+        series = ThirtyMinSeries
+
         df_obs_psi_stem_slice = get_single_file_slice(df_psi_stem_obs, "psi", series, 0.25, 0.75,slice_dates, 
         d1_psi_stem, d2_psi_stem )    
         df_obs_psi_leaf_slice = get_single_file_slice(df_psi_leaf_obs, "psi_leaf_midday_avg", series, 0.25, 0.75, slice_dates, 
         d1_psi_leaf, d2_psi_leaf)    
-        df_obs_sapflow_slice = get_single_file_slice(df_sap_flow_2023, "Ji_Fasy", series, 0.1, 0.9, slice_dates,
-         d1_sap, d2_sap )
+
 
         start_time = time()
         #last_report = start_time
@@ -111,14 +111,13 @@ function calculate_mod_obs_rmse_2024(quincy_output::String, hainich_obs::Hainich
         sim_type_times=nothing
 
 
+
+
+
         #print(names(df_obs_gpp_slice))
 
 
-        lines!(ax_gpp,  df_obs_gpp_slice.DateTime, df_obs_gpp_slice.mean,  color = :black, label = "Observed", alpha= 0.5);
-        lines!(ax_le,   df_obs_le_slice.DateTime, df_obs_le_slice.mean,  color = :black, alpha= 0.5);
-        lines!(ax_stem, df_obs_psi_stem_slice.DateTime, df_obs_psi_stem_slice.mean, color = :black, alpha= 0.5);
-        scatter!(ax_leaf, df_obs_psi_leaf_slice.DateTime, df_obs_psi_leaf_slice.mean, color = :black, markersize = 8);
-        lines!(ax_flow, df_obs_sapflow_slice.DateTime, df_obs_sapflow_slice.mean * 2.0,    color = :black, alpha= 0.5);
+
     
     
         for (i, (full, short)) in enumerate(zip(full_dir_paths, short_dir_paths))
@@ -141,27 +140,69 @@ function calculate_mod_obs_rmse_2024(quincy_output::String, hainich_obs::Hainich
             if j == 1
                 series = DailySeries
             else
-                series = HourlyAvg
+                series = ThirtyMinSeries
             end
             df_mod_gpp = get_single_file_slice(qoutput, "gpp_avg", Fluxnetdata,  series, 0.1, 0.9, slice_dates, d1_gpp ,d2_gpp);
             df_mod_le = get_single_file_slice(qoutput, "qle_avg", Fluxnetdata, series, 0.1, 0.9, slice_dates, d1_gpp, d2_gpp);
-            
-            if j == 1
-                series = ThirtyMinSeries
-            else
-                series = HourlyAvg
-            end
+            df_mod_stem_flow = get_single_file_slice(qoutput, "stem_flow_per_sap_area_avg", Fluxnetdata, series, 0.1, 0.9, slice_dates, d1_sap, d2_sap);
+
+
+            series = ThirtyMinSeries
             df_mod_psi_stem = get_single_file_slice(qoutput, "psi_stem_avg", Fluxnetdata, series, 0.1, 0.9, slice_dates, d1_psi_stem, d2_psi_stem);
             df_mod_psi_leaf = get_single_file_slice(qoutput, "psi_leaf_avg", Fluxnetdata, series, 0.1, 0.9, slice_dates, d1_psi_leaf, d2_psi_leaf);
-            df_mod_stem_flow = get_single_file_slice(qoutput, "stem_flow_per_sap_area_avg", Fluxnetdata, series, 0.1, 0.9, slice_dates, d1_sap, d2_sap);
+            df_mod_G = get_single_file_slice(qoutput, "G_avg", Fluxnetdata, series, 0.1, 0.9, slice_dates, d1_psi_leaf, d2_psi_leaf);
 
             # index = findfirst(==(parse(Int,short)), df_param.fid)
 
-            lines!(ax_gpp,  df_mod_gpp.DateTime,  df_mod_gpp.mean,  label = short, alpha = 0.5);
-            lines!(ax_le,   df_mod_le.DateTime,   -df_mod_le.mean, alpha= 0.5);
-            lines!(ax_stem, df_mod_psi_stem.DateTime, df_mod_psi_stem.mean, alpha = 0.5);
-            lines!(ax_leaf, df_mod_psi_leaf.DateTime, df_mod_psi_leaf.mean, alpha = 0.5);
-            lines!(ax_flow,  df_mod_stem_flow.DateTime,  df_mod_stem_flow.mean * 1000.0, alpha = 0.5);
+
+            if j == 1
+                lines!(ax_gpp,  df_obs_gpp_slice.DateTime, df_obs_gpp_slice.mean,  color = :black, label = "Observed", alpha= 0.5);
+                lines!(ax_le,   df_obs_le_slice.DateTime, df_obs_le_slice.mean,  color = :black, alpha= 0.5);
+                lines!(ax_stem, df_obs_psi_stem_slice.DateTime, df_obs_psi_stem_slice.mean, color = :black, alpha= 0.5);
+                scatter!(ax_leaf, df_obs_psi_leaf_slice.DateTime, df_obs_psi_leaf_slice.mean, color = :black, markersize = 8);
+                lines!(ax_flow, df_obs_sapflow_slice.DateTime, df_obs_sapflow_slice.mean * 2.0,    color = :black, alpha= 0.5);
+
+                lines!(ax_gpp,  df_mod_gpp.DateTime,  df_mod_gpp.mean,  label = short, alpha = 0.5);
+                lines!(ax_le,   df_mod_le.DateTime,   -df_mod_le.mean, alpha= 0.5);
+                lines!(ax_stem, df_mod_psi_stem.DateTime, df_mod_psi_stem.mean, alpha = 0.5);
+                lines!(ax_leaf, df_mod_psi_leaf.DateTime, df_mod_psi_leaf.mean, alpha = 0.5);
+                lines!(ax_flow,  df_mod_stem_flow.DateTime,  df_mod_stem_flow.mean * 1000.0, alpha = 0.5);
+            else
+
+                df_join = innerjoin(df_mod_gpp, df_obs_gpp_slice, on = :DateTime, makeunique=true)
+                df_join.Hour = hour.(df_join.DateTime)
+                df_join = combine(groupby(df_join, :Hour), :mean => mean, :mean_1 => mean)
+                rename!(df_join, :Hour => :DateTime)
+                lines!(ax_gpp,  df_join.DateTime, df_join.mean_1_mean,  color = :black, label = "Observed", alpha= 0.5);
+                lines!(ax_gpp,  df_join.DateTime, df_join.mean_mean, label = short, alpha= 0.5);
+
+
+                df_join = innerjoin(df_mod_le, df_obs_le_slice, on = :DateTime, makeunique=true)
+                df_join.Hour = hour.(df_join.DateTime)
+                df_join = combine(groupby(df_join, :Hour), :mean => mean, :mean_1 => mean)
+                rename!(df_join, :Hour => :DateTime)
+                lines!(ax_le,  df_join.DateTime, -df_join.mean_mean, label = short, alpha= 0.5);
+                lines!(ax_le,  df_join.DateTime, df_join.mean_1_mean,  color = :black, label = "Observed", alpha= 0.5);
+
+
+                df_join = innerjoin(df_mod_psi_stem, df_obs_psi_stem_slice, df_mod_psi_leaf, df_mod_G, on = :DateTime, makeunique=true)
+                df_join.Hour = hour.(df_join.DateTime)
+                df_join = combine(groupby(df_join, :Hour), :mean => mean,
+                 :mean_1 => mean, :mean_2 => mean, :mean_3 => mean)
+                rename!(df_join, :Hour => :DateTime)
+
+                lines!(ax_stem,  df_join.DateTime, df_join.mean_mean,  label = short, alpha= 0.5);
+                lines!(ax_stem,  df_join.DateTime, df_join.mean_1_mean, color = :black, label = "Observed", alpha= 0.5);
+                lines!(ax_leaf,  df_join.DateTime, df_join.mean_2_mean, alpha= 0.5);
+                lines!(ax_G,  df_join.DateTime, df_join.mean_3_mean* 1000.0 * 4000.0/5.0, label = short, alpha= 0.5);
+
+                df_join = innerjoin(df_mod_stem_flow, df_obs_sapflow_slice, on = :DateTime, makeunique=true)
+                df_join.Hour = hour.(df_join.DateTime)
+                df_join = combine(groupby(df_join, :Hour), :mean => mean, :mean_1 => mean)
+                rename!(df_join, :Hour => :DateTime)
+                lines!(ax_flow,  df_join.DateTime, df_join.mean_1_mean *2.0,  color = :black, label = "Observed", alpha= 0.5);
+                lines!(ax_flow,  df_join.DateTime, df_join.mean_mean* 1000.0, label = short, alpha= 0.5);
+            end
             
 
             # df_join = innerjoin(df_mod_gpp, df_obs_gpp_slice, on = :DateTime, makeunique=true)
@@ -207,19 +248,15 @@ function calculate_mod_obs_rmse_2024(quincy_output::String, hainich_obs::Hainich
     colsize!(fig.layout, 1, Relative(2/3))
     colsize!(fig.layout, 2, Relative(1/3))
 
-    save(joinpath(post_process_dir, "$name.png"), fig)
+    save(joinpath(post_process_dir, "2024_24h.png"), fig)
     
     #CSV.write(joinpath(post_process_dir,"params_rmse_2024.csv"), df_param)
 end
 
 
-
-
 root_output_folder= "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2024_bench/42_run_transient_slurm_array_mort_hyd_fail_mort_g1/output"
-id = 2616
-#name, d1, d2 = "18", DateTime("2018-05-01"), DateTime("2018-11-30")
-name, d1, d2 = "23", DateTime("2023-05-01"), DateTime("2024-11-30")
-quincy_output = joinpath(root_output_folder, "3305")
+name, d1, d2 = "24", DateTime("2023-05-01"), DateTime("2024-10-30")
+quincy_output = joinpath(root_output_folder, "5851")
 
 
 calculate_mod_obs_rmse_2024(quincy_output, obs, name)

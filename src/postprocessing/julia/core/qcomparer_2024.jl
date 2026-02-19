@@ -176,6 +176,7 @@ function calculate_mod_obs_rmse_2024(quincy_output::String, hainich_obs::Hainich
             df_mod_psi_stem = get_single_file_slice(qoutput, "psi_stem_avg", Fluxnetdata, series, 0.1, 0.9, slice_dates, d1, d2);
             df_mod_psi_leaf = get_single_file_slice(qoutput, "psi_leaf_avg", Fluxnetdata, series, 0.1, 0.9, slice_dates, d1, d2);
             df_mod_stem_flow = get_single_file_slice(qoutput, "stem_flow_per_sap_area_avg", Fluxnetdata, series, 0.1, 0.9, slice_dates, d1, d2);
+            df_mod_G = get_single_file_slice(qoutput, "G_per_sap_area_avg", Fluxnetdata, series, 0.1, 0.9, slice_dates, d1, d2);
 
             index = findfirst(==(parse(Int,short)), df_param.fid)
 
@@ -197,20 +198,24 @@ function calculate_mod_obs_rmse_2024(quincy_output::String, hainich_obs::Hainich
             df_param[index, Symbol("psi_leaf_rmse_$ystr")] = rmse
 
             df_join = innerjoin(df_mod_stem_flow, df_obs_sapflow_slice, on = :DateTime, makeunique=true)
-            #print(names(df_join))
-            #print(df_join.mean * 1000.0)
-            #print(df_join.mean_1)
             rmse = sqrt(mean((df_join.mean * 1000.0 .- df_join.mean_1).^2))
             df_param[index,Symbol("stem_flow_rmse_$ystr")] = rmse
-
             rmse = sqrt(mean((0.5 * df_join.mean * 1000.0 .- df_join.mean_1).^2))
             df_param[index,Symbol("stem_flow_rmse_05_$ystr")] = rmse
-
             rmse = sqrt(mean((0.25 * df_join.mean * 1000.0 .- df_join.mean_1).^2))
             df_param[index,Symbol("stem_flow_rmse_025_$ystr")] = rmse
-
             rmse = sqrt(mean((2.0 * df_join.mean * 1000.0 .- df_join.mean_1).^2))
             df_param[index,Symbol("stem_flow_rmse_2_$ystr")] = rmse
+
+            df_join = innerjoin(df_mod_G, df_obs_sapflow_slice, on = :DateTime, makeunique=true)
+            rmse = sqrt(mean((df_join.mean * 1000.0 .- df_join.mean_1).^2))
+            df_param[index,Symbol("G_rmse_$ystr")] = rmse
+            rmse = sqrt(mean((0.5 * df_join.mean * 1000.0 .- df_join.mean_1).^2))
+            df_param[index,Symbol("G_rmse_05_$ystr")] = rmse
+            rmse = sqrt(mean((0.25 * df_join.mean * 1000.0 .- df_join.mean_1).^2))
+            df_param[index,Symbol("G_rmse_025_$ystr")] = rmse
+            rmse = sqrt(mean((2.0 * df_join.mean * 1000.0 .- df_join.mean_1).^2))
+            df_param[index,Symbol("G_rmse_2_$ystr")] = rmse
 
 
             last_report = progress_report(i, length(short_dir_paths), start_time, last_report)
