@@ -176,19 +176,15 @@ function calculate_mod_obs_rmse_2024(quincy_output::String, hainich_obs::Hainich
             #last_report = progress_report(i, length(short_dir_paths), start_time, last_report)
         end
     # Save as a standard PNG
-    print(joinpath(post_process_dir, "test.png"))
-    save(joinpath(post_process_dir, "test.png"), fig)
+    print(joinpath(post_process_dir, "$name.png"))
+    save(joinpath(post_process_dir, "$name.png"), fig)
     
     #CSV.write(joinpath(post_process_dir,"params_rmse_2024.csv"), df_param)
 end
 
+root_output_folder= "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2024_bench/51_run_transient_slurm_array_mort_hyd_fail_mort_g1/output"
+id, d1, d2 = "17217", DateTime("2018-05-01"), DateTime("2018-10-30")
+quincy_output = joinpath(root_output_folder, id)
 
 
-
-root_output_folder= "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2024_bench/42_run_transient_slurm_array_mort_hyd_fail_mort_g1/output"
-id = 2616
-name, d1, d2 = "24", DateTime("2023-05-01"), DateTime("2024-10-30")
-quincy_output = joinpath(root_output_folder, "3305")
-
-
-calculate_mod_obs_rmse_2024(quincy_output, obs, name,d1, d2)
+calculate_mod_obs_rmse_2024(quincy_output, obs, id,d1, d2)

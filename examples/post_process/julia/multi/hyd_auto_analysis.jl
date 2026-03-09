@@ -1,11 +1,11 @@
-include("../../../../src/postprocessing/julia/core/qcomparer_2024.jl")
-#include("../../../../src/postprocessing/julia/core/qcomparer_2023.jl")
+#include("../../../../src/postprocessing/julia/core/qcomparer_2024.jl")
+include("../../../../src/postprocessing/julia/core/qcomparer_2023_para.jl")
 
 using CSV
 using DataFrames
+using Distributed
 
-
-hainich_obs = init_hainich_obs();
+#hainich_obs = init_hainich_obs();
 
 rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/05_transient_fluxnet_finer"
 rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/06s_transient_fluxnet_finer"
@@ -32,10 +32,24 @@ rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/
 rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2024_bench/37_rerun_for_test"
 rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2024_bench/38_rerun_for_test"
 rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2024_bench/42_run_transient_slurm_array_mort_hyd_fail_mort_g1"
-rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2024_bench/44_run_transient_slurm_array_mort_hyd_fail_mort_g1"
+rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2024_bench/60_run_transient_slurm_array_mort_hyd_fail_mort_g1"
+rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2024_bench/53_run_transient_g1_low_gamma_leaf"
+#rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2024_bench/255_run_transient_no_texture"
+rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2024_bench/55_run_transient_g1_low_gamma_leaf"
+rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/57_run_transient_g1_low_gamma_leaf"
 #rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/2026_36_run_transient_slurm_array_mort_hyd_fail_mort_g1"
 
 
-calculate_mod_obs_rmse_2024(rt_path_hyd, hainich_obs)                                     
+#calculate_mod_obs_rmse_2024(rt_path_hyd, hainich_obs)                                     
 #calculate_mod_obs_rmse_2023(rt_path_hyd, hainich_obs)                                     
 #calculate_mod_obs_rmse_parallel(rt_path_hyd, hainich_obs)
+
+
+if abspath(PROGRAM_FILE) == @__FILE__
+    
+    # Load observation data
+
+    
+    println("Starting RMSE calculations...")
+    calculate_mod_obs_rmse_2023(rt_path_hyd)
+end

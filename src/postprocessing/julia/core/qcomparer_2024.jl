@@ -149,7 +149,10 @@ function calculate_mod_obs_rmse_2024(quincy_output::String, hainich_obs::Hainich
         df_param[!, Symbol("stem_flow_rmse_05_$ystr")] .= NaN
         df_param[!, Symbol("stem_flow_rmse_2_$ystr")] .= NaN
         df_param[!, Symbol("stem_flow_rmse_025_$ystr")] .= NaN
-
+        df_param[!, Symbol("G_rmse_05_$ystr")] .= NaN
+        df_param[!, Symbol("G_rmse_$ystr")] .= NaN
+        df_param[!, Symbol("G_rmse_2_$ystr")] .= NaN
+        df_param[!, Symbol("G_rmse_025_$ystr")] .= NaN
         qoutput = nothing
         cats = nothing
         sim_type_times=nothing

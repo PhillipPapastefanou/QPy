@@ -282,7 +282,14 @@ class JSB_SSE_NML:
         self.qs_soil_clay = NamelistItem(0.3)
         self.qs_bulk_density = NamelistItem(1500.0)
         
-        
+        self.hyd_cond_sat = NamelistItem(0.3)
+        self.vol_porosity = NamelistItem(0.3)
+        self.vol_field_cap = NamelistItem(0.3)
+        self.vol_p_wilt = NamelistItem(0.3)
+        self.vol_wres = NamelistItem(0.3)
+        self.matric_pot = NamelistItem(0.3)
+        self.pore_size_index = NamelistItem(0.3)
+        self.bclapp = NamelistItem(0.3)
         
 class JSB_SEB_NML:
     def __init__(self):

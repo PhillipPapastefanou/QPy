@@ -10,11 +10,11 @@ using Base.Filesystem: basename
 using CSV
 using Base.Threads
 
-
 mutable struct HainichObs
     df_fnet_22::DataFrame
     df_fnet_24::DataFrame
     df_psi_stem_obs::DataFrame
+    df_psi_leaf_obs::DataFrame
     df_sap_flow_2023::DataFrame
 end
 
@@ -64,11 +64,23 @@ rtobspath = "/Net/Groups/BSI/work_scratch/ppapastefanou/data/Fluxnet_detail/eval
     )
     rename!(df_sap_flow_2023, :date => :DateTime)
 
+
+
+    # Psi leaf
+    full_path_psi_leaf = joinpath(rtobspath, "psi_leaf_midday_2023_2024_avg.csv")
+    df_psi_leaf_obs = CSV.read(
+        full_path_psi_leaf,
+        DataFrame;
+        types      = Dict(:date => DateTime),
+        dateformat = Dict(:date => dateformat"yyyy-mm-dd HH:MM:SS"),
+    )
+    rename!(df_psi_leaf_obs, :date => :DateTime)
+
     df_sap_flow_2023 = filter(row -> !ismissing(row["J0.5"]), df_sap_flow_2023)
     df_sap_flow_2023[!, "J0.5"] = convert(Vector{Float64}, df_sap_flow_2023[!, "J0.5"])
     df_sap_flow_2023[df_sap_flow_2023[:, "J0.5"] .< 0.0, "J0.5"] .= 0.0
 
-    return HainichObs(df_fnet_22, df_fnet_24, df_psi_stem_obs, df_sap_flow_2023)
+    return HainichObs(df_fnet_22, df_fnet_24, df_psi_stem_obs, df_psi_leaf_obs, df_sap_flow_2023)
 
 end
 
@@ -76,12 +88,13 @@ function calculate_mod_obs_rmse_2023(quincy_output::String, hainich_obs::Hainich
     df_fnet_22 = hainich_obs.df_fnet_22
     df_fnet_24 = hainich_obs.df_fnet_24
     df_psi_stem_obs = hainich_obs.df_psi_stem_obs
+    df_psi_leaf_obs = hainich_obs.df_psi_leaf_obs
     df_sap_flow_2023 = hainich_obs.df_sap_flow_2023
 
 
     date_ranges = [
     ("23", DateTime("2023-05-01"), DateTime("2023-10-30")),
-    ("full", DateTime("2000-01-01"), DateTime("2024-12-31")),
+    #("full", DateTime("2000-01-01"), DateTime("2024-12-31")),
     ("03", DateTime("2003-05-01"), DateTime("2003-10-30")),
      ("18", DateTime("2018-05-01"), DateTime("2018-10-30"))
     ]
@@ -123,16 +136,28 @@ function calculate_mod_obs_rmse_2023(quincy_output::String, hainich_obs::Hainich
 
         df_obs_sapflow_slice = get_single_file_slice(df_sap_flow_2023, "J0.5", series, 0.1, 0.9, slice_dates, DateTime("2023-06-01"), DateTime("2023-08-01"))  
 
+
+        df_obs_psi_leaf_slice = get_single_file_slice(df_psi_leaf_obs, "psi_leaf_midday_avg", series, 0.25, 0.75, slice_dates, 
+        d1, d2)    
+
         start_time = time()
         last_report = start_time
 
         df_param[!, Symbol("gpp_rmse_$ystr")] .= NaN
         df_param[!, Symbol("le_rmse_$ystr")] .= NaN
         df_param[!, Symbol("psi_stem_rmse_$ystr")] .= NaN
+        df_param[!, Symbol("psi_leaf_rmse_$ystr")] .= NaN
+
         df_param[!, Symbol("stem_flow_rmse_$ystr")] .= NaN
         df_param[!, Symbol("stem_flow_rmse_05_$ystr")] .= NaN
         df_param[!, Symbol("stem_flow_rmse_2_$ystr")] .= NaN
         df_param[!, Symbol("stem_flow_rmse_025_$ystr")] .= NaN
+
+
+        df_param[!, Symbol("G_rmse_05_$ystr")] .= NaN
+        df_param[!, Symbol("G_rmse_$ystr")] .= NaN
+        df_param[!, Symbol("G_rmse_2_$ystr")] .= NaN
+        df_param[!, Symbol("G_rmse_025_$ystr")] .= NaN
 
         qoutput = nothing
         cats = nothing
@@ -161,6 +186,10 @@ function calculate_mod_obs_rmse_2023(quincy_output::String, hainich_obs::Hainich
             df_mod_le = get_single_file_slice(qoutput, "qle_avg", Fluxnetdata, series, 0.1, 0.9, slice_dates, d1, d2);
             df_mod_psi_stem = get_single_file_slice(qoutput, "psi_stem_avg", Fluxnetdata, series, 0.1, 0.9, slice_dates, d1, d2);
             df_mod_stem_flow = get_single_file_slice(qoutput, "stem_flow_per_sap_area_avg", Fluxnetdata, series, 0.1, 0.9, slice_dates, d1, d2);
+            df_mod_G = get_single_file_slice(qoutput, "G_per_sap_area_avg", Fluxnetdata, series, 0.1, 0.9, slice_dates, d1, d2);
+            df_mod_psi_leaf = get_single_file_slice(qoutput, "psi_leaf_avg", Fluxnetdata, series, 0.1, 0.9, slice_dates, d1, d2);
+
+
 
             index = findfirst(==(parse(Int,short)), df_param.fid)
 
@@ -176,6 +205,10 @@ function calculate_mod_obs_rmse_2023(quincy_output::String, hainich_obs::Hainich
             df_join = innerjoin(df_mod_psi_stem, df_obs_psi_stem_slice, on = :DateTime, makeunique=true)
             rmse = sqrt(mean((df_join.mean .- df_join.mean_1).^2))
             df_param[index, Symbol("psi_stem_rmse_$ystr")] = rmse
+
+            df_join = innerjoin(df_mod_psi_leaf, df_obs_psi_leaf_slice, on = :DateTime, makeunique=true)
+            rmse = sqrt(mean((df_join.mean .- df_join.mean_1).^2))
+            df_param[index, Symbol("psi_leaf_rmse_$ystr")] = rmse
 
       
             df_join = innerjoin(df_mod_stem_flow, df_obs_sapflow_slice, on = :DateTime, makeunique=true)
@@ -195,13 +228,24 @@ function calculate_mod_obs_rmse_2023(quincy_output::String, hainich_obs::Hainich
             df_param[index,Symbol("stem_flow_rmse_2_$ystr")] = rmse
 
 
+            df_join = innerjoin(df_mod_G, df_obs_sapflow_slice, on = :DateTime, makeunique=true)
+            rmse = sqrt(mean((df_join.mean * 1000.0 .- df_join.mean_1).^2))
+            df_param[index,Symbol("G_rmse_$ystr")] = rmse
+            rmse = sqrt(mean((0.5 * df_join.mean * 1000.0 .- df_join.mean_1).^2))
+            df_param[index,Symbol("G_rmse_05_$ystr")] = rmse
+            rmse = sqrt(mean((0.25 * df_join.mean * 1000.0 .- df_join.mean_1).^2))
+            df_param[index,Symbol("G_rmse_025_$ystr")] = rmse
+            rmse = sqrt(mean((2.0 * df_join.mean * 1000.0 .- df_join.mean_1).^2))
+            df_param[index,Symbol("G_rmse_2_$ystr")] = rmse
+
+
             last_report = progress_report(i, length(short_dir_paths), start_time, last_report)
         end
 
     end
 
 
-    CSV.write(joinpath(post_process_dir,"params_rmse.csv"), df_param)
+    CSV.write(joinpath(post_process_dir,"params_rmse_2023.csv"), df_param)
 end
 
 function calculate_mod_obs_rmse_parallel(quincy_output::String, hainich_obs::HainichObs; check_all = false)

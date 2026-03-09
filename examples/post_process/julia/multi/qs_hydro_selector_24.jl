@@ -16,7 +16,11 @@ rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/
 rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2024_bench/37_rerun_for_test"
 rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2024_bench/39_rerun_for_test"
 rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2024_bench/40_run_transient_slurm_array_mort_hyd_fail_mort_g1"
-rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2024_bench/42_run_transient_slurm_array_mort_hyd_fail_mort_g1"
+rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2024_bench/60_run_transient_slurm_array_mort_hyd_fail_mort_g1"
+rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2024_bench/54_run_transient_g1_low_gamma_leaf"
+#rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2024_bench/52_run_transient_slurm_array_mort_hyd_fail_mort_g1"
+#rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2024_bench/254_run_transient_no_texture"
+rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/57_run_transient_g1_low_gamma_leaf"
 
 rmse_data_path = joinpath(rt_path_hyd, "post", "params_rmse_2024.csv")
 ana_path = joinpath(rt_path_hyd, "post", "ana")
@@ -32,10 +36,10 @@ df = df[.!isnan.(df.psi_stem_rmse_24), :]
 
 vscodedisplay(df)
 
-psi_stem_err_ref = 0.23
-psi_leaf_err_ref = 0.4
+psi_stem_err_ref = 0.45
+psi_leaf_err_ref = 0.5
 
-stem_flow_err_ref = 9.3 
+stem_flow_err_ref = 9 
 
 
 # Psi_stem constrain
@@ -46,13 +50,19 @@ vscodedisplay(df_psi_stem)
 
 df_psi_stem_psi_leaf = filter(row -> (row.psi_stem_rmse_24 < psi_stem_err_ref) & (row.psi_leaf_rmse_24 < psi_leaf_err_ref), df);
 print(size(df_psi_stem_psi_leaf))
-#vscodedisplay(df_psi_stem_psi_leaf)
+vscodedisplay(df_psi_stem_psi_leaf)
 
 # Psi_stem and stem flow constrain
-df_psi_stem_psi_leaf_sap = filter(row -> (row.psi_stem_rmse_24 < psi_stem_err_ref) & (row.psi_leaf_rmse_24 < psi_leaf_err_ref)& (row.stem_flow_rmse_05_24 < stem_flow_err_ref), df);
+df_psi_stem_psi_leaf_sap = filter(row -> (row.psi_stem_rmse_24 < psi_stem_err_ref) & (row.psi_leaf_rmse_24 < psi_leaf_err_ref)& (row.G_rmse_05_24 < stem_flow_err_ref), df);
 print(size(df_psi_stem_psi_leaf_sap))
 vscodedisplay(df_psi_stem_psi_leaf_sap)
 
+
+
+# Psi_stem and stem flow constrain
+df_test = filter(row -> (row.psi_leaf_rmse_24 < 0.5)& (row.gamma_leaf < 0.06), df);
+print(size(df_test))
+vscodedisplay(df_test)
 
 hist(df_psi_stem[!, :stem_flow_rmse_05_23])
 

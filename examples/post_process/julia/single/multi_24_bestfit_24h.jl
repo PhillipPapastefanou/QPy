@@ -55,7 +55,7 @@ end
 
 
 
-function calculate_mod_obs_rmse_2024(quincy_output::String, hainich_obs::HainichObs, name::String, d1 ,d2)
+function calculate_mod_obs_rmse_2024(quincy_output::String, hainich_obs::HainichObs, ids, d1 ,d2)
     df_fnet_22 = hainich_obs.df_fnet_22
     df_fnet_24 = hainich_obs.df_fnet_24
     df_psi_stem_obs = hainich_obs.df_psi_stem_obs
@@ -71,12 +71,12 @@ function calculate_mod_obs_rmse_2024(quincy_output::String, hainich_obs::Hainich
     # ]
 
 
-    post_process_dir = joinpath("$quincy_output", "../../post")
+    post_process_dir = joinpath("$quincy_output", "../post")
     if !isdir(post_process_dir)
         mkdir(post_process_dir)
     end
 
-    full_dir_paths = [quincy_output]
+    full_dir_paths = [joinpath(quincy_output, id) for id in ids]
     short_dir_paths = basename.(full_dir_paths)
 
     # println("A")
@@ -137,7 +137,7 @@ function calculate_mod_obs_rmse_2024(quincy_output::String, hainich_obs::Hainich
         slice_dates, 
         d1_gpp, d2_gpp)
 
-        df_climate_input = read_input_df(full_dir_paths[1])
+        df_climate_input = read_input_df(joinpath(full_dir_paths[1]))
 
         df_obs_rad = get_single_file_slice(df_climate_input, "swvis_srf_down", series, 0.05, 0.95,
         slice_dates, 
@@ -343,20 +343,22 @@ function calculate_mod_obs_rmse_2024(quincy_output::String, hainich_obs::Hainich
     colsize!(fig.layout, 1, Relative(2/3))
     colsize!(fig.layout, 2, Relative(1/3))
 
-    #println("aaa$(year(d1))_24h_$(name).png")
-    save(joinpath(post_process_dir, "$(year(d1))_24h_$(name).png"), fig)
+    println(joinpath(post_process_dir, "multi_$(year(d1))_24h_.png"))
+    save(joinpath(post_process_dir, "multi_$(year(d1))_24h_.png"), fig)
     
     #CSV.write(joinpath(post_process_dir,"params_rmse_2024.csv"), df_param)
 end
 
-root_output_folder= "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2024_bench/53_run_transient_g1_low_gamma_leaf/output"
-#"16137"
+root_output_folder= "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2024_bench/54_run_transient_g1_low_gamma_leaf/output"
+#root_output_folder= "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2024_bench/254_run_transient_no_texture/output"
+
 for year in ["2003", "2024", "2023", "2018"]
     print("$year..")
-    id, d1, d2 = "1836", DateTime("$year-05-01"), DateTime("$year-10-30")
-    id, d1, d2 = "7366", DateTime("$year-05-01"), DateTime("$year-10-30")
-    quincy_output = joinpath(root_output_folder, id)
-    calculate_mod_obs_rmse_2024(quincy_output, obs, id, d1, d2)
+    ids, d1, d2 = ["1836", "7366"], DateTime("$year-05-01"), DateTime("$year-10-30")
+    #ids, d1, d2 = ["0", "10378", "16137"], DateTime("$year-05-01"), DateTime("$year-10-30")
+    #ids, d1, d2 = ["0", "3686", "4293", "4191"], DateTime("$year-05-01"), DateTime("$year-10-30")
+    ids, d1, d2 = ["0", "14005", "15540"], DateTime("$year-05-01"), DateTime("$year-10-30")
+    calculate_mod_obs_rmse_2024(root_output_folder, obs, ids, d1, d2)
     println("Done!")
 end
 
