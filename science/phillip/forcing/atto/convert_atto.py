@@ -36,5 +36,5 @@ quincy_atto_forcing = Quincy_ATTO_Forcing(settings=set)
 
 quincy_atto_forcing.Parse_forcing(atto_lat, atto_lon, forcing_file)
 
-#quincy_atto_forcing.Export_static_forcing()
 quincy_atto_forcing.Export_transient_forcing()
+quincy_atto_forcing.Export_static_forcing()
