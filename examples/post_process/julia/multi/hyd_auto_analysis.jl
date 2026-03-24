@@ -1,11 +1,11 @@
 #include("../../../../src/postprocessing/julia/core/qcomparer_2024.jl")
-include("../../../../src/postprocessing/julia/core/qcomparer_2023_para.jl")
+include("../../../../src/postprocessing/julia/core/qcomparer_2023.jl")
 
 using CSV
 using DataFrames
 using Distributed
 
-#hainich_obs = init_hainich_obs();
+hainich_obs = init_hainich_obs();
 
 rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/05_transient_fluxnet_finer"
 rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/06s_transient_fluxnet_finer"
@@ -36,7 +36,8 @@ rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2024_bench/
 rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2024_bench/53_run_transient_g1_low_gamma_leaf"
 #rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2024_bench/255_run_transient_no_texture"
 rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2024_bench/55_run_transient_g1_low_gamma_leaf"
-rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/57_run_transient_g1_low_gamma_leaf"
+rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2024_bench/56_refix_run_transient_g1_low_gamma_leaf"
+#t_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/61_run_transient_g1_low_gamma_leaf"
 #rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/2026_36_run_transient_slurm_array_mort_hyd_fail_mort_g1"
 
 
@@ -51,5 +52,6 @@ if abspath(PROGRAM_FILE) == @__FILE__
 
     
     println("Starting RMSE calculations...")
-    calculate_mod_obs_rmse_2023(rt_path_hyd)
+    calculate_mod_obs_rmse_2023(rt_path_hyd, hainich_obs)
 end
+

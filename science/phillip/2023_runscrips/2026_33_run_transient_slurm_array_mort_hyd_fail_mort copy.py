@@ -38,16 +38,16 @@ site = "DE-Hai"
 # Use static forcing
 forcing_mode = ForcingMode.TRANSIENT
 # Number of cpu cores to be used
-NMAXTASKS  = 512
+NMAXTASKS  = 600
 # Path where all the simulation data will be saved
 RAM_IN_GB = 4
 
-number_of_runs = 1024*2
+number_of_runs = 1024*14
 
 n_soil_combs = 1
 
 PARTITION = 'work'
-RUN_DIRECTORY =  "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/21_transient_slurm_array_krtos/"
+RUN_DIRECTORY =  "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/2026_33_run_transient_slurm_array_mort_hyd_fail_mort/"
 
 qpf = QuincyPathFinder()
 QUINCY_ROOT_PATH = qpf.quincy_root_path
@@ -105,6 +105,7 @@ namelist_base.base_ctl.fluxnet_type_transient_timestep_output.value = True
 namelist_base.base_ctl.fluxnet_static_forc_start_yr.value = 2000
 namelist_base.base_ctl.fluxnet_static_forc_last_yr.value = 2024
 
+namelist_base.vegetation_ctl.flag_dynamic_roots.value = False
 
 # Parse base lctlibe path
 lctlib_reader = LctlibReader(lctlib_root_path)
@@ -131,10 +132,10 @@ quincy_multi_run = Quincy_Multi_Run(setup_root_path)
 number_of_soil_samples = int(number_of_runs/n_soil_combs)
 
 # If we speicify more variables that we use we do NOT have a problem
-number_of_variables = 17
+number_of_variables = 21
 
 # Create a latin hypercube sample that is distributed between 0-1
-seed   = 123456789
+seed   = 12345678
 sampler = qmc.LatinHypercube(d = number_of_variables, seed= seed)
 sample = sampler.random(n = number_of_soil_samples)
 sample = sample.T
@@ -143,32 +144,39 @@ sample = sample.T
 slicer = Subslicer(array=sample)
 
 # 1. Parameter k_xylem_sat
-k_xylem_sat_min = 1.0
-k_xylem_sat_max = 8.0
+k_xylem_sat_min = 2.0
+k_xylem_sat_max = 7.0
 
-# 2. Parameter kappa_stem
-kappa_stem_min = 50
-kappa_stem_max = 200
+# 2. Parameter kappa_stem kg m-3 MPa-1
+gamma_stem_max_min = 100
+gamma_stem_max_max = 250
 
-# 3. Parameter kappa_leaf 
-kappa_leaf_min      = 0.01
+# 2. Parameter kappa_stem kg m-3 MPa-1
+gamma_stem_res_min = 15
+gamma_stem_res_max = 35
+
+psi_stem_tlp_min = -2.3
+psi_stem_tlp_max = -1.8
+
+# 3. Parameter kappa_leaf kg m-2 MPa-1
+kappa_leaf_min      = 0.03
 kappa_leaf_max      = 0.06
 
 # 4. Parameter klatosa 
-k_latosa_min = 3000
+k_latosa_min = 1500
 k_latosa_max = 6000
 
 # 5. Parameter klatosa 
-g1_min = 1.5
-g1_max = 4.0
+g1_min = 1.75
+g1_max = 3.0
 
 # 6. Parameter klatosa 
-g0_min = 0.0023
-g0_max = 0.0027
+g0_min = 0.0024
+g0_max = 0.0026
 
 # 7. Parameter klatosa 
-psi_close50_min = -0.7
-psi_close50_max = -1.5
+psi_close50_min = -0.6
+psi_close50_max = -1.7
 
 # 8. Parameter sand 
 # sand_min = 0.16
@@ -176,20 +184,21 @@ psi_close50_max = -1.5
 sand_min = 0.23
 sand_max = 0.25
 
+
 # 9. Parameter silt 
 # silt_min = 0.28
 # silt_max = 0.38
 
-silt_min = 0.33
+silt_min = 0.30
 silt_max = 0.35
 
 # 10. root dist
-root_dist_min = 4.0
-root_dist_max = 6.0
+root_dist_min = 3.0
+root_dist_max = 5.5
 
 # 11. Parameter kappa_leaf 
-root_scale_min = 50.0
-root_scale_max = 100.0
+root_scale_min = 10.0
+root_scale_max = 50.0
 
 # 12. Parameter kappa_leaf 
 slope_leaf_close_min = 2.5
@@ -209,12 +218,14 @@ k_gdd_max  = 0.016
 
 # 16. Parameter k_rtos
 # default is around 4.2
-rtos_min  = 3.0
-rtos_mmax  = 6.0
+rtos_min  = 4
+rtos_mmax  = 4
 
 k_xylem_sats = rescale(slicer.get(), min = k_xylem_sat_min, max = k_xylem_sat_max)
-kappa_stems = rescale(slicer.get(), min = kappa_stem_min, max = kappa_stem_max)
-kappa_leaves = rescale(slicer.get(), min = kappa_leaf_min, max = kappa_leaf_max)
+gamma_stem_maxs = rescale(slicer.get(), min = gamma_stem_max_min, max = gamma_stem_max_max)
+gamma_stem_ress = rescale(slicer.get(), min = gamma_stem_res_min, max = gamma_stem_res_max)
+psi_stem_tlps = rescale(slicer.get(), min = psi_stem_tlp_min, max = psi_stem_tlp_max)
+gamma_leafs = rescale(slicer.get(), min = kappa_leaf_min, max = kappa_leaf_max)
 k_latosas = rescale(slicer.get(), min = k_latosa_min, max = k_latosa_max)
 g1s = rescale(slicer.get(), min = g1_min, max = g1_max)
 g0s = rescale(slicer.get(), min = g0_min, max = g0_max)
@@ -238,6 +249,7 @@ h = 0
 for j in range(0, n_soil_combs):
     # We loop through the number of soil samples
     for i in range(0, number_of_soil_samples):
+        print(i)
               
 
         # We create a copy of the lctlibfile...
@@ -255,6 +267,7 @@ for j in range(0, n_soil_combs):
         else:
             nlm.assimilation_ctl.gs_beta_type.value = GsBetaType.PLANT
             nlm.phyd_ctl.use_plant_hydraulics.value = True    
+            nlm.phyd_ctl.use_hydaulic_failure_mort.value = True    
                
         soil_model_str = ""
         
@@ -262,7 +275,7 @@ for j in range(0, n_soil_combs):
         nlm.spq_ctl.spq_deactivate_spq.value = True
             
         if j == 0:
-            nlm.jsb_hydro_nml.soilhydmodel.value = JSBSoilHydModelType.VanGenuchten
+            nlm.jsb_hydro_nml.soilhydmodel.value = JSBSoilHydModelType.VANGENUCHTEN
             soil_model_str = "VanGenuchten"       
         # elif j == 1:
         #     nlm.jsb_hydro_nml.soilhydmodel.value = JSBSoilHydModelType.Campbell
@@ -282,11 +295,15 @@ for j in range(0, n_soil_combs):
         lctlib[pft].k_gdd_dormance = float(k_gdd_s[i])
        
         lctlib[pft].k_xylem_sat = float(k_xylem_sats[i])
-        lctlib[pft].kappa_stem = float(kappa_stems[i])
-        lctlib[pft].kappa_leaf = float(kappa_leaves[i])
+        lctlib[pft].gamma_stem_max = float(gamma_stem_maxs[i])
+        lctlib[pft].gamma_stem_res = float(gamma_stem_ress[i])
+        lctlib[pft].gamma_leaf = float(gamma_leafs[i])
+        lctlib[pft].psi50_stem_tlp = float(psi_stem_tlps[i])
+        lctlib[pft].slope_stem_tlp = 10.0
         lctlib[pft].k_latosa = float(k_latosas[i])
         lctlib[pft].g0 = float(g0s[i])
         lctlib[pft].g1_medlyn = float(g1s[i])
+        
         lctlib[pft].psi50_leaf_close = float(psi_close50s[i])
         lctlib[pft].k_root_dist = float(root_dists[i])
         lctlib[pft].root_scale = float(10**root_scale_log[i])
@@ -334,8 +351,10 @@ df_parameter_setup = pd.DataFrame({
 })
 
 df_parameter_setup['k_xylem_sats'] = np.round(np.tile(k_xylem_sats, n_soil_combs),5)
-df_parameter_setup['kappa_stem'] = np.round(np.tile(kappa_stems, n_soil_combs),5)
-df_parameter_setup['kappa_leaf'] = np.round(np.tile(kappa_leaves, n_soil_combs),5)
+df_parameter_setup['gamma_stem_max'] = np.round(np.tile(gamma_stem_maxs, n_soil_combs),5)
+df_parameter_setup['gamma_stem_res'] = np.round(np.tile(gamma_stem_ress, n_soil_combs),5)
+df_parameter_setup['gamma_leaf'] = np.round(np.tile(gamma_leafs, n_soil_combs),5)
+df_parameter_setup['psi50_stem_tlp'] = np.round(np.tile(psi_stem_tlps, n_soil_combs),5)
 df_parameter_setup['k_latosa']=np.round(np.tile(k_latosas, n_soil_combs),5)
 df_parameter_setup['g0']= np.round(np.tile(g0s, n_soil_combs),5)
 df_parameter_setup['g1']=np.round(np.tile(g1s, n_soil_combs),5)

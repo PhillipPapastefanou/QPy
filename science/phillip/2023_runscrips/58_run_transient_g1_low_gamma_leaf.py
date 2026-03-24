@@ -203,8 +203,8 @@ root_scale_min = 50.0
 root_scale_max = 120.0
 
 # 12. Parameter kappa_leaf 
-slope_leaf_close_min = 2.5
-slope_leaf_close_max = 2.5
+slope_leaf_close_min = 1.5
+slope_leaf_close_max = 1.5
 
 # 13. Parameter silt 
 gdd_t_air_thres_min  = 8.0

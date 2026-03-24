@@ -15,7 +15,7 @@ rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/
 rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/2026_33_run_transient_slurm_array_mort_hyd_fail_mort"
 rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/2026_35b_run_transient_slurm_array_mort_hyd_fail_mort_g1"
 rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2024_bench/54_run_transient_g1_low_gamma_leaf"
-rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/57_run_transient_g1_low_gamma_leaf"
+rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/60_run_transient_g1_low_gamma_leaf"
 
 rmse_data_path = joinpath(rt_path_hyd, "post", "params_rmse_2023.csv")
 ana_path = joinpath(rt_path_hyd, "post", "ana")
@@ -29,9 +29,9 @@ df = df[:, .!map(col -> all(x -> ismissing(x) || (x isa Number && isnan(x)), col
                  eachcol(df))]
 df = df[.!isnan.(df.psi_stem_rmse_23), :]
 
-psi_stem_err_ref = 0.15 
-stem_flow_err_ref = 8.4
-psi_leaf_err_ref = 0.47 
+psi_stem_err_ref = 0.17 
+stem_flow_err_ref = 8
+psi_leaf_err_ref = 0.40 
 #vscodedisplay(df)
 
 # Psi_stem constrain
@@ -43,12 +43,14 @@ print(size(df_psi_stem_leaf))
 
 # Psi_stem and stem flow constrain
 df_psi_stem_leaf_stem_flow = filter(row -> (row.psi_stem_rmse_23 < psi_stem_err_ref)& (row.psi_leaf_rmse_23 < psi_leaf_err_ref) &
- (row.G_rmse_025_23 < stem_flow_err_ref)& (row.k_latosa  >4000.0), df);
+ (row.stem_flow_rmse_05_23 < stem_flow_err_ref), df);
 print(size(df_psi_stem_leaf_stem_flow))
 
 
 vscodedisplay(df_psi_stem_leaf_stem_flow)
 
+
+& (row.k_latosa  >4000.0)
 
 df_stem_flow= filter(row -> (row.G_rmse_025_23 < stem_flow_err_ref), df);
 print(size(df_psi_stem))

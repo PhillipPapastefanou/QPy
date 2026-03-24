@@ -7,9 +7,9 @@ using CSV
 using Base.Threads
 using CairoMakie
 
-include("../../../../src/postprocessing/julia/core/qcomparer_2024.jl")
+# include("../../../../src/postprocessing/julia/core/qcomparer_2024.jl")
 
-obs = init_hainich_obs()
+# obs = init_hainich_obs()
 
 
 # Function to convert Year, DOY, and Decimal Hour to DateTime
@@ -55,12 +55,12 @@ end
 
 
 
-function calculate_mod_obs_rmse_2024(quincy_output::String, hainich_obs::HainichObs, ids, d1 ,d2)
-    df_fnet_22 = hainich_obs.df_fnet_22
-    df_fnet_24 = hainich_obs.df_fnet_24
-    df_psi_stem_obs = hainich_obs.df_psi_stem_obs
-    df_psi_leaf_obs = hainich_obs.df_psi_leaf_obs
-    df_sap_flow_2023 = hainich_obs.df_sap_flow_2023
+function calculate_vars(quincy_output::String, ids, d1 ,d2)
+    # df_fnet_22 = hainich_obs.df_fnet_22
+    # df_fnet_24 = hainich_obs.df_fnet_24
+    # df_psi_stem_obs = hainich_obs.df_psi_stem_obs
+    # df_psi_leaf_obs = hainich_obs.df_psi_leaf_obs
+    # df_sap_flow_2023 = hainich_obs.df_sap_flow_2023
 
 
     # date_ranges = [
@@ -278,7 +278,7 @@ for year in ["2003", "2024", "2023", "2018"]
     print("$year..")
     #ids, d1, d2 = ["1836", "7366"], DateTime("$year-05-01"), DateTime("$year-10-30")
     ids, d1, d2 = ["0", "3686", "4293", "4191"], DateTime("$year-05-01"), DateTime("$year-10-30")
-    calculate_mod_obs_rmse_2024(root_output_folder, obs, ids, d1, d2)
+    calculate_vars(root_output_folder, ids, d1, d2)
     println("Done!")
 end
 
