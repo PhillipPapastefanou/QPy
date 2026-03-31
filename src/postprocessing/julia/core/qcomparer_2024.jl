@@ -67,14 +67,15 @@ rtobspath = "/Net/Groups/BSI/work_scratch/ppapastefanou/data/Fluxnet_detail/eval
     rename!(df_psi_leaf_obs, :date => :DateTime)
 
     # Sap flow
-    full_path_sap_flow_2023_2024 = joinpath(rtobspath, "Sapflow2023-2024.csv")
+    full_path_sap_flow_2023_2024 = joinpath(rtobspath, "DE-Hai_forcing_30min_20230101_20251227.csv")
     df_sap_flow_2023 = CSV.read(
         full_path_sap_flow_2023_2024,
         DataFrame;
-        types      = Dict(:date => DateTime),
-        dateformat = Dict(:date => dateformat"yyyy-mm-dd HH:MM:SS"),
+        types = Dict(:datetime => String)
     )
-    rename!(df_sap_flow_2023, :date => :DateTime)
+
+    df_sap_flow_2023.datetime = DateTime.(first.(df_sap_flow_2023.datetime, 19), dateformat"yyyy-mm-dd HH:MM:SS")
+    rename!(df_sap_flow_2023, :datetime => :DateTime)
     df_sap_flow_2023 = filter(row -> !ismissing(row["Ji_Fasy"]), df_sap_flow_2023)
     df_sap_flow_2023[!, "Ji_Fasy"] = convert(Vector{Float64}, df_sap_flow_2023[!, "Ji_Fasy"])
     df_sap_flow_2023[df_sap_flow_2023[:, "Ji_Fasy"] .< 0.0, "Ji_Fasy"] .= 0.0

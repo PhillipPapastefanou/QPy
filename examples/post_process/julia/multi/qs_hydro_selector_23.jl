@@ -16,6 +16,10 @@ rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/
 rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/2026_35b_run_transient_slurm_array_mort_hyd_fail_mort_g1"
 rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2024_bench/54_run_transient_g1_low_gamma_leaf"
 rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/60_run_transient_g1_low_gamma_leaf"
+rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/std_58_run_transient"
+rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/61_run_transient_g1_low_gamma_leaf"
+rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/63_run_transient_3days"
+#rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2024_bench/56_refix_run_transient_g1_low_gamma_leaf"
 
 rmse_data_path = joinpath(rt_path_hyd, "post", "params_rmse_2023.csv")
 ana_path = joinpath(rt_path_hyd, "post", "ana")
@@ -29,14 +33,15 @@ df = df[:, .!map(col -> all(x -> ismissing(x) || (x isa Number && isnan(x)), col
                  eachcol(df))]
 df = df[.!isnan.(df.psi_stem_rmse_23), :]
 
-psi_stem_err_ref = 0.17 
-stem_flow_err_ref = 8
-psi_leaf_err_ref = 0.40 
+psi_stem_err_ref = 0.13 
+stem_flow_err_ref = 7.0
+psi_leaf_err_ref = 0.45 
 #vscodedisplay(df)
 
 # Psi_stem constrain
 df_psi_stem = filter(row -> (row.psi_stem_rmse_23 < psi_stem_err_ref), df);
 print(size(df_psi_stem))
+
 
 df_psi_stem_leaf = filter(row -> (row.psi_stem_rmse_23 < psi_stem_err_ref)& (row.psi_leaf_rmse_23 < psi_leaf_err_ref), df);
 print(size(df_psi_stem_leaf))
@@ -49,6 +54,32 @@ print(size(df_psi_stem_leaf_stem_flow))
 
 vscodedisplay(df_psi_stem_leaf_stem_flow)
 
+
+quantile(df_psi_stem[!,:k_latosa],[0.2, 0.5, 0.8])
+quantile(df_psi_stem_leaf[!,:k_latosa],[0.2, 0.5, 0.8])
+quantile(df_psi_stem_leaf_stem_flow[!,:k_latosa],[0.2, 0.5, 0.8])
+
+
+
+mean(df_psi_stem[!,:le_rmse_18])
+mean(df_psi_stem_leaf[!,:le_rmse_18])
+mean(df_psi_stem_leaf_stem_flow[!,:le_rmse_18])
+mean(df_psi_stem[!,:le_rmse_18])
+
+
+mean(df_psi_stem_leaf[!,:le_rmse_18])
+mean(df_psi_stem_leaf_stem_flow[!,:le_rmse_18])
+
+
+quantile(df_psi_stem[!,:le_rmse_18],[0.2, 0.5, 0.8])
+quantile(df_psi_stem_leaf[!,:le_rmse_18],[0.2, 0.5, 0.8])
+quantile(df_psi_stem_leaf_stem_flow[!,:le_rmse_18],[0.2, 0.5, 0.8])
+
+
+
+mean(df_psi_stem[!,:le_rmse_03])
+mean(df_psi_stem_leaf[!,:le_rmse_03])
+mean(df_psi_stem_leaf_stem_flow[!,:le_rmse_03])
 
 & (row.k_latosa  >4000.0)
 
@@ -118,16 +149,18 @@ print(quantile(df_psi_stem_stem_flow_03_18.k_latosa, 0.8))
 #vscodedisplay(df_psi_stem_stem_flow_03_18) 
 
 # gpp only
-gpp_full = filter(row -> (row.gpp_rmse_full < 3.7) , df);
+gpp_full = filter(row -> (row.gpp_rmse_23 < 3.7) , df);
 print(size(gpp_full))
 
 # le only
-le_full = filter(row -> (row.le_rmse_full < 34) , df);
+le_full = filter(row -> (row.le_rmse_23 < 45) , df);
 print(size(le_full))
 
 # gpp only
-gpp_le_full = filter(row -> (row.gpp_rmse_full < 3.7) & (row.le_rmse_full < 34), df);
+gpp_le_full = filter(row -> (row.gpp_rmse_23 < 3.7) & (row.le_rmse_23 < 45), df);
 print(size(gpp_le_full))
+
+vscodedisplay(gpp_le_full)
 
 
 
@@ -278,16 +311,16 @@ function std_out_display(name, df, cols)
 end
 
 
-std_out_display("psi_stem", df_psi_stem, cols_no_rmse)
-std_out_display("stem_flow", df_stem_flow, cols_no_rmse)
-std_out_display("psi_stem_psi_leaf", df_psi_stem_leaf, cols_no_rmse)
-std_out_display("psi_stem_leaf_stem_flow", df_psi_stem_leaf_stem_flow, cols_no_rmse)
+std_out_display("23_psi_stem", df_psi_stem, cols_no_rmse)
+#std_out_display("23_stem_flow", df_stem_flow, cols_no_rmse)
+std_out_display("23_psi_stem_psi_leaf", df_psi_stem_leaf, cols_no_rmse)
+std_out_display("23_psi_stem_leaf_stem_flow", df_psi_stem_leaf_stem_flow, cols_no_rmse)
 
 
 # std_out_display("psi_stem_stem_flow", df_psi_stem_stem_flow, cols_no_rmse)
 # std_out_display("psi_stem_stem_flow_full", df_psi_stem_stem_flow_full, cols_no_rmse)
 # std_out_display("psi_stem_stem_flow_18", df_psi_stem_stem_flow_full, cols_no_rmse)
 # std_out_display("psi_stem_stem_flow_03", df_psi_stem_stem_flow_03, cols_no_rmse)
-# std_out_display("gpp_full", gpp_full, cols_no_rmse)
-# std_out_display("le_full", le_full, cols_no_rmse)
-# std_out_display("gpp_le_full", gpp_le_full, cols_no_rmse)
+std_out_display("gpp_full", gpp_full, cols_no_rmse)
+std_out_display("le_full", le_full, cols_no_rmse)
+std_out_display("gpp_le_full", gpp_le_full, cols_no_rmse)

@@ -89,14 +89,6 @@ function calculate_vars(quincy_output::String, ids, d1 ,d2)
 
     
 
-        df_fnet = ""
-        if year(d1) < 2022
-            df_fnet =    df_fnet_22  
-        else
-            df_fnet =    df_fnet_24        
-        end
-
-
         vars = ["gpp_avg", "npp_avg", "total_veg_c", "gc_avg"]
 
 
@@ -272,12 +264,13 @@ function calculate_vars(quincy_output::String, ids, d1 ,d2)
 end
 
 root_output_folder= "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2024_bench/53_run_transient_g1_low_gamma_leaf/output"
-root_output_folder= "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2024_bench/254_run_transient_no_texture/output"
+root_output_folder = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/61_run_transient_g1_low_gamma_leaf/output"
+
 
 for year in ["2003", "2024", "2023", "2018"]
     print("$year..")
     #ids, d1, d2 = ["1836", "7366"], DateTime("$year-05-01"), DateTime("$year-10-30")
-    ids, d1, d2 = ["0", "3686", "4293", "4191"], DateTime("$year-05-01"), DateTime("$year-10-30")
+    ids, d1, d2 = ["0","92", "858", "1723"], DateTime("$year-05-01"), DateTime("$year-10-30")
     calculate_vars(root_output_folder, ids, d1, d2)
     println("Done!")
 end

@@ -1,5 +1,5 @@
-#include("../../../../src/postprocessing/julia/core/qcomparer_2024.jl")
-include("../../../../src/postprocessing/julia/core/qcomparer_2023.jl")
+include("../../../../src/postprocessing/julia/core/qcomparer_2024.jl")
+#include("../../../../src/postprocessing/julia/core/qcomparer_2023.jl")
 
 using CSV
 using DataFrames
@@ -37,8 +37,6 @@ rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2024_bench/
 #rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2024_bench/255_run_transient_no_texture"
 rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2024_bench/55_run_transient_g1_low_gamma_leaf"
 rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2024_bench/56_refix_run_transient_g1_low_gamma_leaf"
-#t_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/61_run_transient_g1_low_gamma_leaf"
-#rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/2026_36_run_transient_slurm_array_mort_hyd_fail_mort_g1"
 
 
 #calculate_mod_obs_rmse_2024(rt_path_hyd, hainich_obs)                                     
@@ -52,6 +50,6 @@ if abspath(PROGRAM_FILE) == @__FILE__
 
     
     println("Starting RMSE calculations...")
-    calculate_mod_obs_rmse_2023(rt_path_hyd, hainich_obs)
+    calculate_mod_obs_rmse_2024(rt_path_hyd, hainich_obs)
 end
 

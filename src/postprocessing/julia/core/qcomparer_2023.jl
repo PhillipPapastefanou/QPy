@@ -55,15 +55,18 @@ rtobspath = "/Net/Groups/BSI/work_scratch/ppapastefanou/data/Fluxnet_detail/eval
     rename!(df_psi_stem_obs, :date => :DateTime)
 
     # Sap flow
-    full_path_sap_flow_2023 = joinpath(rtobspath, "Sapflow2023.csv")
+    full_path_sap_flow_2023_2024 = joinpath(rtobspath, "DE-Hai_forcing_30min_20230101_20251227.csv")
     df_sap_flow_2023 = CSV.read(
-        full_path_sap_flow_2023,
+        full_path_sap_flow_2023_2024,
         DataFrame;
-        types      = Dict(:date => DateTime),
-        dateformat = Dict(:date => dateformat"yyyy-mm-dd HH:MM:SS"),
+        types = Dict(:datetime => String)
     )
-    rename!(df_sap_flow_2023, :date => :DateTime)
 
+    df_sap_flow_2023.datetime = DateTime.(first.(df_sap_flow_2023.datetime, 19), dateformat"yyyy-mm-dd HH:MM:SS")
+    rename!(df_sap_flow_2023, :datetime => :DateTime)
+    df_sap_flow_2023 = filter(row -> !ismissing(row["Ji_Fasy"]), df_sap_flow_2023)
+    df_sap_flow_2023[!, "Ji_Fasy"] = convert(Vector{Float64}, df_sap_flow_2023[!, "Ji_Fasy"])
+    df_sap_flow_2023[df_sap_flow_2023[:, "Ji_Fasy"] .< 0.0, "Ji_Fasy"] .= 0.0
 
 
     # Psi leaf
@@ -75,11 +78,6 @@ rtobspath = "/Net/Groups/BSI/work_scratch/ppapastefanou/data/Fluxnet_detail/eval
         dateformat = Dict(:date => dateformat"yyyy-mm-dd HH:MM:SS"),
     )
     rename!(df_psi_leaf_obs, :date => :DateTime)
-
-    df_sap_flow_2023 = filter(row -> !ismissing(row["J0.5"]), df_sap_flow_2023)
-    df_sap_flow_2023[!, "J0.5"] = convert(Vector{Float64}, df_sap_flow_2023[!, "J0.5"])
-    df_sap_flow_2023[df_sap_flow_2023[:, "J0.5"] .< 0.0, "J0.5"] .= 0.0
-
     return HainichObs(df_fnet_22, df_fnet_24, df_psi_stem_obs, df_psi_leaf_obs, df_sap_flow_2023)
 
 end
@@ -134,7 +132,7 @@ function calculate_mod_obs_rmse_2023(quincy_output::String, hainich_obs::Hainich
         df_obs_psi_stem_slice = get_single_file_slice(df_psi_stem_obs, "FAG", series, 0.25, 0.75,slice_dates, 
         d1, d2)    
 
-        df_obs_sapflow_slice = get_single_file_slice(df_sap_flow_2023, "J0.5", series, 0.1, 0.9, slice_dates, DateTime("2023-06-01"), DateTime("2023-08-01"))  
+        df_obs_sapflow_slice = get_single_file_slice(df_sap_flow_2023, "Ji_Fasy", series, 0.1, 0.9, slice_dates, DateTime("2023-06-01"), DateTime("2023-08-01"))  
 
 
         df_obs_psi_leaf_slice = get_single_file_slice(df_psi_leaf_obs, "psi_leaf_midday_avg", series, 0.25, 0.75, slice_dates, 
@@ -165,8 +163,6 @@ function calculate_mod_obs_rmse_2023(quincy_output::String, hainich_obs::Hainich
 
 
         for (i, (full, short)) in enumerate(zip(full_dir_paths, short_dir_paths))
-
-            println(i)
 
             if i == 1 
                 qoutput = read_quincy_site_output(full)

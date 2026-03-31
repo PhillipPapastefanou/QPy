@@ -1,4 +1,5 @@
-include("../../../../src/postprocessing/julia/core/qcomparer_2024.jl")
+#include("../../../../src/postprocessing/julia/core/qcomparer_2023.jl")
+
 
 using CSV
 using DataFrames
@@ -6,27 +7,26 @@ using Dates
 using CairoMakie
 using StatsBase  
 
-rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/14_transient_slurm_array"
-rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/27_transient_slurm_array_dyn_roots_off"
-rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/29_transient_slurm_array_dyn_roots_off"
-rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/30_run_transient_slurm_array_mort_hyd_fail_mort"
-rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/2026_31_run_transient_slurm_array_mort_hyd_fail_mort"
-rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/2026_33_run_transient_slurm_array_mort_hyd_fail_mort"
-rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/2026_35b_run_transient_slurm_array_mort_hyd_fail_mort_g1"
-rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2024_bench/37_rerun_for_test"
-rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2024_bench/39_rerun_for_test"
-rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2024_bench/40_run_transient_slurm_array_mort_hyd_fail_mort_g1"
-rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2024_bench/60_run_transient_slurm_array_mort_hyd_fail_mort_g1"
-rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2024_bench/54_run_transient_g1_low_gamma_leaf"
-#rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2024_bench/52_run_transient_slurm_array_mort_hyd_fail_mort_g1"
-#rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2024_bench/254_run_transient_no_texture"
-rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/57_run_transient_g1_low_gamma_leaf"
-rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_rerun/57_run_transient_g1_low_gamma_leaf/0"
-rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/59_run_transient_g1_low_gamma_leaf"
-rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/59_run_transient_g1_low_gamma_leaf"
-rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2024_bench/56_refix_run_transient_g1_low_gamma_leaf"
 
-rmse_data_path = joinpath(rt_path_hyd, "post", "params_rmse_2024.csv")
+macro varname(arg)
+    return string(arg)
+end
+
+function export_indexes(df, path, var, name_str)
+    n = nrow(df)
+    indices = round.(Int, range(1, n, length=30))
+    subset_ids = df[indices, :id]
+    print(quantile(df[indices, var],[0.2, 0.5, 0.8]))
+
+    df_indices = DataFrame(fid = subset_ids)
+    path_file = joinpath(path, "$(name_str)_ind.csv")
+    CSV.write(path_file, df_indices)
+end
+
+rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/63_run_transient_3days"
+#rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2024_bench/56_refix_run_transient_g1_low_gamma_leaf"
+
+rmse_data_path = joinpath(rt_path_hyd, "post", "params_rmse_2023.csv")
 ana_path = joinpath(rt_path_hyd, "post", "ana")
 
 if !isdir(ana_path)
@@ -36,44 +36,64 @@ end
 df = CSV.read(rmse_data_path, DataFrame)
 df = df[:, .!map(col -> all(x -> ismissing(x) || (x isa Number && isnan(x)), col),
                  eachcol(df))]
-df = df[.!isnan.(df.psi_stem_rmse_24), :]
+df = df[.!isnan.(df.psi_stem_rmse_23), :]
+df = filter(row -> (row.psi_leaf_rmse_23 < 10), df);
+print(size(df))
 
-vscodedisplay(df)
-
-psi_stem_err_ref = 0.48
-psi_leaf_err_ref = 0.5
-
-stem_flow_err_ref = 5.5 
-
+psi_stem_err_ref = 0.13 
+stem_flow_err_ref = 7.0
+psi_leaf_err_ref = 0.45 
+vscodedisplay(df_psi_stem_leaf_stem_flow)
 
 # Psi_stem constrain
-
-df_psi_stem = filter(row -> (row.psi_stem_rmse_24< psi_stem_err_ref), df);
+df_psi_stem = filter(row -> (row.psi_stem_rmse_23 < psi_stem_err_ref), df);
 print(size(df_psi_stem))
-vscodedisplay(df_psi_stem)
 
-df_psi_stem_psi_leaf = filter(row -> (row.psi_stem_rmse_24 < psi_stem_err_ref) & (row.psi_leaf_rmse_24 < psi_leaf_err_ref), df);
-print(size(df_psi_stem_psi_leaf))
-vscodedisplay(df_psi_stem_psi_leaf)
+df_psi_stem_leaf = filter(row -> (row.psi_stem_rmse_23 < psi_stem_err_ref)& (row.psi_leaf_rmse_23 < psi_leaf_err_ref), df);
+print(size(df_psi_stem_leaf))
 
 # Psi_stem and stem flow constrain
-df_psi_stem_psi_leaf_sap = filter(row -> (row.psi_stem_rmse_24 < psi_stem_err_ref) & (row.psi_leaf_rmse_24 < psi_leaf_err_ref)& (row.stem_flow_rmse_05_24 < stem_flow_err_ref), df);
-print(size(df_psi_stem_psi_leaf_sap))
-vscodedisplay(df_psi_stem_psi_leaf_sap)
+df_psi_stem_leaf_stem_flow = filter(row -> (row.psi_stem_rmse_23 < psi_stem_err_ref)& (row.psi_leaf_rmse_23 < psi_leaf_err_ref) &
+ (row.stem_flow_rmse_05_23 < stem_flow_err_ref), df);
+print(size(df_psi_stem_leaf_stem_flow))
 
 
-df
-df_psi_stem_psi_leaf_sap_le = filter(row -> (row.psi_stem_rmse_24 < psi_stem_err_ref) & (row.psi_leaf_rmse_24 < psi_leaf_err_ref)
-& (row.stem_flow_rmse_05_24 < stem_flow_err_ref)& (row.le_rmse_24 < 36), df);
-print(size(df_psi_stem_psi_leaf_sap_le))
+quantile(df_psi_stem[!,:k_latosa],[0.2, 0.5, 0.8])
+quantile(df_psi_stem_leaf[!,:k_latosa],[0.2, 0.5, 0.8])
+quantile(df_psi_stem_leaf_stem_flow[!,:k_latosa],[0.2, 0.5, 0.8])
 
 
-df_psi_stem_psi_leaf_sap_gpp = filter(row -> (row.psi_stem_rmse_24 < psi_stem_err_ref) & (row.psi_leaf_rmse_24 < psi_leaf_err_ref)
-& (row.stem_flow_rmse_05_24 < stem_flow_err_ref)& (row.gpp_rmse_24 < 3.2), df);
-print(size(df_psi_stem_psi_leaf_sap_gpp))
+v = :gpp_rmse_18
+export_indexes(df, ana_path ,v, "df")
+export_indexes(df_psi_stem, ana_path ,v, "df_psi_stem")
+export_indexes(df_psi_stem_leaf, ana_path ,v, "df_psi_stem_leaf")
+export_indexes(df_psi_stem_leaf_stem_flow, ana_path ,v, "df_psi_stem_leaf_stem_flow")
 
 
-vscodedisplay(df_test)
+
+
+
+mean(df_psi_stem_leaf[!,:gpp_rmse_18])
+mean(df_psi_stem_leaf_stem_flow[!,:gpp_rmse_18])
+
+mean(df_psi_stem[!,:le_rmse_18])
+mean(df_psi_stem_leaf[!,:le_rmse_18])
+mean(df_psi_stem_leaf_stem_flow[!,:le_rmse_18])
+
+quantile(df_psi_stem[!,:le_rmse_18],[0.2, 0.5, 0.8])
+quantile(df_psi_stem_leaf[!,:le_rmse_18],[0.2, 0.5, 0.8])
+quantile(df_psi_stem_leaf_stem_flow[!,:le_rmse_18],[0.2, 0.5, 0.8])
+
+
+
+mean(df_psi_stem[!,:le_rmse_03])
+mean(df_psi_stem_leaf[!,:le_rmse_03])
+mean(df_psi_stem_leaf_stem_flow[!,:le_rmse_03])
+
+& (row.k_latosa  >4000.0)
+
+df_stem_flow= filter(row -> (row.G_rmse_025_23 < stem_flow_err_ref), df);
+print(size(df_psi_stem))
 
 
 hist(df_psi_stem[!, :stem_flow_rmse_05_23])
@@ -138,16 +158,18 @@ print(quantile(df_psi_stem_stem_flow_03_18.k_latosa, 0.8))
 #vscodedisplay(df_psi_stem_stem_flow_03_18) 
 
 # gpp only
-gpp_full = filter(row -> (row.gpp_rmse_full < 3.7) , df);
+gpp_full = filter(row -> (row.gpp_rmse_23 < 3.7) , df);
 print(size(gpp_full))
 
 # le only
-le_full = filter(row -> (row.le_rmse_full < 34) , df);
+le_full = filter(row -> (row.le_rmse_23 < 45) , df);
 print(size(le_full))
 
 # gpp only
-gpp_le_full = filter(row -> (row.gpp_rmse_full < 3.7) & (row.le_rmse_full < 34), df);
+gpp_le_full = filter(row -> (row.gpp_rmse_23 < 3.7) & (row.le_rmse_23 < 45), df);
 print(size(gpp_le_full))
+
+vscodedisplay(gpp_le_full)
 
 
 
@@ -298,16 +320,16 @@ function std_out_display(name, df, cols)
 end
 
 
-std_out_display("psi_stem", df_psi_stem, cols_no_rmse)
-std_out_display("psi_stem_psi_leaf", df_psi_stem_psi_leaf, cols_no_rmse)
-std_out_display("psi_stem_psi_leaf_sap", df_psi_stem_psi_leaf_sap, cols_no_rmse)
-std_out_display("psi_stem_psi_leaf_sap_le", df_psi_stem_psi_leaf_sap_le, cols_no_rmse)
-std_out_display("psi_stem_psi_leaf_sap_gpp", df_psi_stem_psi_leaf_sap_gpp, cols_no_rmse)
+std_out_display("23_psi_stem", df_psi_stem, cols_no_rmse)
+#std_out_display("23_stem_flow", df_stem_flow, cols_no_rmse)
+std_out_display("23_psi_stem_psi_leaf", df_psi_stem_leaf, cols_no_rmse)
+std_out_display("23_psi_stem_leaf_stem_flow", df_psi_stem_leaf_stem_flow, cols_no_rmse)
 
-std_out_display("psi_stem_stem_flow_23", df_psi_stem_stem_flow_23, cols_no_rmse)
-std_out_display("psi_stem_stem_flow_full", df_psi_stem_stem_flow_full, cols_no_rmse)
-std_out_display("psi_stem_stem_flow_18", df_psi_stem_stem_flow_full, cols_no_rmse)
-std_out_display("psi_stem_stem_flow_03", df_psi_stem_stem_flow_03, cols_no_rmse)
+
+# std_out_display("psi_stem_stem_flow", df_psi_stem_stem_flow, cols_no_rmse)
+# std_out_display("psi_stem_stem_flow_full", df_psi_stem_stem_flow_full, cols_no_rmse)
+# std_out_display("psi_stem_stem_flow_18", df_psi_stem_stem_flow_full, cols_no_rmse)
+# std_out_display("psi_stem_stem_flow_03", df_psi_stem_stem_flow_03, cols_no_rmse)
 std_out_display("gpp_full", gpp_full, cols_no_rmse)
 std_out_display("le_full", le_full, cols_no_rmse)
 std_out_display("gpp_le_full", gpp_le_full, cols_no_rmse)

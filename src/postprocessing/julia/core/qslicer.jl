@@ -410,6 +410,8 @@ function progress_report(i, n, start_time, last_report; interval=5.0)
               "elapsed $elapsed_str | " *
               "remaining ≈ $remaining_str"
 
+        flush(stdout)
+
         return now
     end
     return last_report

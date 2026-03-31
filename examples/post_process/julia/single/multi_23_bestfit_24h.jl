@@ -158,7 +158,7 @@ function calculate_mod_obs_rmse_2023(quincy_output::String, hainich_obs::Hainich
         df_obs_rad.mean_vpd = calculate_vpd.(df_obs_t_k[!,:mean], df_obs_q_gkg[!,:mean], df_obs_p_hpa[!, :mean])
         
         if year(d1) == 2023
-            df_obs_sapflow_slice = get_single_file_slice(df_sap_flow_2023, "J0.5", series, 0.1, 0.9, slice_dates,
+            df_obs_sapflow_slice = get_single_file_slice(df_sap_flow_2023, "Ji_Fasy", series, 0.1, 0.9, slice_dates,
             d1_sap, d2_sap )
 
             series = ThirtyMinSeries
@@ -352,7 +352,8 @@ function calculate_mod_obs_rmse_2023(quincy_output::String, hainich_obs::Hainich
 end
 
 rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/57b_run_transient_g1_low_gamma_leaf/output"
-rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/60_run_transient_g1_low_gamma_leaf/output"
+rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/61_run_transient_g1_low_gamma_leaf/output"
+rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/63_run_transient_3days/output"
 #rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_rerun/57b_run_transient_g1_low_gamma_leaf/1/output"
 
 #root_output_folder= "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2024_bench/254_run_transient_no_texture/output"
@@ -365,7 +366,9 @@ for year in ["2003", "2024", "2023", "2018"]
     #ids, d1, d2 = ["0", "3686", "4293", "4191"], DateTime("$year-05-01"), DateTime("$year-10-30")
     #ids, d1, d2 = ["0", "352", "29757"], DateTime("$year-05-01"), DateTime("$year-10-30")
     #ids, d1, d2 = ["352", "29757"], DateTime("$year-07-08"), DateTime("$year-07-13")
-    ids, d1, d2 = ["0","14761", "41", "3348"], DateTime("$year-05-01"), DateTime("$year-10-30")
+    #ids, d1, d2 = ["0","92", "858", "1723"], DateTime("$year-05-01"), DateTime("$year-10-30")
+    ids, d1, d2 = ["0","5039", "832"], DateTime("$year-05-01"), DateTime("$year-10-30")
+    ids, d1, d2 = ["0","4389", "15157"], DateTime("$year-05-01"), DateTime("$year-10-30")
     calculate_mod_obs_rmse_2023(rt_path_hyd, obs, ids, d1, d2)
     println("Done!")
 end

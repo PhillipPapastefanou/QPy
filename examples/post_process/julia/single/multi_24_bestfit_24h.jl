@@ -349,7 +349,7 @@ function calculate_mod_obs_rmse_2024(quincy_output::String, hainich_obs::Hainich
     #CSV.write(joinpath(post_process_dir,"params_rmse_2024.csv"), df_param)
 end
 
-root_output_folder= "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2024_bench/54_run_transient_g1_low_gamma_leaf/output"
+root_output_folder= "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2024_bench/56_refix_run_transient_g1_low_gamma_leaf/output"
 #root_output_folder= "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2024_bench/254_run_transient_no_texture/output"
 
 for year in ["2003", "2024", "2023", "2018"]
@@ -357,7 +357,7 @@ for year in ["2003", "2024", "2023", "2018"]
     ids, d1, d2 = ["1836", "7366"], DateTime("$year-05-01"), DateTime("$year-10-30")
     #ids, d1, d2 = ["0", "10378", "16137"], DateTime("$year-05-01"), DateTime("$year-10-30")
     #ids, d1, d2 = ["0", "3686", "4293", "4191"], DateTime("$year-05-01"), DateTime("$year-10-30")
-    ids, d1, d2 = ["0", "14005", "15540"], DateTime("$year-05-01"), DateTime("$year-10-30")
+    ids, d1, d2 = ["0", "829", "19230"], DateTime("$year-05-01"), DateTime("$year-10-30")
     calculate_mod_obs_rmse_2024(root_output_folder, obs, ids, d1, d2)
     println("Done!")
 end
