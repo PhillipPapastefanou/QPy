@@ -23,6 +23,14 @@ function export_indexes(df, path, var, name_str)
     CSV.write(path_file, df_indices)
 end
 
+function export_indexes_all(df, path, var, name_str)
+    subset_ids = df[!, :id]
+    df_indices = DataFrame(fid = subset_ids)
+    path_file = joinpath(path, "$(name_str)_ind_all.csv")
+    CSV.write(path_file, df_indices)
+end
+
+
 rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/63_run_transient_3days"
 #rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2024_bench/56_refix_run_transient_g1_low_gamma_leaf"
 
@@ -68,6 +76,12 @@ export_indexes(df, ana_path ,v, "df")
 export_indexes(df_psi_stem, ana_path ,v, "df_psi_stem")
 export_indexes(df_psi_stem_leaf, ana_path ,v, "df_psi_stem_leaf")
 export_indexes(df_psi_stem_leaf_stem_flow, ana_path ,v, "df_psi_stem_leaf_stem_flow")
+
+
+export_indexes_all(df, ana_path ,v, "df")
+export_indexes_all(df_psi_stem, ana_path ,v, "df_psi_stem")
+export_indexes_all(df_psi_stem_leaf, ana_path ,v, "df_psi_stem_leaf")
+export_indexes_all(df_psi_stem_leaf_stem_flow, ana_path ,v, "df_psi_stem_leaf_stem_flow")
 
 
 

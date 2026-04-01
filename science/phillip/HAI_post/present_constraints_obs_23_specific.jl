@@ -1,4 +1,3 @@
-
 using Statistics, VectorizedStatistics
 using DataFrames
 using Dates
@@ -12,119 +11,28 @@ using StatsPlots
 include("../../../src/postprocessing/julia/core/qcomparer_2023.jl")
 include("../../../src/postprocessing/julia/core/qslicer.jl")
 
-
+# --- 1. Helper Functions ---
 function format_unit_to_latex(unit_str::String)
-
-    # 1. Handle "micro" prefixes
-    # We replace it with \mu{} so LaTeX separates the macro from the next letters 
-    # (e.g., \mu{}mol prevents it from looking for a non-existent \mumol command)
     s = replace(unit_str, "micro " => "\\mu{}")
     s = replace(s, "micro" => "\\mu{}")
-    
-    # 2. Split the string into individual units based on spaces
     parts = split(s, " ", keepempty=false)
-    
     formatted_parts = String[]
-    
     for part in parts
-        # Regex explanation:
-        # ^([A-Za-z\\]+)  -> Captures the base (letters or slashes for \mu)
-        # (-?\d+)$        -> Captures the exponent (optional minus sign, then numbers)
         m = match(r"^([A-Za-z\\]+)(-?\d+)$", part)
-        
         if m !== nothing
-            # If it has an exponent, format it as base^{exponent}
-            base = m.captures[1]
-            exponent = m.captures[2]
-            push!(formatted_parts, "$(base)^{$(exponent)}")
+            push!(formatted_parts, "$(m.captures[1])^{$(m.captures[2])}")
         else
-            # If no exponent is found, leave it as is (e.g., "mol", "MPa")
             push!(formatted_parts, part)
         end
     end
-    
-    # 3. Join everything together with the center dot
-    joined_str = join(formatted_parts, " \\cdot ")
-    
-    # 4. Wrap the whole thing in \mathrm{} to keep the font upright
-    final_latex_string = "\\mathrm{$(joined_str)}"
-    
-    # Convert and return as a LaTeXString
-    return latexstring(final_latex_string)
+    return latexstring("\\mathrm{$(join(formatted_parts, " \\cdot "))}")
 end
 
-# Function to convert Year, DOY, and Decimal Hour to DateTime
-function to_datetime(y, d, h)
-    # DateTime(year, month, day) + Day offset + Hour offset
-    # We use d-1 because January 1st is Day 1
-    return DateTime(y) + Day(d - 1) + Millisecond(round(h * 3600000))
-end
-
-
-function read_input_df(root_output_folder)
-
-    df  =  CSV.read(joinpath(root_output_folder , "climate.dat"), DataFrame, delim=' ', ignorerepeated=true,header=1, 
-              skipto=3)
-
-    transform!(df, [:year, :doy, :hour] => ByRow(to_datetime) => :DateTime)
-
-    return df
-end
-
-
-function calculate_vpd(t_k, q_gkg, p_hpa)
-    # 1. Convert Kelvin to Celsius
-    t_c = t_k - 273.15
-    
-    # 2. Saturation Vapor Pressure (es) in kPa
-    # Tetens formula constants for water
-    es = 0.61078 * exp((17.27 * t_c) / (t_c + 237.3))
-    
-    # 3. Actual Vapor Pressure (ea) in kPa
-    # Convert q from g/kg to kg/kg
-    q_kgkg = q_gkg / 1000.0
-    # Convert Pressure from hPa to kPa
-    p_kpa = p_hpa / 10.0
-    
-    # ea = (q * P) / (ε + (1 - ε)q) where ε ≈ 0.622
-    ea = (q_kgkg * p_kpa) / (0.622 + 0.378 * q_kgkg)
-    
-    # 4. VPD is the difference (ensure it's not negative due to sensor noise)
-    return max(0.0, es - ea)
-end
-
-
-
-
-
-
-# ide = "sum23"
-# colors = [:purple, :blue, :green, :red]
-# var_avails=  ["gpp_avg", "stem_flow_per_sap_area_avg", "G_per_sap_area_avg", "psi_stem_avg", "psi_leaf_avg", "beta_gs", "gc_avg"]
-# target_midday_1 = DateTime("2023-06-01T12:00:00")
-# target_midday_2 = DateTime("2023-07-20T12:00:00")
-# d1, d2 = DateTime("2023-05-15"), DateTime("2023-09-30")
-
-# ide = "sum03"
-# colors = [:purple, :blue, :green, :red]
-# var_avails=  ["gpp_avg", "stem_flow_per_sap_area_avg", "G_per_sap_area_avg", "psi_stem_avg", "psi_leaf_avg", "beta_gs", "gc_avg"]
-# target_midday_1 = DateTime("2003-06-01T12:00:00")
-# target_midday_2 = DateTime("2003-08-05T12:00:00")
-# d1, d2 = DateTime("2003-05-15"), DateTime("2003-09-30")
-
-# ide = "sum2003_obs"
-# colors = [:red, :black, :blue]
-# var_avails=  ["qle_avg", "gpp_avg", "stem_flow_per_sap_area_avg", "G_per_sap_area_avg", "psi_stem_avg", "psi_leaf_avg", "beta_gs", "gc_avg"]
-# target_midday_1 = DateTime("2003-06-01T12:00:00")
-# target_midday_2 = DateTime("2003-08-05T12:00:00")
-# d1, d2 = DateTime("2003-05-15"), DateTime("2003-08-01")
-
-
+# --- 2. Setup & Paths ---
 obs = init_hainich_obs()
-
-ide = "sum2023_obs"
+ide = "sum2023_obs_hot"
 var_avails = ["qle_avg", "gpp_avg", "stem_flow_per_sap_area_avg", "G_per_sap_area_avg", "psi_stem_avg", "psi_leaf_avg", "beta_gs", "gc_avg"]
-d1, d2 = DateTime("2023-05-22"), DateTime("2023-08-01")
+d1, d2 = DateTime("2023-07-01"), DateTime("2023-08-01")
 
 rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/63_run_transient_3days/output"
 post_process_dir = joinpath(rt_path_hyd, "../post", ide)
@@ -191,12 +99,21 @@ for scen in scenarios
         val_cols = names(df_ensemble, Not(:DateTime))
         df = transform(df_ensemble, val_cols => ByRow((vals...) -> begin
             clean_vals = filter(v -> !ismissing(v) && !isnan(v), [vals...])
-            if isempty(clean_vals) return (mean=NaN,) end
-            m = mean(clean_vals)
-            if variable == "qle_avg" m = -m end
-            if variable == "stem_flow_per_sap_area_avg" m = m * 1000.0 * 0.5 end
-            if variable == "G_per_sap_area_avg" m = m * 1000.0 * 0.5 end
-            return (mean = m,)
+            if isempty(clean_vals) return (mean=NaN, qlow=NaN, qup=NaN) end
+            
+            m  = mean(clean_vals)
+            ql = quantile(clean_vals, 0.1)
+            qu = quantile(clean_vals, 0.9)
+            
+            if variable == "qle_avg" 
+                m = -m
+                ql, qu = -qu, -ql # Swap bounds when flipping sign
+            end
+            if variable == "stem_flow_per_sap_area_avg" || variable == "G_per_sap_area_avg"
+                factor = 1000.0 * 0.5
+                m *= factor; ql *= factor; qu *= factor
+            end
+            return (mean = m, qlow = ql, qup = qu)
         end) => AsTable)
 
         df.DateOnly = Date.(df.DateTime)
@@ -216,12 +133,10 @@ for scen in scenarios
             obs_clean.DateOnly = Date.(obs_clean.DateTime)
             obs_clean.Hour = hour.(obs_clean.DateTime) .+ minute.(obs_clean.DateTime) ./ 60
             
-            # Inner join for overlap diurnal
-            df_overlap = innerjoin(df[!, [:DateTime, :Hour, :mean]], obs_clean[!, [:DateTime, :mean]], on = :DateTime, makeunique=true)
+            # Join for diurnal overlap
+            df_overlap = innerjoin(df[!, [:DateTime, :Hour, :mean, :qlow, :qup]], obs_clean[!, [:DateTime, :mean]], on = :DateTime, makeunique=true)
             
-            mod_diurnal = combine(groupby(df_overlap, :Hour), :mean => mean => :mean)
-            obs_diurnal = combine(groupby(df_overlap, :mean_1), :Hour => (h -> h) => :Hour, :mean_1 => mean => :mean) # fix naming from join
-            # Simpler grouping for diurnal obs
+            mod_diurnal = combine(groupby(df_overlap, :Hour), :mean => mean => :mean, :qlow => mean => :qlow, :qup => mean => :qup)
             obs_diurnal = combine(groupby(df_overlap, :Hour), :mean_1 => mean => :mean)
 
             all_data[variable]["Obs"] = (daily = combine(groupby(obs_clean, :DateOnly), :mean => mean => :mean), 
@@ -229,10 +144,10 @@ for scen in scenarios
                                          raw_ts = obs_clean)
         end
 
-        mod_daily = combine(groupby(df, :DateOnly), :mean => mean => :mean)
-        mod_diurnal = haskey(all_data[variable], "Obs") ? mod_diurnal : combine(groupby(df, :Hour), :mean => mean => :mean)
+        mod_daily = combine(groupby(df, :DateOnly), :mean => mean => :mean, :qlow => mean => :qlow, :qup => mean => :qup)
+        mod_diurnal_final = haskey(all_data[variable], "Obs") ? mod_diurnal : combine(groupby(df, :Hour), :mean => mean => :mean, :qlow => mean => :qlow, :qup => mean => :qup)
         
-        all_data[variable][scen.label] = (daily = mod_daily, diurnal = sort!(mod_diurnal, :Hour), raw_ts = df)
+        all_data[variable][scen.label] = (daily = mod_daily, diurnal = sort!(mod_diurnal_final, :Hour), raw_ts = df)
     end
 end
 
@@ -250,26 +165,40 @@ for variable in var_avails
     plot!(final_plot[1], title="$(variable) $(is_psi ? "30-min" : "Daily")", ylabel=unit_label; presentation_style...)
     plot!(final_plot[2], title="Diurnal Overlap", xlabel="Hour", xticks=0:6:24, xlims=(0,24); presentation_style...)
 
+    # Plot Observations
     if haskey(all_data[variable], "Obs")
         o = all_data[variable]["Obs"]
-        x_obs = is_psi ? o.raw_ts.DateTime : o.daily.DateOnly
-        y_obs = is_psi ? o.raw_ts.mean : o.daily.mean
-        
+        x_o = is_psi ? o.raw_ts.DateTime : o.daily.DateOnly
+        y_o = is_psi ? o.raw_ts.mean : o.daily.mean
         if is_leaf
-            # Use points for psi_leaf_avg
-            scatter!(final_plot[1], x_obs, y_obs, color=:black, label="Obs", markersize=4, markerstrokewidth=0)
+            scatter!(final_plot[1], x_o, y_o, color=:black, label="Obs", markersize=4, markerstrokewidth=0)
             scatter!(final_plot[2], o.diurnal.Hour, o.diurnal.mean, color=:black, label="Obs", markersize=5, markerstrokewidth=0)
         else
-            # Use dashed line for everything else
-            plot!(final_plot[1], x_obs, y_obs, color=:black, label="Obs", linestyle=:dash)
+            plot!(final_plot[1], x_o, y_o, color=:black, label="Obs", linestyle=:dash)
             plot!(final_plot[2], o.diurnal.Hour, o.diurnal.mean, color=:black, label="Obs", linestyle=:dash)
         end
     end
 
+    # Plot Models
     for (lab, col) in [("Flow (Ensemble)", :red), ("Flow (ID=0)", :blue)]
         m = all_data[variable][lab]
-        plot!(final_plot[1], is_psi ? m.raw_ts.DateTime : m.daily.DateOnly, is_psi ? m.raw_ts.mean : m.daily.mean, color=col, label=lab)
-        plot!(final_plot[2], m.diurnal.Hour, m.diurnal.mean, color=col, label="")
+        x_m = is_psi ? m.raw_ts.DateTime : m.daily.DateOnly
+        y_m = is_psi ? m.raw_ts.mean : m.daily.mean
+        
+        if lab == "Flow (Ensemble)"
+            # Determine ribbon data based on resolution
+            ql = is_psi ? m.raw_ts.qlow : m.daily.qlow
+            qu = is_psi ? m.raw_ts.qup : m.daily.qup
+            
+            rib_ts = (y_m .- ql, qu .- y_m)
+            rib_diurnal = (m.diurnal.mean .- m.diurnal.qlow, m.diurnal.qup .- m.diurnal.mean)
+            
+            plot!(final_plot[1], x_m, y_m, ribbon=rib_ts, fillalpha=0.2, color=col, label=lab)
+            plot!(final_plot[2], m.diurnal.Hour, m.diurnal.mean, ribbon=rib_diurnal, fillalpha=0.2, color=col, label="")
+        else
+            plot!(final_plot[1], x_m, y_m, color=col, label=lab)
+            plot!(final_plot[2], m.diurnal.Hour, m.diurnal.mean, color=col, label="")
+        end
     end
     
     savefig(final_plot, joinpath(post_process_dir, "comparison_$(variable).png"))

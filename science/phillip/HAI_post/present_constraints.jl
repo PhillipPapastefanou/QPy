@@ -101,20 +101,20 @@ end
 # target_midday_2 = DateTime("2023-07-20T12:00:00")
 # d1, d2 = DateTime("2023-05-15"), DateTime("2023-09-30")
 
-# ide = "sum03"
-# colors = [:purple, :blue, :green, :red]
-# var_avails=  ["gpp_avg", "stem_flow_per_sap_area_avg", "G_per_sap_area_avg", "psi_stem_avg", "psi_leaf_avg", "beta_gs", "gc_avg"]
-# target_midday_1 = DateTime("2003-06-01T12:00:00")
-# target_midday_2 = DateTime("2003-08-05T12:00:00")
-# d1, d2 = DateTime("2003-05-15"), DateTime("2003-09-30")
-
-
-ide = "sum18"
+ide = "sum03"
 colors = [:purple, :blue, :green, :red]
-var_avails=  ["gpp_avg", "stem_flow_per_sap_area_avg", "G_per_sap_area_avg", "psi_stem_avg", "psi_leaf_avg", "beta_gs", "gc_avg"]
-target_midday_1 = DateTime("2018-06-01T12:00:00")
-target_midday_2 = DateTime("2018-08-05T12:00:00")
-d1, d2 = DateTime("2018-05-15"), DateTime("2018-09-30")
+var_avails=  ["npp_avg", "total_veg_c", "gpp_avg", "stem_flow_per_sap_area_avg", "G_per_sap_area_avg", "psi_stem_avg", "psi_leaf_avg", "beta_gs", "gc_avg"]
+target_midday_1 = DateTime("2003-06-01T12:00:00")
+target_midday_2 = DateTime("2003-08-05T12:00:00")
+d1, d2 = DateTime("2003-05-15"), DateTime("2003-09-30")
+
+
+# ide = "sum18"
+# colors = [:purple, :blue, :green, :red]
+# var_avails=  ["npp_avg", "total_veg_c", "gpp_avg", "stem_flow_per_sap_area_avg", "G_per_sap_area_avg", "psi_stem_avg", "psi_leaf_avg", "beta_gs", "gc_avg"]
+# target_midday_1 = DateTime("2018-06-01T12:00:00")
+# target_midday_2 = DateTime("2018-08-05T12:00:00")
+# d1, d2 = DateTime("2018-05-15"), DateTime("2018-09-30")
 
 # --- 1. Setup ---
 rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/63_run_transient_3days/output"
