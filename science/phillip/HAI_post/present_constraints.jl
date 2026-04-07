@@ -94,19 +94,19 @@ function calculate_vpd(t_k, q_gkg, p_hpa)
     return max(0.0, es - ea)
 end
 
-# ide = "sum23"
-# colors = [:purple, :blue, :green, :red]
-# var_avails=  ["gpp_avg", "stem_flow_per_sap_area_avg", "G_per_sap_area_avg", "psi_stem_avg", "psi_leaf_avg", "beta_gs", "gc_avg"]
-# target_midday_1 = DateTime("2023-06-01T12:00:00")
-# target_midday_2 = DateTime("2023-07-20T12:00:00")
-# d1, d2 = DateTime("2023-05-15"), DateTime("2023-09-30")
-
-ide = "sum03"
+ide = "sum23"
 colors = [:purple, :blue, :green, :red]
-var_avails=  ["npp_avg", "total_veg_c", "gpp_avg", "stem_flow_per_sap_area_avg", "G_per_sap_area_avg", "psi_stem_avg", "psi_leaf_avg", "beta_gs", "gc_avg"]
-target_midday_1 = DateTime("2003-06-01T12:00:00")
-target_midday_2 = DateTime("2003-08-05T12:00:00")
-d1, d2 = DateTime("2003-05-15"), DateTime("2003-09-30")
+var_avails=  ["gpp_avg", "stem_flow_per_sap_area_avg", "G_per_sap_area_avg", "psi_stem_avg", "psi_leaf_avg", "beta_gs", "gc_avg"]
+target_midday_1 = DateTime("2023-06-01T12:00:00")
+target_midday_2 = DateTime("2023-07-20T12:00:00")
+d1, d2 = DateTime("2023-05-15"), DateTime("2023-09-30")
+
+# ide = "sum03"
+# colors = [:purple, :blue, :green, :red]
+# var_avails=  ["npp_avg", "total_veg_c", "gpp_avg", "stem_flow_per_sap_area_avg", "G_per_sap_area_avg", "psi_stem_avg", "psi_leaf_avg", "beta_gs", "gc_avg"]
+# target_midday_1 = DateTime("2003-06-01T12:00:00")
+# target_midday_2 = DateTime("2003-08-05T12:00:00")
+# d1, d2 = DateTime("2003-05-15"), DateTime("2003-09-30")
 
 
 # ide = "sum18"
@@ -122,11 +122,12 @@ post_process_dir = joinpath(rt_path_hyd, "../post", ide)
 !isdir(post_process_dir) && mkdir(post_process_dir)
 
 # Define the scenarios and their display labels
+# GOOD: This is what you pasted, and it is perfectly valid!
 scenarios = [
-    "df_ind" => "Ind",
-    "df_psi_stem_ind" => "Psi Stem",
-    "df_psi_stem_leaf_ind" => "Psi Leaf",
-    "df_psi_stem_leaf_stem_flow_ind" => "Flow"
+    "df_ind" => "U",
+    "df_psi_stem_ind" => L"\psi_{s}",
+    "df_psi_stem_leaf_ind" => L"\psi_{s} + \psi_{L}",
+    "df_psi_stem_leaf_stem_flow_ind" => L"\psi_{s} + \psi_{L} + J"
 ]
 
 

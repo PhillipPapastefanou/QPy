@@ -58,13 +58,12 @@ end
 df_plot_all = DataFrame(Parameter=String[], Value=Float64[], Scenario=String[])
 ide = "dist"
 colors = [:purple, :blue, :green, :red]
-scen_order = ["Ind", "Psi Stem", "Psi Leaf", "Flow"]
-# Define the scenarios
+scen_order = ["U", L"\psi_{s}", L"\psi_{s} + \psi_{L}", L"\psi_{s} + \psi_{L} + J"]
 scenarios = [
-    "df_ind" => "Ind",
-    "df_psi_stem_ind" => "Psi Stem",
-    "df_psi_stem_leaf_ind" => "Psi Leaf",
-    "df_psi_stem_leaf_stem_flow_ind" => "Flow"
+    "df_ind" => "U",
+    "df_psi_stem_ind" => L"\psi_{s}",
+    "df_psi_stem_leaf_ind" => L"\psi_{s} + \psi_{L}",
+    "df_psi_stem_leaf_stem_flow_ind" => L"\psi_{s} + \psi_{L} + J"
 ]
 rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/63_run_transient_3days/output"
 post_process_dir = joinpath(rt_path_hyd, "../post", ide)

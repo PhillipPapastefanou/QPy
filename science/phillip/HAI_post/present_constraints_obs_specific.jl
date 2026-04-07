@@ -112,12 +112,12 @@ end
 # target_midday_2 = DateTime("2003-08-05T12:00:00")
 # d1, d2 = DateTime("2003-05-15"), DateTime("2003-09-30")
 
-# ide = "sum2003_obs"
-# colors = [:red, :black, :blue]
-# var_avails=  ["qle_avg", "gpp_avg", "stem_flow_per_sap_area_avg", "G_per_sap_area_avg", "psi_stem_avg", "psi_leaf_avg", "beta_gs", "gc_avg"]
-# target_midday_1 = DateTime("2003-06-01T12:00:00")
-# target_midday_2 = DateTime("2003-08-05T12:00:00")
-# d1, d2 = DateTime("2003-05-15"), DateTime("2003-08-01")
+ide = "sum2003_obs"
+colors = [:red, :black, :blue]
+var_avails=  ["qle_avg", "gpp_avg", "stem_flow_per_sap_area_avg", "G_per_sap_area_avg", "psi_stem_avg", "psi_leaf_avg", "beta_gs", "gc_avg"]
+target_midday_1 = DateTime("2003-06-01T12:00:00")
+target_midday_2 = DateTime("2003-08-05T12:00:00")
+d1, d2 = DateTime("2003-05-15"), DateTime("2003-08-01")
 
 
 obs = init_hainich_obs()
@@ -128,10 +128,10 @@ df_psi_leaf_obs = obs.df_psi_leaf_obs
 df_sap_flow_2023 = obs.df_sap_flow_2023
 
 
-ide = "sum2023_obs"
-colors = [:red, :black, :blue]
-var_avails=  ["qle_avg", "gpp_avg", "stem_flow_per_sap_area_avg", "G_per_sap_area_avg", "psi_stem_avg", "psi_leaf_avg", "beta_gs", "gc_avg"]
-d1, d2 = DateTime("2023-05-22"), DateTime("2023-08-01")
+# ide = "sum2023_obs"
+# colors = [:red, :black, :blue]
+# var_avails=  ["qle_avg", "gpp_avg", "stem_flow_per_sap_area_avg", "G_per_sap_area_avg", "psi_stem_avg", "psi_leaf_avg", "beta_gs", "gc_avg"]
+# d1, d2 = DateTime("2023-05-22"), DateTime("2023-08-01")
 
 
 # ide = "sum2018_obs"
@@ -142,13 +142,14 @@ d1, d2 = DateTime("2023-05-22"), DateTime("2023-08-01")
 # d1, d2 = DateTime("2018-05-15"), DateTime("2018-09-30")
 
 rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/63_run_transient_3days/output"
+rt_path_std = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/63_run_transient_3days/output"
 post_process_dir = joinpath(rt_path_hyd, "../post", ide)
 !isdir(post_process_dir) && mkdir(post_process_dir)
 
 # Define the scenarios with a specific ID filter
 scenarios = [
-    (dir="df_psi_stem_leaf_stem_flow_ind", label="Flow (Ensemble)", id_filter=:all),
-    (dir="df_ind", label="Flow (ID=0)",     id_filter=[0])
+    (dir="df_psi_stem_leaf_stem_flow_ind", label=L"\psi_{s} + \psi_{L} + J", id_filter=:all),
+    (dir="df_ind", label="std", id_filter=[0])
 ]
 
 series = ThirtyMinSeries
@@ -381,14 +382,14 @@ for variable in var_avails
     # Plot Model Data: Ensemble
     ens_daily = all_data[variable]["Flow (Ensemble)"].daily
     ens_diurn = all_data[variable]["Flow (Ensemble)"].diurnal
-    plot!(final_plot[1], ens_daily.DateOnly, ens_daily.mean, color=:red, label="Flow (Ensemble)")
-    plot!(final_plot[2], ens_diurn.Hour, ens_diurn.mean, color=:red, label="Flow (Ensemble)")
+    plot!(final_plot[1], ens_daily.DateOnly, ens_daily.mean, color=:red, label=L"\psi_{s} + \psi_{L} + J")
+    plot!(final_plot[2], ens_diurn.Hour, ens_diurn.mean, color=:red, label=L"\psi_{s} + \psi_{L} + J")
     
     # Plot Model Data: ID=0
     id0_daily = all_data[variable]["Flow (ID=0)"].daily
     id0_diurn = all_data[variable]["Flow (ID=0)"].diurnal
-    plot!(final_plot[1], id0_daily.DateOnly, id0_daily.mean, color=:blue, label="Flow (ID=0)")
-    plot!(final_plot[2], id0_diurn.Hour, id0_diurn.mean, color=:blue, label="Flow (ID=0)")
+    plot!(final_plot[1], id0_daily.DateOnly, id0_daily.mean, color=:blue, label="std")
+    plot!(final_plot[2], id0_diurn.Hour, id0_diurn.mean, color=:blue, label="std")
     
     # Save
     fname = "comparison_$(variable)_ensemble_vs_id0.png"

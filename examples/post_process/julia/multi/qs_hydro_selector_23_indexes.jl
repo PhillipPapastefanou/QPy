@@ -4,7 +4,6 @@
 using CSV
 using DataFrames
 using Dates
-using CairoMakie
 using StatsBase  
 
 
@@ -31,11 +30,12 @@ function export_indexes_all(df, path, var, name_str)
 end
 
 
-rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/63_run_transient_3days"
+rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/std_58_run_transient"
 #rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2024_bench/56_refix_run_transient_g1_low_gamma_leaf"
 
 rmse_data_path = joinpath(rt_path_hyd, "post", "params_rmse_2023.csv")
 ana_path = joinpath(rt_path_hyd, "post", "ana")
+
 
 if !isdir(ana_path)
     mkdir(ana_path)
@@ -52,6 +52,9 @@ psi_stem_err_ref = 0.13
 stem_flow_err_ref = 7.0
 psi_leaf_err_ref = 0.45 
 vscodedisplay(df_psi_stem_leaf_stem_flow)
+
+df_psi_stem= filter(row -> (row.k_latosa < 5000.0), df);
+print(size(df_psi_stem))
 
 # Psi_stem constrain
 df_psi_stem = filter(row -> (row.psi_stem_rmse_23 < psi_stem_err_ref), df);
@@ -73,13 +76,13 @@ quantile(df_psi_stem_leaf_stem_flow[!,:k_latosa],[0.2, 0.5, 0.8])
 
 v = :gpp_rmse_18
 export_indexes(df, ana_path ,v, "df")
-export_indexes(df_psi_stem, ana_path ,v, "df_psi_stem")
+export_indexes(df_psi_stem, ana_path ,v, "df_std")
 export_indexes(df_psi_stem_leaf, ana_path ,v, "df_psi_stem_leaf")
 export_indexes(df_psi_stem_leaf_stem_flow, ana_path ,v, "df_psi_stem_leaf_stem_flow")
 
 
 export_indexes_all(df, ana_path ,v, "df")
-export_indexes_all(df_psi_stem, ana_path ,v, "df_psi_stem")
+export_indexes_all(df_psi_stem, ana_path ,v, "df_std")
 export_indexes_all(df_psi_stem_leaf, ana_path ,v, "df_psi_stem_leaf")
 export_indexes_all(df_psi_stem_leaf_stem_flow, ana_path ,v, "df_psi_stem_leaf_stem_flow")
 

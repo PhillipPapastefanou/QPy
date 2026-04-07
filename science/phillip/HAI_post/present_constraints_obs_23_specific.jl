@@ -39,9 +39,18 @@ post_process_dir = joinpath(rt_path_hyd, "../post", ide)
 !isdir(post_process_dir) && mkdir(post_process_dir)
 
 scenarios = [
-    (dir="df_psi_stem_leaf_stem_flow_ind", label="Flow (Ensemble)", id_filter=:all),
-    (dir="df_ind", label="Flow (ID=0)", id_filter=[0])
+    (dir="df_psi_stem_leaf_stem_flow_ind", label=L"\psi_{s} + \psi_{L} + J", id_filter=:all),
+    (dir="df_ind", label="std", id_filter=[0])
 ]
+
+# scen_order = ["U", L"\psi_{s}", L"\psi_{s} + \psi_{L}", L"\psi_{s} + \psi_{L} + J"]
+# scenarios = [
+#     "df_ind" => "U",
+#     "df_psi_stem_ind" => L"\psi_{s}",
+#     "df_psi_stem_leaf_ind" => L"\psi_{s} + \psi_{L}",
+#     "df_psi_stem_leaf_stem_flow_ind" => L"\psi_{s} + \psi_{L} + J"
+# ]
+
 
 series = ThirtyMinSeries
 df_fnet = year(d1) < 2022 ? obs.df_fnet_22 : obs.df_fnet_24
@@ -180,12 +189,12 @@ for variable in var_avails
     end
 
     # Plot Models
-    for (lab, col) in [("Flow (Ensemble)", :red), ("Flow (ID=0)", :blue)]
+    for (lab, col) in [(L"\psi_{s} + \psi_{L} + J", :red), ("std", :blue)]
         m = all_data[variable][lab]
         x_m = is_psi ? m.raw_ts.DateTime : m.daily.DateOnly
         y_m = is_psi ? m.raw_ts.mean : m.daily.mean
         
-        if lab == "Flow (Ensemble)"
+        if lab == L"\psi_{s} + \psi_{L} + J"
             # Determine ribbon data based on resolution
             ql = is_psi ? m.raw_ts.qlow : m.daily.qlow
             qu = is_psi ? m.raw_ts.qup : m.daily.qup

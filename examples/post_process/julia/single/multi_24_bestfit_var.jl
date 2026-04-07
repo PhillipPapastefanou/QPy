@@ -86,10 +86,9 @@ function calculate_vars(quincy_output::String, ids, d1 ,d2)
 
 
     #df_param = CSV.read(joinpath(quincy_output, "parameters.csv"), DataFrame)
-
     
 
-        vars = ["gpp_avg", "npp_avg", "total_veg_c", "gc_avg"]
+        vars = ["transpiration_avg", "res_flow_avg","gpp_avg", "npp_avg", "total_veg_c", "gc_avg"]
 
 
         fig = Figure(resolution = (1600, 1200))  

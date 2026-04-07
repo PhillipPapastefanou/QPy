@@ -1,4 +1,3 @@
-
 using Statistics, VectorizedStatistics
 using DataFrames
 using Dates
@@ -15,56 +14,35 @@ include("../../../src/postprocessing/julia/core/qslicer.jl")
 obs = init_hainich_obs()
 
 function format_unit_to_latex(unit_str::String)
-
-    # 1. Handle "micro" prefixes
-    # We replace it with \mu{} so LaTeX separates the macro from the next letters 
-    # (e.g., \mu{}mol prevents it from looking for a non-existent \mumol command)
     s = replace(unit_str, "micro " => "\\mu{}")
     s = replace(s, "micro" => "\\mu{}")
-    
-    # 2. Split the string into individual units based on spaces
     parts = split(s, " ", keepempty=false)
-    
     formatted_parts = String[]
-    
     for part in parts
-        # Regex explanation:
-        # ^([A-Za-z\\]+)  -> Captures the base (letters or slashes for \mu)
-        # (-?\d+)$        -> Captures the exponent (optional minus sign, then numbers)
         m = match(r"^([A-Za-z\\]+)(-?\d+)$", part)
-        
         if m !== nothing
-            # If it has an exponent, format it as base^{exponent}
-            base = m.captures[1]
-            exponent = m.captures[2]
-            push!(formatted_parts, "$(base)^{$(exponent)}")
+            push!(formatted_parts, "$(m.captures[1])^{$(m.captures[2])}")
         else
-            # If no exponent is found, leave it as is (e.g., "mol", "MPa")
             push!(formatted_parts, part)
         end
     end
-    
-    # 3. Join everything together with the center dot
     joined_str = join(formatted_parts, " \\cdot ")
-    
-    # 4. Wrap the whole thing in \mathrm{} to keep the font upright
-    final_latex_string = "\\mathrm{$(joined_str)}"
-    
-    # Convert and return as a LaTeXString
-    return latexstring(final_latex_string)
+    return latexstring("\\mathrm{$(joined_str)}")
 end
 
-# Function to convert Year, DOY, and Decimal Hour to DateTime
 function to_datetime(y, d, h)
-    # DateTime(year, month, day) + Day offset + Hour offset
-    # We use d-1 because January 1st is Day 1
     return DateTime(y) + Day(d - 1) + Millisecond(round(h * 3600000))
 end
 
 function seasonal_yearly(df)
-    df_season = filter(r -> month(r.DateTime) in 5:9, df)
+    # 1. Filter for summer months (May to September)
+    # This syntax is much faster and avoids the "Vector + Int" error
+    df_season = filter(:DateTime => d -> month(d) in 5:9, df)
+    
+    # 2. Extract the year
     df_season.year = year.(df_season.DateTime)
 
+    # 3. Aggregate
     df_yearly = combine(
         groupby(df_season, :year),
         :median => mean => :median,
@@ -72,122 +50,149 @@ function seasonal_yearly(df)
         :qup    => mean => :qup
     )
 
-    df_yearly.DateTime = Date.(df_yearly.year, 1, 1)
     return df_yearly
 end
 
 function read_input_df(root_output_folder)
-
-    df  =  CSV.read(joinpath(root_output_folder , "climate.dat"), DataFrame, delim=' ', ignorerepeated=true,header=1, 
-              skipto=3)
-
+    df = CSV.read(joinpath(root_output_folder , "climate.dat"), DataFrame, delim=' ', ignorerepeated=true, header=1, skipto=3)
     transform!(df, [:year, :doy, :hour] => ByRow(to_datetime) => :DateTime)
-
     return df
 end
 
-
 function calculate_vpd(t_k, q_gkg, p_hpa)
-    # 1. Convert Kelvin to Celsius
     t_c = t_k - 273.15
-    
-    # 2. Saturation Vapor Pressure (es) in kPa
-    # Tetens formula constants for water
     es = 0.61078 * exp((17.27 * t_c) / (t_c + 237.3))
-    
-    # 3. Actual Vapor Pressure (ea) in kPa
-    # Convert q from g/kg to kg/kg
     q_kgkg = q_gkg / 1000.0
-    # Convert Pressure from hPa to kPa
     p_kpa = p_hpa / 10.0
-    
-    # ea = (q * P) / (ε + (1 - ε)q) where ε ≈ 0.622
     ea = (q_kgkg * p_kpa) / (0.622 + 0.378 * q_kgkg)
-    
-    # 4. VPD is the difference (ensure it's not negative due to sensor noise)
     return max(0.0, es - ea)
 end
 
-
-
+# --- 1. Setup ---
 ide = "future"
 colors = [:purple, :blue, :green, :red]
-var_avails =  ["npp_avg", "total_veg_c", "gpp_avg", "stem_flow_per_sap_area_avg", "G_per_sap_area_avg", "psi_stem_avg", "psi_leaf_avg", "beta_gs", "gc_avg"]
+var_avails = ["npp_avg", "total_veg_c", "gpp_avg", "stem_flow_per_sap_area_avg", "G_per_sap_area_avg", "psi_stem_avg", "psi_leaf_avg", "beta_gs", "gc_avg"]
+var_avails = ["total_veg_c","psi_stem_avg", "psi_leaf_avg", "beta_gs", "gc_avg"]
 d1, d2 = DateTime("2020-01-01"), DateTime("2101-01-01")
 
-
-# --- 1. Setup ---
 rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/63_run_transient_3days/output"
 post_process_dir = joinpath(rt_path_hyd, "../post", ide)
 !isdir(post_process_dir) && mkdir(post_process_dir)
 
 ismip_path = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/isimip/ismip_selection_63"
 
-# Define the scenarios and their display labels
 scenarios = [
-    "df_ind" => "Ind",
-    "df_psi_stem_ind" => "Psi Stem",
-    "df_psi_stem_leaf_ind" => "Psi Leaf",
-    "df_psi_stem_leaf_stem_flow_ind" => "Flow"
+    "df_ind" => "U",
+    "df_psi_stem_ind" => L"\psi_{s}",
+    "df_psi_stem_leaf_ind" => L"\psi_{s} + \psi_{L}",
+    "df_psi_stem_leaf_stem_flow_ind" => L"\psi_{s} + \psi_{L} + J"
 ]
 
-
 series = DailySeries
-
-# We will store the processed data here: Dict{Variable -> Dict{Scenario -> (daily_df, diurnal_df)}}
-all_data = Dict()
-
 SSPS = ["ssp126", "ssp370", "ssp585"]
-MODELS = ["mri-esm2-0","mpi-esm1-2", "ipsl-cm6a", "gfdl-esm4" ,"ukesm1-0"]
+MODELS = ["mri-esm2-0", "mpi-esm1-2", "ipsl-cm6a", "gfdl-esm4" ,"ukesm1-0"]
 
-for model in [MODELS[1]]
-    for ssp in [SSPS[1]]
+# --- 2. Main Execution Loop ---
+for model in MODELS
+    for ssp in SSPS
+        
+        # Dictionary to cache our yearly data before plotting: Dict[var][scen_label] = dfy
+        yearly_data = Dict{String, Dict{String, DataFrame}}()
+        for var in var_avails
+            yearly_data[var] = Dict{String, DataFrame}()
+        end
 
-        start_time = time()
-        last_report = start_time
+        # Phase A: Data Extraction
+        for (scen_folder, scen_label) in scenarios
+            println("Extracting Data for Model: $model | SSP: $ssp | Scenario: $scen_label")
+            
+            folder = "$(ismip_path)_$scen_folder/$model/$ssp/output/"
+            all_names = readdir(folder)
+            indexes = filter(x -> isdir(joinpath(folder, x)), all_names)
 
-        first_index = true
-        qoutput = nothing
-        cats = nothing
-        sim_type_times=nothing
-        run_collection= QMultiRunCollections(QOutputCollection[], String[])
+            first_index = true
+            qoutput = nothing
+            cats = nothing
+            sim_type_times = nothing
+            run_collection = QMultiRunCollections(QOutputCollection[], String[])
 
-        scenfolder = scenarios[1][1]
-        folder = "$(ismip_path)_$scenfolder/$model/$ssp/output/"
+            for i in indexes
+                i_str = string(i)
+                foldern = "$folder/$i_str"
 
-        # Get all names in the directory
-        all_names = readdir(folder)
-
-        # Filter to ensure you only get directories (and exclude hidden files if any)
-        indexes = filter(x -> isdir(joinpath(folder, x)), all_names)
-
-        for i in indexes
-            i_str = string(i)
-            foldern = "$folder/$i_str"
-
-            if first_index 
-                qoutput = read_quincy_site_output(foldern)
-                cats = qoutput.cats
-                sim_type_times = qoutput.sim_type_times
-                first_index = false
-            else
-                qoutput = deepcopy(qoutput)
-                #We need to override the file paths
-                for sim_type_t in sim_type_times
-                    for cat in cats
-                        filename = joinpath(foldern, cat*"_"*sim_type_t*".nc")
-                        qoutput.data[sim_type_t][cat].filename = filename 
+                if first_index 
+                    qoutput = read_quincy_site_output(foldern)
+                    cats = qoutput.cats
+                    sim_type_times = qoutput.sim_type_times
+                    first_index = false
+                else
+                    qoutput = deepcopy(qoutput)
+                    for sim_type_t in sim_type_times
+                        for cat in cats
+                            filename = joinpath(foldern, cat*"_"*sim_type_t*".nc")
+                            qoutput.data[sim_type_t][cat].filename = filename 
+                        end
                     end
                 end
-
+                push!(run_collection.idstr, i_str);
+                push!(run_collection.output, qoutput);
             end
-            push!(run_collection.idstr, i_str);
-            push!(run_collection.output, qoutput);
+
+            for var in var_avails
+                # Note: Assuming slice_dates is defined elsewhere in your workspace
+                df = get_multi_file_slice_avg(run_collection, var, Fluxnetdata, DailySeries, 0.1, 0.9, slice_dates, d1, d2)
+                dfy = seasonal_yearly(df)
+                println(var)
+                # Store the processed yearly dataframe
+                yearly_data[var][scen_label] = dfy
+            end
         end
 
-        for var in var_avails
-            @time df = get_multi_file_slice(run_collection, var, Fluxnetdata, DailySeries, 0.1, 0.9, slice_dates, d1, d2 )
-            dfy = seasonal_yearly(df)
+        # Phase B: Plotting Routine
+for var in var_avails
+    println("Plotting building steps for Variable: $var")
+    
+    # Initialize a base plot for this variable
+    p = plot(
+        title = "Building Scenarios: $var ($model - $ssp)",
+        xlabel = "Year",
+        ylabel = "Value",
+        legend = :outertopright,
+        size = (1200, 600),
+        grid = true,
+        fontfamily = "Computer Modern",
+        framestyle = :box,
+        # Ensure the Y-axis is fixed across all 4 plots for consistency
+        # We find the min/max across all scenarios for this variable first
+        ylims = :auto 
+    )
+
+    # Loop through the scenarios to add them one by one
+    for (idx, (scen_folder, scen_label)) in enumerate(scenarios)
+        if haskey(yearly_data[var], scen_label)
+            dfy = yearly_data[var][scen_label]
+            
+            # Calculate ribbon relative distances
+            lower_err = dfy.median .- dfy.qlow
+            upper_err = dfy.qup .- dfy.median
+
+            # Add the current scenario to the existing plot 'p'
+            plot!(p, dfy.year, dfy.median,
+                ribbon = (lower_err, upper_err),
+                fillalpha = 0.2,
+                linewidth = 3,         # Slightly thicker for visibility
+                color = colors[idx],
+                label = scen_label
+            )
+
+            # SAVE STEP: Save the plot at its current state (idx 1, then 1+2, etc.)
+            step_name = "future_step_$(idx)_$(var)_$(model)_$(ssp).png"
+            savefig(p, joinpath(post_process_dir, step_name))
+            println("  Saved step $idx: $scen_label")
         end
+    end
+end
+        
+        println("Completed processing for $model - $ssp.")
     end
 end
