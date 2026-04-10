@@ -278,6 +278,8 @@ class Lctlib_Item:
         self.root_scale = 1.0
         # Residual hydraulic conductivity (kg H2O m-2 s-1)
         self.g_res = 0.0
+        # Threshold at which leaf shedding is triggered (MPa)
+        self.psi_leaf_threshold = 0.0
         
         
         # VegRoughness: Vegetation roughness length [m]; for non-vegetation value is arbitrary but should be larger than zero to avoid division by zero                     
