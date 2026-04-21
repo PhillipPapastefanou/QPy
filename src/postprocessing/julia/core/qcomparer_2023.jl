@@ -236,6 +236,7 @@ function calculate_mod_obs_rmse_2023(quincy_output::String, hainich_obs::Hainich
 
 
             last_report = progress_report(i, length(short_dir_paths), start_time, last_report)
+            flush(stdout)
         end
 
     end
