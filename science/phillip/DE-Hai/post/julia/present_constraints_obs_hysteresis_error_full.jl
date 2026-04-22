@@ -43,6 +43,10 @@ d1, d2 = DateTime("2023-07-11"), DateTime("2023-07-25")
 # SAP FLOW DATES (01/06 to 01/10)
 d1_sap, d2_sap = DateTime("2023-06-01"), DateTime("2023-10-01")
 
+# EXACT OVERLAP DATES (Filters both Obs and Model to this window)
+d1_overlap = DateTime("2023-05-01")
+d2_overlap = DateTime("2023-11-01")
+
 rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/68_run_transient_3days_new_mort_new_phen_fix/output"
 post_process_dir = joinpath(rt_path_hyd, "../post", ide)
 !isdir(post_process_dir) && mkdir(post_process_dir)
@@ -135,78 +139,130 @@ for scen in scenarios
 
         if obs_df_raw !== nothing
             obs_clean = dropmissing(obs_df_raw, :mean)
+            obs_clean.DateOnly = Date.(obs_clean.DateTime)
             obs_clean.Hour = round.((hour.(obs_clean.DateTime) .+ minute.(obs_clean.DateTime) ./ 60) .* 2) ./ 2
             
-            obs_diurnal = combine(groupby(obs_clean, :Hour), 
+            obs_overlap = filter(r -> r.DateTime >= d1_overlap && r.DateTime <= d2_overlap, obs_clean)
+            
+            obs_diurnal = combine(groupby(obs_overlap, :Hour), 
                                   :mean => mean => :mean,
                                   :mean => safe_q20 => :qlow,
                                   :mean => safe_q80 => :qup)
                                   
-            all_data[variable]["Obs"] = (diurnal = sort!(obs_diurnal, :Hour), raw_ts = obs_clean)
+            all_data[variable]["Obs"] = (diurnal = sort!(obs_diurnal, :Hour), raw_ts = obs_overlap)
+
+            df_overlap = innerjoin(df, obs_overlap[!, [:DateOnly, :Hour]], on=[:DateOnly, :Hour], makeunique=true)
+            
+            mod_diurnal_final = combine(groupby(df_overlap, :Hour), :mean => mean => :mean, :qlow => mean => :qlow, :qup => mean => :qup)
+        else
+            mod_diurnal_final = combine(groupby(df, :Hour), :mean => mean => :mean, :qlow => mean => :qlow, :qup => mean => :qup)
         end
 
-        mod_diurnal_final = combine(groupby(df, :Hour), :mean => mean => :mean, :qlow => mean => :qlow, :qup => mean => :qup)
         all_data[variable][scen.label] = (diurnal = sort!(mod_diurnal_final, :Hour), raw_ts = df)
     end
 end
 
-# --- 4. Hysteresis Loop Logic ---
 presentation_style = (fontfamily="Computer Modern", guidefontsize=18, tickfontsize=14, titlefontsize=20, legendfontsize=12, linewidth=2.5, grid=true, gridalpha=0.1)
 
-var_x = "stem_flow_per_sap_area_avg"
+# --- 4. Plot 1: Sap Flow Hysteresis Loop Logic ---
+var_x1 = "stem_flow_per_sap_area_avg"
 var_y = "psi_stem_avg"
 
-if haskey(all_data, var_x) && haskey(all_data, var_y)
-    h_plot = plot(title="Diurnal Hysteresis (24h Average)", 
-                  xlabel="$(var_x) [$(all_data[var_x]["unit"])]", 
+if haskey(all_data, var_x1) && haskey(all_data, var_y)
+    h_plot1 = plot(title="Diurnal Hysteresis (Matched Timestamps)", 
+                  xlabel="$(var_x1) [$(all_data[var_x1]["unit"])]", 
                   ylabel="$(var_y) [$(all_data[var_y]["unit"])]"; 
                   presentation_style...)
 
-    # Plot Observation Hysteresis
-    if haskey(all_data[var_x], "Obs") && haskey(all_data[var_y], "Obs")
-        obs_x = all_data[var_x]["Obs"].diurnal
+    if haskey(all_data[var_x1], "Obs") && haskey(all_data[var_y], "Obs")
+        obs_x = all_data[var_x1]["Obs"].diurnal
         obs_y = all_data[var_y]["Obs"].diurnal
         df_h_obs = innerjoin(obs_x, obs_y, on=:Hour, renamecols="_x" => "_y")
         
         if nrow(df_h_obs) > 0
-            plot!(h_plot, [df_h_obs.mean_x; df_h_obs.mean_x[1]], [df_h_obs.mean_y; df_h_obs.mean_y[1]], 
+            plot!(h_plot1, [df_h_obs.mean_x; df_h_obs.mean_x[1]], [df_h_obs.mean_y; df_h_obs.mean_y[1]], 
                   color=:black, label="Obs", linestyle=:dash)
             
             xerr_obs = (df_h_obs.mean_x .- df_h_obs.qlow_x, df_h_obs.qup_x .- df_h_obs.mean_x)
             yerr_obs = (df_h_obs.mean_y .- df_h_obs.qlow_y, df_h_obs.qup_y .- df_h_obs.mean_y)
             
-            # EXPLICITLY COLORING THE ERROR BARS
-            scatter!(h_plot, df_h_obs.mean_x, df_h_obs.mean_y, 
+            scatter!(h_plot1, df_h_obs.mean_x, df_h_obs.mean_y, 
                      xerror=xerr_obs, yerror=yerr_obs, 
                      color=:black, markerstrokecolor=:black, linecolor=:black, 
                      markeralpha=0.5, linealpha=0.5, label="", markersize=4)
-        else
-            println("Warning: Observation timestamps between $(var_x) and $(var_y) do not align enough to plot an observation loop.")
         end
     end
 
-    # Plot Model Scenarios Hysteresis
     for (lab, col) in [(L"\psi_{s} + \psi_{L} + J", :red)]
-        mod_x = all_data[var_x][lab].diurnal
+        mod_x = all_data[var_x1][lab].diurnal
         mod_y = all_data[var_y][lab].diurnal
         df_h_mod = innerjoin(mod_x, mod_y, on=:Hour, renamecols="_x" => "_y")
         
         if nrow(df_h_mod) > 0
-            plot!(h_plot, [df_h_mod.mean_x; df_h_mod.mean_x[1]], [df_h_mod.mean_y; df_h_mod.mean_y[1]], 
+            plot!(h_plot1, [df_h_mod.mean_x; df_h_mod.mean_x[1]], [df_h_mod.mean_y; df_h_mod.mean_y[1]], 
                   color=col, label=lab)
             
             xerr_mod = (df_h_mod.mean_x .- df_h_mod.qlow_x, df_h_mod.qup_x .- df_h_mod.mean_x)
             yerr_mod = (df_h_mod.mean_y .- df_h_mod.qlow_y, df_h_mod.qup_y .- df_h_mod.mean_y)
             
-            # EXPLICITLY COLORING THE ERROR BARS
-            scatter!(h_plot, df_h_mod.mean_x, df_h_mod.mean_y, 
+            scatter!(h_plot1, df_h_mod.mean_x, df_h_mod.mean_y, 
                      xerror=xerr_mod, yerror=yerr_mod, 
                      color=col, markerstrokecolor=col, linecolor=col, 
                      markeralpha=0.5, linealpha=0.6, label="", markersize=3)
-            
         end
     end
-    savefig(h_plot, joinpath(post_process_dir, "hysteresis_error_$(var_x)_vs_$(var_y).png"))
+    savefig(h_plot1, joinpath(post_process_dir, "hysteresis_error_$(var_x1)_vs_$(var_y).png"))
 end
 
-println("Processing complete. Plots saved to: ", post_process_dir)
+# --- 5. Plot 2: G_per_sap_area Hysteresis Loop Logic ---
+var_x2 = "G_per_sap_area_avg"
+
+if haskey(all_data, var_x2) && haskey(all_data, var_y)
+    h_plot2 = plot(title="Diurnal Hysteresis (G vs Psi)", 
+                  xlabel="$(var_x2) [$(all_data[var_x2]["unit"])]", 
+                  ylabel="$(var_y) [$(all_data[var_y]["unit"])]"; 
+                  presentation_style...)
+
+    # Plot Observation Hysteresis (If observations exist for G)
+    if haskey(all_data["stem_flow_per_sap_area_avg"], "Obs") && haskey(all_data[var_y], "Obs")
+        obs_x = all_data["stem_flow_per_sap_area_avg"]["Obs"].diurnal
+        obs_y = all_data[var_y]["Obs"].diurnal
+        df_h_obs = innerjoin(obs_x, obs_y, on=:Hour, renamecols="_x" => "_y")
+        
+        if nrow(df_h_obs) > 0
+            plot!(h_plot2, [df_h_obs.mean_x; df_h_obs.mean_x[1]], [df_h_obs.mean_y; df_h_obs.mean_y[1]], 
+                  color=:black, label="Obs", linestyle=:dash)
+            
+            xerr_obs = (df_h_obs.mean_x .- df_h_obs.qlow_x, df_h_obs.qup_x .- df_h_obs.mean_x)
+            yerr_obs = (df_h_obs.mean_y .- df_h_obs.qlow_y, df_h_obs.qup_y .- df_h_obs.mean_y)
+            
+            scatter!(h_plot2, df_h_obs.mean_x, df_h_obs.mean_y, 
+                     xerror=xerr_obs, yerror=yerr_obs, 
+                     color=:black, markerstrokecolor=:black, linecolor=:black, 
+                     markeralpha=0.5, linealpha=0.5, label="", markersize=4)
+        end
+    end
+
+    # Plot Model Scenarios Hysteresis
+    for (lab, col) in [(L"\psi_{s} + \psi_{L} + J", :red)]
+        mod_x = all_data[var_x2][lab].diurnal
+        mod_y = all_data[var_y][lab].diurnal
+        df_h_mod = innerjoin(mod_x, mod_y, on=:Hour, renamecols="_x" => "_y")
+        
+        if nrow(df_h_mod) > 0
+            plot!(h_plot2, [df_h_mod.mean_x; df_h_mod.mean_x[1]], [df_h_mod.mean_y; df_h_mod.mean_y[1]], 
+                  color=col, label=lab)
+            
+            xerr_mod = (df_h_mod.mean_x .- df_h_mod.qlow_x, df_h_mod.qup_x .- df_h_mod.mean_x)
+            yerr_mod = (df_h_mod.mean_y .- df_h_mod.qlow_y, df_h_mod.qup_y .- df_h_mod.mean_y)
+            
+            scatter!(h_plot2, df_h_mod.mean_x, df_h_mod.mean_y, 
+                     xerror=xerr_mod, yerror=yerr_mod, 
+                     color=col, markerstrokecolor=col, linecolor=col, 
+                     markeralpha=0.5, linealpha=0.6, label="", markersize=3)
+        end
+    end
+    savefig(h_plot2, joinpath(post_process_dir, "hysteresis_error_$(var_x2)_vs_$(var_y).png"))
+end
+
+println("Processing complete. Both plots saved to: ", post_process_dir)
