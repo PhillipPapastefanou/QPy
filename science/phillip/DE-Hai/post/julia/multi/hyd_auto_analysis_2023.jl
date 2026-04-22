@@ -1,5 +1,5 @@
 #include("../../../../src/postprocessing/julia/core/qcomparer_2024.jl")
-include("../../../../src/postprocessing/julia/core/qcomparer_2023.jl")
+include("../../../../../../src/postprocessing/julia/core/qcomparer_2023.jl")
 
 using CSV
 using DataFrames

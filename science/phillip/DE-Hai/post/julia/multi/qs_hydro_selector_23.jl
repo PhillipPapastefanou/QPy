@@ -1,4 +1,4 @@
-include("../../../../src/postprocessing/julia/core/qcomparer_2023.jl")
+include("../../../../../../src/postprocessing/julia/core/qcomparer_2023.jl")
 
 
 using CSV
@@ -22,7 +22,7 @@ rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/
 rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/63_run_transient_3days"
 rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/63_run_transient_3days"
 rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/64_run_transient_3days_new_mort_new_phen"
-rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/67_run_transient_3days_new_mort_new_phen_fix"
+rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/68_run_transient_3days_new_mort_new_phen_fix"
 #rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2024_bench/56_refix_run_transient_g1_low_gamma_leaf"
 
 rmse_data_path = joinpath(rt_path_hyd, "post", "params_rmse_2023.csv")
@@ -57,6 +57,7 @@ df_psi_stem_leaf_stem_flow = filter(row -> (row.psi_stem_rmse_23 < psi_stem_err_
 print(size(df_psi_stem_leaf_stem_flow))
 
 vscodedisplay(df_psi_stem_leaf[:, [1;15:end]] )
+vscodedisplay(df_psi_stem_leaf_stem_flow)
 
 
 df_psi_stem_leaf_stem_flow

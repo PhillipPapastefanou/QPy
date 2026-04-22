@@ -7,7 +7,7 @@ using CSV
 using Base.Threads
 using CairoMakie
 
-include("../../../../src/postprocessing/julia/core/qcomparer_2023.jl")
+include("../../../../../../src/postprocessing/julia/core/qcomparer_2023.jl")
 
 obs = init_hainich_obs()
 
@@ -346,7 +346,7 @@ end
 
 rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/57b_run_transient_g1_low_gamma_leaf/output"
 rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/61_run_transient_g1_low_gamma_leaf/output"
-rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/67_run_transient_3days_new_mort_new_phen_fix/output"
+rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/68_run_transient_3days_new_mort_new_phen_fix/output"
 #rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_rerun/57b_run_transient_g1_low_gamma_leaf/1/output"
 
 #root_output_folder= "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2024_bench/254_run_transient_no_texture/output"
@@ -362,7 +362,7 @@ for year in ["2003", "2024", "2023", "2018"]
     #ids, d1, d2 = ["0","92", "858", "1723"], DateTime("$year-05-01"), DateTime("$year-10-30")
     ids, d1, d2 = ["0","5039", "832"], DateTime("$year-05-01"), DateTime("$year-10-30")
     ids, d1, d2 = ["0","40", "13810", "29399"], DateTime("$year-05-01"), DateTime("$year-10-30")
-    ids, d1, d2 = ["0","7737","3444"], DateTime("$year-05-01"), DateTime("$year-10-30")
+    ids, d1, d2 = ["0","5828","27278"], DateTime("$year-05-01"), DateTime("$year-10-30")
     calculate_mod_obs_rmse_2023(rt_path_hyd, obs, ids, d1, d2)
     println("Done!")
 end

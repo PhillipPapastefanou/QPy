@@ -9,8 +9,8 @@ using Plots
 using LaTeXStrings
 using StatsPlots
 
-include("../../../src/postprocessing/julia/core/qcomparer_2023.jl")
-include("../../../src/postprocessing/julia/core/qslicer.jl")
+include("../../../../../src/postprocessing/julia/core/qcomparer_2023.jl")
+include("../../../../../src/postprocessing/julia/core/qslicer.jl")
 
 obs = init_hainich_obs()
 
@@ -117,7 +117,7 @@ d1, d2 = DateTime("2023-05-15"), DateTime("2023-09-30")
 # d1, d2 = DateTime("2018-05-15"), DateTime("2018-09-30")
 
 # --- 1. Setup ---
-rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/63_run_transient_3days/output"
+rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/68_run_transient_3days_new_mort_new_phen_fix/output"
 post_process_dir = joinpath(rt_path_hyd, "../post", ide)
 !isdir(post_process_dir) && mkdir(post_process_dir)
 
@@ -125,7 +125,7 @@ post_process_dir = joinpath(rt_path_hyd, "../post", ide)
 # GOOD: This is what you pasted, and it is perfectly valid!
 scenarios = [
     "df_ind" => "U",
-    "df_psi_stem_ind" => L"\psi_{s}",
+    "df_psi_leaf_ind" => L"\psi_{L}",
     "df_psi_stem_leaf_ind" => L"\psi_{s} + \psi_{L}",
     "df_psi_stem_leaf_stem_flow_ind" => L"\psi_{s} + \psi_{L} + J"
 ]

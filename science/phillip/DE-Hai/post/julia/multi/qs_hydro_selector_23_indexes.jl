@@ -31,6 +31,7 @@ end
 
 
 rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/66_run_transient_3days_new_mort_new_phen"
+rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/68_run_transient_3days_new_mort_new_phen_fix"
 #rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2024_bench/56_refix_run_transient_g1_low_gamma_leaf"
 
 rmse_data_path = joinpath(rt_path_hyd, "post", "params_rmse_2023.csv")
@@ -79,7 +80,7 @@ export_indexes_all(df_psi_leaf, ana_path ,v, "df_std")
 export_indexes_all(df_psi_stem_leaf, ana_path ,v, "df_psi_stem_leaf")
 export_indexes_all(df_psi_stem_leaf_stem_flow, ana_path ,v, "df_psi_stem_leaf_stem_flow")
 
-
+vscodedisplay(df_psi_stem_leaf_stem_flow)
 
 
 mean(df_psi_leaf[!,:le_rmse_18])

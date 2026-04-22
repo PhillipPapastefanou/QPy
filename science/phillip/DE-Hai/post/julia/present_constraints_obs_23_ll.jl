@@ -30,9 +30,9 @@ end
 
 # --- 2. Setup & Paths ---
 obs = init_hainich_obs()
-ide = "sum2023_obs_hot"
+ide = "sum2023_obs_long"
 var_avails = ["qle_avg", "gpp_avg", "stem_flow_per_sap_area_avg", "G_per_sap_area_avg", "psi_stem_avg", "psi_leaf_avg", "beta_gs", "gc_avg"]
-d1, d2 = DateTime("2023-07-01"), DateTime("2023-08-01")
+d1, d2 = DateTime("2023-06-01"), DateTime("2023-09-01")
 
 rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/68_run_transient_3days_new_mort_new_phen_fix/output"
 post_process_dir = joinpath(rt_path_hyd, "../post", ide)

@@ -9,8 +9,8 @@ using Plots
 using LaTeXStrings
 using StatsPlots
 
-include("../../../src/postprocessing/julia/core/qcomparer_2023.jl")
-include("../../../src/postprocessing/julia/core/qslicer.jl")
+include("../../../../../src/postprocessing/julia/core/qcomparer_2023.jl")
+include("../../../../../src/postprocessing/julia/core/qslicer.jl")
 
 
 function format_unit_to_latex(unit_str::String)
@@ -141,8 +141,7 @@ df_sap_flow_2023 = obs.df_sap_flow_2023
 # target_midday_2 = DateTime("2018-08-05T12:00:00")
 # d1, d2 = DateTime("2018-05-15"), DateTime("2018-09-30")
 
-rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/63_run_transient_3days/output"
-rt_path_std = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/63_run_transient_3days/output"
+rt_path_std = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/68_run_transient_3days_new_mort_new_phen_fix/output"
 post_process_dir = joinpath(rt_path_hyd, "../post", ide)
 !isdir(post_process_dir) && mkdir(post_process_dir)
 

@@ -10,8 +10,8 @@ using Graphs
 using GraphRecipes
 
 # --- 1. Load Custom Core Functions ---
-include("../../../src/postprocessing/julia/core/qcomparer_2023.jl")
-include("../../../src/postprocessing/julia/core/qslicer.jl")
+include("../../../../../src/postprocessing/julia/core/qcomparer_2023.jl")
+include("../../../../../src/postprocessing/julia/core/qslicer.jl")
 
 # --- 2. Helper Functions ---
 function format_unit_to_latex(unit_str::String)
@@ -32,7 +32,7 @@ end
 
 # --- 3. Setup Parameters & Paths ---
 ide = "corr"
-rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/63_run_transient_3days/output"
+rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/68_run_transient_3days_new_mort_new_phen_fix/output"
 post_process_dir = joinpath(rt_path_hyd, "../post", ide)
 
 !isdir(post_process_dir) && mkpath(post_process_dir)
