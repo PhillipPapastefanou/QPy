@@ -30,39 +30,36 @@ end
 
 # --- 2. Setup & Paths ---
 obs = init_hainich_obs()
-ide = "sum2023_obs_long"
-var_avails = ["qle_avg", "gpp_avg", "stem_flow_per_sap_area_avg", "G_per_sap_area_avg", "psi_stem_avg", "psi_leaf_avg", "beta_gs", "gc_avg"]
-d1, d2 = DateTime("2023-06-01"), DateTime("2023-09-01")
+ide = "fig_1_2023_timeseries_and_diurnal"
+
+var_avails = ["psi_leaf_avg", "psi_stem_avg", "G_per_sap_area_avg"]
+
+# STANDARD DATES (For Psi_stem)
+d1, d2 = DateTime("2023-07-01"), DateTime("2023-08-01")
+
+# SAP FLOW DATES
+d1_sap, d2_sap = DateTime("2023-06-01"), DateTime("2023-08-01")
+
+# PSI LEAF EXACT DATES (01/06 to 01/06)
+d1_leaf = DateTime("2023-06-01")
+d2_leaf = DateTime("2023-10-01") 
 
 rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/68_run_transient_3days_new_mort_new_phen_fix/output"
 post_process_dir = joinpath(rt_path_hyd, "../post", ide)
 !isdir(post_process_dir) && mkdir(post_process_dir)
 
 scenarios = [
-    (dir="df_psi_stem_leaf_stem_flow_ind", label=L"\psi_{s} + \psi_{L} + J", id_filter=:all),
-    (dir="df_ind", label="std", id_filter=[0])
+    (dir="df_psi_stem_leaf_stem_flow_ind", label=L"\psi_{s} + \psi_{L} + J", id_filter=:all)
 ]
-
-# scen_order = ["U", L"\psi_{s}", L"\psi_{s} + \psi_{L}", L"\psi_{s} + \psi_{L} + J"]
-# scenarios = [
-#     "df_ind" => "U",
-#     "df_psi_stem_ind" => L"\psi_{s}",
-#     "df_psi_stem_leaf_ind" => L"\psi_{s} + \psi_{L}",
-#     "df_psi_stem_leaf_stem_flow_ind" => L"\psi_{s} + \psi_{L} + J"
-# ]
-
 
 series = ThirtyMinSeries
 df_fnet = year(d1) < 2022 ? obs.df_fnet_22 : obs.df_fnet_24
 
-# Prepare Observations
-df_obs_gpp_slice = get_single_file_slice(df_fnet, "GPP", series, 0.05, 0.95, slice_dates, d1, d2)
-df_obs_le_slice = get_single_file_slice(df_fnet, "LE", series, 0.05, 0.95, slice_dates, d1, d2)
-
+# Prepare Observations with specific date windows
 if year(d1) == 2023
-    df_obs_sapflow_slice = get_single_file_slice(obs.df_sap_flow_2023, "Ji_Fasy", series, 0.1, 0.9, slice_dates, d1, d2)
+    df_obs_sapflow_slice = get_single_file_slice(obs.df_sap_flow_2023, "Ji_Fasy", series, 0.1, 0.9, slice_dates, d1_sap, d2_sap)
     df_obs_psi_stem_slice = get_single_file_slice(obs.df_psi_stem_obs, "FAG", series, 0.25, 0.75, slice_dates, d1, d2)    
-    df_obs_psi_leaf_slice = get_single_file_slice(obs.df_psi_leaf_obs, "psi_leaf_midday_avg", series, 0.25, 0.75, slice_dates, d1, d2)    
+    df_obs_psi_leaf_slice = get_single_file_slice(obs.df_psi_leaf_obs, "psi_leaf_midday_avg", series, 0.25, 0.75, slice_dates, d1_leaf, d2_leaf)    
 end
 
 all_data = Dict()
@@ -96,9 +93,13 @@ for scen in scenarios
             all_data[variable] = Dict{String, Any}()
             all_data[variable]["unit"] = format_unit_to_latex(get_unit(qcol.output[1], variable))
         end
+        
+        # Apply correct dates based on variable
+        curr_d1 = variable == "psi_leaf_avg" ? d1_leaf : (variable == "G_per_sap_area_avg" ? d1_sap : d1)
+        curr_d2 = variable == "psi_leaf_avg" ? d2_leaf : (variable == "G_per_sap_area_avg" ? d2_sap : d2)
 
-        # A. Ensemble model data
-        df_list = get_multi_file_slice(qcol, variable, Fluxnetdata, series, 0.1, 0.9, slice_dates, d1, d2)
+        # Extract ensemble model data
+        df_list = get_multi_file_slice(qcol, variable, Fluxnetdata, series, 0.1, 0.9, slice_dates, curr_d1, curr_d2)
         df_ensemble = rename(df_list[1], :mean => "run_1")
         for idx in 2:length(df_list)
             next_df = rename(df_list[idx], :mean => "run_$(idx)")
@@ -114,11 +115,7 @@ for scen in scenarios
             ql = quantile(clean_vals, 0.1)
             qu = quantile(clean_vals, 0.9)
             
-            if variable == "qle_avg" 
-                m = -m
-                ql, qu = -qu, -ql # Swap bounds when flipping sign
-            end
-            if variable == "stem_flow_per_sap_area_avg" || variable == "G_per_sap_area_avg"
+            if variable == "G_per_sap_area_avg"
                 factor = 1000.0 * 0.5
                 m *= factor; ql *= factor; qu *= factor
             end
@@ -128,11 +125,8 @@ for scen in scenarios
         df.DateOnly = Date.(df.DateTime)
         df.Hour = hour.(df.DateTime) .+ minute.(df.DateTime) ./ 60
 
-        # B. Observation Match & Overlap
-        obs_df_raw = if variable == "gpp_avg"; df_obs_gpp_slice
-        elseif variable == "qle_avg" && @isdefined(df_obs_le_slice); df_obs_le_slice
-        elseif variable == "stem_flow_per_sap_area_avg" && @isdefined(df_obs_sapflow_slice); df_obs_sapflow_slice
-        elseif variable == "G_per_sap_area_avg" && @isdefined(df_obs_sapflow_slice); df_obs_sapflow_slice
+        # Observations mapping
+        obs_df_raw = if variable == "G_per_sap_area_avg" && @isdefined(df_obs_sapflow_slice); df_obs_sapflow_slice
         elseif variable == "psi_stem_avg" && @isdefined(df_obs_psi_stem_slice); df_obs_psi_stem_slice
         elseif variable == "psi_leaf_avg" && @isdefined(df_obs_psi_leaf_slice); df_obs_psi_leaf_slice
         else nothing end
@@ -140,75 +134,121 @@ for scen in scenarios
         if obs_df_raw !== nothing
             obs_clean = dropmissing(obs_df_raw, :mean)
             obs_clean.DateOnly = Date.(obs_clean.DateTime)
-            obs_clean.Hour = hour.(obs_clean.DateTime) .+ minute.(obs_clean.DateTime) ./ 60
+            obs_clean.Hour = round.((hour.(obs_clean.DateTime) .+ minute.(obs_clean.DateTime) ./ 60) .* 2) ./ 2
             
-            # Join for diurnal overlap
-            df_overlap = innerjoin(df[!, [:DateTime, :Hour, :mean, :qlow, :qup]], obs_clean[!, [:DateTime, :mean]], on = :DateTime, makeunique=true)
-            
-            mod_diurnal = combine(groupby(df_overlap, :Hour), :mean => mean => :mean, :qlow => mean => :qlow, :qup => mean => :qup)
-            obs_diurnal = combine(groupby(df_overlap, :Hour), :mean_1 => mean => :mean)
+            if !hasproperty(obs_clean, :qlow)
+                obs_clean.qlow = obs_clean.mean
+                obs_clean.qup = obs_clean.mean
+            end
 
-            all_data[variable]["Obs"] = (daily = combine(groupby(obs_clean, :DateOnly), :mean => mean => :mean), 
-                                         diurnal = sort!(obs_diurnal, :Hour),
-                                         raw_ts = obs_clean)
+            obs_diurnal = combine(groupby(obs_clean, :Hour), 
+                :mean => (x -> mean(skipmissing(x))) => :mean,
+                :qlow => (x -> mean(skipmissing(x))) => :qlow,
+                :qup  => (x -> mean(skipmissing(x))) => :qup
+            )
+            all_data[variable]["Obs"] = (raw_ts = obs_clean, diurnal = sort!(obs_diurnal, :Hour))
+            
+            # ---> THE FIX: Exact Timestamp matching for Model Diurnal <---
+            df_overlap = innerjoin(df, obs_clean[!, [:DateTime]], on=:DateTime, makeunique=true)
+            if nrow(df_overlap) > 0
+                mod_diurnal = combine(groupby(df_overlap, :Hour), :mean => mean => :mean, :qlow => mean => :qlow, :qup => mean => :qup)
+            else
+                mod_diurnal = combine(groupby(df, :Hour), :mean => mean => :mean, :qlow => mean => :qlow, :qup => mean => :qup)
+            end
+        else
+            mod_diurnal = combine(groupby(df, :Hour), :mean => mean => :mean, :qlow => mean => :qlow, :qup => mean => :qup)
         end
-
-        mod_daily = combine(groupby(df, :DateOnly), :mean => mean => :mean, :qlow => mean => :qlow, :qup => mean => :qup)
-        mod_diurnal_final = haskey(all_data[variable], "Obs") ? mod_diurnal : combine(groupby(df, :Hour), :mean => mean => :mean, :qlow => mean => :qlow, :qup => mean => :qup)
         
-        all_data[variable][scen.label] = (daily = mod_daily, diurnal = sort!(mod_diurnal_final, :Hour), raw_ts = df)
+        all_data[variable][scen.label] = (raw_ts = df, diurnal = sort!(mod_diurnal, :Hour))
     end
 end
 
-# --- 4. Plotting ---
-presentation_style = (fontfamily="Computer Modern", guidefontsize=18, tickfontsize=14, titlefontsize=22, legendfontsize=14, linewidth=2.5, grid=true, gridalpha=0.2)
+# --- 4. Plotting (3 Rows x 2 Columns) ---
+presentation_style = (fontfamily="Computer Modern", guidefontsize=16, tickfontsize=12, titlefontsize=16, legendfontsize=10, linewidth=2.5, grid=true, gridalpha=0.2)
 
-for variable in var_avails
+plots_array = []
+main_scen_label = L"\psi_{s} + \psi_{L} + J"
+col = :red 
+
+for (i, variable) in enumerate(var_avails)
     unit_label = all_data[variable]["unit"]
-    is_psi = variable in ["psi_stem_avg", "psi_leaf_avg"]
     is_leaf = variable == "psi_leaf_avg"
+    is_sap  = variable == "G_per_sap_area_avg" 
     
-    l = @layout [a{0.67w} b]
-    final_plot = plot(layout=l, size=(1400, 500), margin=12Plots.mm)
+    p_ts = plot(ylabel=unit_label, title="$(variable) (Time Series)"; presentation_style...)
+    p_di = plot(xlabel="Hour", title="Diurnal Average", xticks=0:6:24, xlims=(0,24); presentation_style...)
     
-    plot!(final_plot[1], title="$(variable) $(is_psi ? "30-min" : "Daily")", ylabel=unit_label; presentation_style...)
-    plot!(final_plot[2], title="Diurnal Overlap", xlabel="Hour", xticks=0:6:24, xlims=(0,24); presentation_style...)
-
-    # Plot Observations
+    t_min, t_max = d1, d2
     if haskey(all_data[variable], "Obs")
-        o = all_data[variable]["Obs"]
-        x_o = is_psi ? o.raw_ts.DateTime : o.daily.DateOnly
-        y_o = is_psi ? o.raw_ts.mean : o.daily.mean
-        if is_leaf
-            scatter!(final_plot[1], x_o, y_o, color=:black, label="Obs", markersize=4, markerstrokewidth=0)
-            scatter!(final_plot[2], o.diurnal.Hour, o.diurnal.mean, color=:black, label="Obs", markersize=5, markerstrokewidth=0)
-        else
-            plot!(final_plot[1], x_o, y_o, color=:black, label="Obs", linestyle=:dash)
-            plot!(final_plot[2], o.diurnal.Hour, o.diurnal.mean, color=:black, label="Obs", linestyle=:dash)
+        obs_ts = all_data[variable]["Obs"].raw_ts
+        obs_di = all_data[variable]["Obs"].diurnal
+        
+        if nrow(obs_ts) > 0
+            t_min = minimum(obs_ts.DateTime)
+            t_max = maximum(obs_ts.DateTime)
+            
+            # Left: Plot TS Observations 
+            if is_leaf
+                scatter!(p_ts, obs_ts.DateTime, obs_ts.mean, color=:black, label="Obs", markersize=6, markerstrokewidth=0)
+            elseif is_sap
+                obs_ts_daily = combine(groupby(obs_ts, :DateOnly), 
+                    :mean => (x -> mean(skipmissing(x))) => :mean,
+                    :qlow => (x -> mean(skipmissing(x))) => :qlow,
+                    :qup  => (x -> mean(skipmissing(x))) => :qup
+                )
+                rib_obs_ts = (coalesce.(obs_ts_daily.mean .- obs_ts_daily.qlow, 0.0), coalesce.(obs_ts_daily.qup .- obs_ts_daily.mean, 0.0))
+                plot!(p_ts, obs_ts_daily.DateOnly, obs_ts_daily.mean, ribbon=rib_obs_ts, fillalpha=0.15, color=:black, label="Obs (Sapflow)", linealpha=0.9)
+            else
+                rib_obs_ts = (coalesce.(obs_ts.mean .- obs_ts.qlow, 0.0), coalesce.(obs_ts.qup .- obs_ts.mean, 0.0))
+                plot!(p_ts, obs_ts.DateTime, obs_ts.mean, ribbon=rib_obs_ts, fillalpha=0.15, color=:black, label="Obs", linealpha=0.9)
+            end
+            
+            # Right: Plot Diurnal Observations
+            if !is_leaf
+                rib_obs_di = (coalesce.(obs_di.mean .- obs_di.qlow, 0.0), coalesce.(obs_di.qup .- obs_di.mean, 0.0))
+                plot!(p_di, obs_di.Hour, obs_di.mean, ribbon=rib_obs_di, fillalpha=0.15, color=:black, label="Obs", linealpha=0.9)
+            end
         end
     end
 
-    # Plot Models
-    for (lab, col) in [(L"\psi_{s} + \psi_{L} + J", :red), ("std", :blue)]
-        m = all_data[variable][lab]
-        x_m = is_psi ? m.raw_ts.DateTime : m.daily.DateOnly
-        y_m = is_psi ? m.raw_ts.mean : m.daily.mean
+    # Plot Model Data
+    if haskey(all_data[variable], main_scen_label)
+        mod_ts_full = all_data[variable][main_scen_label].raw_ts
+        mod_di = all_data[variable][main_scen_label].diurnal
         
-        if lab == L"\psi_{s} + \psi_{L} + J"
-            # Determine ribbon data based on resolution
-            ql = is_psi ? m.raw_ts.qlow : m.daily.qlow
-            qu = is_psi ? m.raw_ts.qup : m.daily.qup
-            
-            rib_ts = (y_m .- ql, qu .- y_m)
-            rib_diurnal = (m.diurnal.mean .- m.diurnal.qlow, m.diurnal.qup .- m.diurnal.mean)
-            
-            plot!(final_plot[1], x_m, y_m, ribbon=rib_ts, fillalpha=0.2, color=col, label=lab)
-            plot!(final_plot[2], m.diurnal.Hour, m.diurnal.mean, ribbon=rib_diurnal, fillalpha=0.2, color=col, label="")
-        else
-            plot!(final_plot[1], x_m, y_m, color=col, label=lab)
-            plot!(final_plot[2], m.diurnal.Hour, m.diurnal.mean, color=col, label="")
+        mod_ts = filter(r -> r.DateTime >= t_min && r.DateTime <= t_max, mod_ts_full)
+        
+        if nrow(mod_ts) > 0
+            # Left: Plot TS Model
+            if is_leaf
+                mod_ts_midday = filter(r -> r.Hour == 12.0, mod_ts)
+                if nrow(mod_ts_midday) > 0
+                    rib_ts = (mod_ts_midday.mean .- mod_ts_midday.qlow, mod_ts_midday.qup .- mod_ts_midday.mean)
+                    plot!(p_ts, mod_ts_midday.DateTime, mod_ts_midday.mean, color=col, label="", linealpha=0.5)
+                end
+            elseif is_sap
+                mod_ts_daily = combine(groupby(mod_ts, :DateOnly), :mean => mean => :mean, :qlow => mean => :qlow, :qup => mean => :qup)
+                rib_ts = (mod_ts_daily.mean .- mod_ts_daily.qlow, mod_ts_daily.qup .- mod_ts_daily.mean)
+                plot!(p_ts, mod_ts_daily.DateOnly, mod_ts_daily.mean, ribbon=rib_ts, fillalpha=0.2, color=col, label="Model (G)")
+            else
+                rib_ts = (mod_ts.mean .- mod_ts.qlow, mod_ts.qup .- mod_ts.mean)
+                plot!(p_ts, mod_ts.DateTime, mod_ts.mean, ribbon=rib_ts, fillalpha=0.2, color=col, label="Model")
+            end
+        end
+        
+        # Right: Plot Diurnal Model
+        if nrow(mod_di) > 0
+            rib_di = (mod_di.mean .- mod_di.qlow, mod_di.qup .- mod_di.mean)
+            plot!(p_di, mod_di.Hour, mod_di.mean, ribbon=rib_di, fillalpha=0.2, color=col, label="Model")
         end
     end
     
-    savefig(final_plot, joinpath(post_process_dir, "comparison_$(variable).png"))
+    push!(plots_array, p_ts)
+    push!(plots_array, p_di)
 end
+
+l = @layout [grid(3, 2)]
+final_figure = plot(plots_array..., layout=l, size=(1600, 1000), margin=8Plots.mm)
+
+savefig(final_figure, joinpath(post_process_dir, "timeseries_and_diurnal_3x2_comparison.png"))
+println("Processing complete. 3x2 Plot saved to: ", post_process_dir)

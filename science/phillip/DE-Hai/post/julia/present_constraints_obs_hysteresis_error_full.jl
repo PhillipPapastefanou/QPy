@@ -28,9 +28,9 @@ function format_unit_to_latex(unit_str::String)
     return latexstring("\\mathrm{$(join(formatted_parts, " \\cdot "))}")
 end
 
-# Safe quantile function for observations
-safe_q20(x) = length(x) > 1 ? quantile(x, 0.2) : first(x)
-safe_q80(x) = length(x) > 1 ? quantile(x, 0.8) : first(x)
+# Safe quantile function for observations (fortified against missing types)
+safe_q20(x) = length(collect(skipmissing(x))) > 1 ? quantile(collect(skipmissing(x)), 0.2) : first(skipmissing(x))
+safe_q80(x) = length(collect(skipmissing(x))) > 1 ? quantile(collect(skipmissing(x)), 0.8) : first(skipmissing(x))
 
 # --- 2. Setup & Paths ---
 obs = init_hainich_obs()
@@ -151,9 +151,14 @@ for scen in scenarios
                                   
             all_data[variable]["Obs"] = (diurnal = sort!(obs_diurnal, :Hour), raw_ts = obs_overlap)
 
-            df_overlap = innerjoin(df, obs_overlap[!, [:DateOnly, :Hour]], on=[:DateOnly, :Hour], makeunique=true)
+            # ---> EXACT TIMESTAMP MATCHING FIX APPLIED HERE <---
+            df_overlap = innerjoin(df, obs_overlap[!, [:DateTime]], on=:DateTime, makeunique=true)
             
-            mod_diurnal_final = combine(groupby(df_overlap, :Hour), :mean => mean => :mean, :qlow => mean => :qlow, :qup => mean => :qup)
+            if nrow(df_overlap) > 0
+                mod_diurnal_final = combine(groupby(df_overlap, :Hour), :mean => mean => :mean, :qlow => mean => :qlow, :qup => mean => :qup)
+            else
+                mod_diurnal_final = combine(groupby(df, :Hour), :mean => mean => :mean, :qlow => mean => :qlow, :qup => mean => :qup)
+            end
         else
             mod_diurnal_final = combine(groupby(df, :Hour), :mean => mean => :mean, :qlow => mean => :qlow, :qup => mean => :qup)
         end

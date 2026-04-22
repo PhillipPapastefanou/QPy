@@ -117,7 +117,7 @@ for scen in scenarios
             ql = quantile(clean_vals, 0.1)
             qu = quantile(clean_vals, 0.9)
             
-            # UPDATED: Make sure G gets scaled just like sapflow did
+            # Make sure G gets scaled just like sapflow did
             if variable == "G_per_sap_area_avg"
                 factor = 1000.0 * 0.5
                 m *= factor; ql *= factor; qu *= factor
@@ -129,7 +129,6 @@ for scen in scenarios
         df.Hour = hour.(df.DateTime) .+ minute.(df.DateTime) ./ 60
 
         # Observations mapping
-        # MAP Sapflow observations directly against the modeled G variable
         obs_df_raw = if variable == "G_per_sap_area_avg" && @isdefined(df_obs_sapflow_slice); df_obs_sapflow_slice
         elseif variable == "psi_stem_avg" && @isdefined(df_obs_psi_stem_slice); df_obs_psi_stem_slice
         elseif variable == "psi_leaf_avg" && @isdefined(df_obs_psi_leaf_slice); df_obs_psi_leaf_slice
@@ -141,7 +140,18 @@ for scen in scenarios
             # Round hours for diurnal join
             obs_clean.Hour = round.((hour.(obs_clean.DateTime) .+ minute.(obs_clean.DateTime) ./ 60) .* 2) ./ 2
             
-            obs_diurnal = combine(groupby(obs_clean, :Hour), :mean => mean => :mean)
+            # Safely handle quantiles if they are not present in the raw extraction
+            if !hasproperty(obs_clean, :qlow)
+                obs_clean.qlow = obs_clean.mean
+                obs_clean.qup = obs_clean.mean
+            end
+
+            # Propagate observation uncertainties into the diurnal aggregation
+            obs_diurnal = combine(groupby(obs_clean, :Hour), 
+                :mean => (x -> mean(skipmissing(x))) => :mean,
+                :qlow => (x -> mean(skipmissing(x))) => :qlow,
+                :qup  => (x -> mean(skipmissing(x))) => :qup
+            )
             all_data[variable]["Obs"] = (raw_ts = obs_clean, diurnal = sort!(obs_diurnal, :Hour))
         end
         
@@ -176,20 +186,27 @@ for (i, variable) in enumerate(var_avails)
             t_min = minimum(obs_ts.DateTime)
             t_max = maximum(obs_ts.DateTime)
             
-            # Left: Plot TS Observations
+            # Left: Plot TS Observations (WITH UNCERTAINTY)
             if is_leaf
-                scatter!(p_ts, obs_ts.DateTime, obs_ts.mean, color=:black, label="Obs (Sapflow)", markersize=6, markerstrokewidth=0)
+                scatter!(p_ts, obs_ts.DateTime, obs_ts.mean, color=:black, label="Obs", markersize=6, markerstrokewidth=0)
             elseif is_sap
-                # Aggregate Observations to Daily Mean for Sap Flow
-                obs_ts_daily = combine(groupby(obs_ts, :DateOnly), :mean => mean => :mean)
-                plot!(p_ts, obs_ts_daily.DateOnly, obs_ts_daily.mean, color=:black, label="Obs (Sapflow)", linealpha=0.9)
+                # Aggregate Observations to Daily Mean + Daily Uncertainty for Sap Flow
+                obs_ts_daily = combine(groupby(obs_ts, :DateOnly), 
+                    :mean => (x -> mean(skipmissing(x))) => :mean,
+                    :qlow => (x -> mean(skipmissing(x))) => :qlow,
+                    :qup  => (x -> mean(skipmissing(x))) => :qup
+                )
+                rib_obs_ts = (coalesce.(obs_ts_daily.mean .- obs_ts_daily.qlow, 0.0), coalesce.(obs_ts_daily.qup .- obs_ts_daily.mean, 0.0))
+                plot!(p_ts, obs_ts_daily.DateOnly, obs_ts_daily.mean, ribbon=rib_obs_ts, fillalpha=0.15, color=:black, label="Obs (Sapflow)", linealpha=0.9)
             else
-                plot!(p_ts, obs_ts.DateTime, obs_ts.mean, color=:black, label="Obs", linealpha=0.9)
+                rib_obs_ts = (coalesce.(obs_ts.mean .- obs_ts.qlow, 0.0), coalesce.(obs_ts.qup .- obs_ts.mean, 0.0))
+                plot!(p_ts, obs_ts.DateTime, obs_ts.mean, ribbon=rib_obs_ts, fillalpha=0.15, color=:black, label="Obs", linealpha=0.9)
             end
             
-            # Right: Plot Diurnal Observations
+            # Right: Plot Diurnal Observations (WITH UNCERTAINTY)
             if !is_leaf
-                plot!(p_di, obs_di.Hour, obs_di.mean, color=:black, label="Obs", linealpha=0.9)
+                rib_obs_di = (coalesce.(obs_di.mean .- obs_di.qlow, 0.0), coalesce.(obs_di.qup .- obs_di.mean, 0.0))
+                plot!(p_di, obs_di.Hour, obs_di.mean, ribbon=rib_obs_di, fillalpha=0.15, color=:black, label="Obs", linealpha=0.9)
             end
         end
     end
