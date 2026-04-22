@@ -117,7 +117,7 @@ colors = [:red, :black, :blue]
 var_avails=  ["qle_avg", "gpp_avg", "stem_flow_per_sap_area_avg", "G_per_sap_area_avg", "psi_stem_avg", "psi_leaf_avg", "beta_gs", "gc_avg"]
 target_midday_1 = DateTime("2003-06-01T12:00:00")
 target_midday_2 = DateTime("2003-08-05T12:00:00")
-d1, d2 = DateTime("2003-05-15"), DateTime("2003-08-01")
+d1, d2 = DateTime("2003-08-01"), DateTime("2003-09-01")
 
 
 obs = init_hainich_obs()
@@ -378,15 +378,15 @@ for variable in var_avails
         plot!(final_plot[2], o_diurn.Hour, o_diurn.mean, color=:black, label="Obs", linestyle=:dash)
     end
 
-    # Plot Model Data: Ensemble
-    ens_daily = all_data[variable]["Flow (Ensemble)"].daily
-    ens_diurn = all_data[variable]["Flow (Ensemble)"].diurnal
+    # Plot Model Data: Ensemble (Using the correct label key)
+    ens_daily = all_data[variable][L"\psi_{s} + \psi_{L} + J"].daily
+    ens_diurn = all_data[variable][L"\psi_{s} + \psi_{L} + J"].diurnal
     plot!(final_plot[1], ens_daily.DateOnly, ens_daily.mean, color=:red, label=L"\psi_{s} + \psi_{L} + J")
     plot!(final_plot[2], ens_diurn.Hour, ens_diurn.mean, color=:red, label=L"\psi_{s} + \psi_{L} + J")
     
-    # Plot Model Data: ID=0
-    id0_daily = all_data[variable]["Flow (ID=0)"].daily
-    id0_diurn = all_data[variable]["Flow (ID=0)"].diurnal
+    # Plot Model Data: ID=0 (Using the correct label key)
+    id0_daily = all_data[variable]["std"].daily
+    id0_diurn = all_data[variable]["std"].diurnal
     plot!(final_plot[1], id0_daily.DateOnly, id0_daily.mean, color=:blue, label="std")
     plot!(final_plot[2], id0_diurn.Hour, id0_diurn.mean, color=:blue, label="std")
     
