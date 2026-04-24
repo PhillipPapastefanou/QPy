@@ -9,8 +9,8 @@ using Plots
 using LaTeXStrings
 using StatsPlots
 
-include("../../../../../src/postprocessing/julia/core/qcomparer_2023.jl")
-include("../../../../../src/postprocessing/julia/core/qslicer.jl")
+include("../../../../../../src/postprocessing/julia/core/qcomparer_2023.jl")
+include("../../../../../../src/postprocessing/julia/core/qslicer.jl")
 
 
 function format_unit_to_latex(unit_str::String)
@@ -112,12 +112,29 @@ end
 # target_midday_2 = DateTime("2003-08-05T12:00:00")
 # d1, d2 = DateTime("2003-05-15"), DateTime("2003-09-30")
 
-ide = "sum2003_obs"
+ide = "f_sum2003_obs"
 colors = [:red, :black, :blue]
 var_avails=  ["qle_avg", "gpp_avg", "stem_flow_per_sap_area_avg", "G_per_sap_area_avg", "psi_stem_avg", "psi_leaf_avg", "beta_gs", "gc_avg"]
 target_midday_1 = DateTime("2003-06-01T12:00:00")
 target_midday_2 = DateTime("2003-08-05T12:00:00")
 d1, d2 = DateTime("2003-08-01"), DateTime("2003-09-01")
+
+
+# ide = "f_sum2018_obs"
+# colors = [:red, :black, :blue]
+# # Note: "qle_avg" is removed here based on your commented-out 2018 code
+# var_avails = ["qle_avg", "gpp_avg", "stem_flow_per_sap_area_avg", "G_per_sap_area_avg", "psi_stem_avg", "psi_leaf_avg", "beta_gs", "gc_avg"]
+# target_midday_1 = DateTime("2018-06-01T12:00:00")
+# target_midday_2 = DateTime("2018-08-05T12:00:00")
+# d1, d2 = DateTime("2018-05-15"), DateTime("2018-09-30")
+
+
+# ide = "f_sum2023_obs"
+# colors = [:red, :black, :blue]
+# var_avails = ["qle_avg", "gpp_avg", "stem_flow_per_sap_area_avg", "G_per_sap_area_avg", "psi_stem_avg", "psi_leaf_avg", "beta_gs", "gc_avg"]
+# target_midday_1 = DateTime("2023-06-01T12:00:00")
+# target_midday_2 = DateTime("2023-07-20T12:00:00")
+# d1, d2 = DateTime("2023-05-22"), DateTime("2023-08-01")
 
 
 obs = init_hainich_obs()

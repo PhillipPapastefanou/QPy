@@ -9,8 +9,8 @@ using LaTeXStrings
 using StatsPlots
 using CategoricalArrays # Needed to lock in X-axis and Scenario order
 
-include("../../../src/postprocessing/julia/core/qcomparer_2023.jl")
-include("../../../src/postprocessing/julia/core/qslicer.jl")
+include("../../../../../src/postprocessing/julia/core/qcomparer_2023.jl")
+include("../../../../../src/postprocessing/julia/core/qslicer.jl")
 
 obs = init_hainich_obs()
 
@@ -92,7 +92,7 @@ var_avails = ["total_veg_c","psi_stem_avg", "psi_leaf_avg", "beta_gs", "gc_avg"]
 #var_avails = ["total_veg_c"]
 d1, d2 = DateTime("2020-01-01"), DateTime("2101-01-01")
 
-rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/63_run_transient_3days/output"
+rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/68_run_transient_3days_new_mort_new_phen_fix/output"
 post_process_dir = joinpath(rt_path_hyd, "../post", ide)
 !isdir(post_process_dir) && mkdir(post_process_dir)
 

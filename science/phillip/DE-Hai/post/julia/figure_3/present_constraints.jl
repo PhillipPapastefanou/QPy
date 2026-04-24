@@ -9,8 +9,8 @@ using Plots
 using LaTeXStrings
 using StatsPlots
 
-include("../../../../../src/postprocessing/julia/core/qcomparer_2023.jl")
-include("../../../../../src/postprocessing/julia/core/qslicer.jl")
+include("../../../../../../src/postprocessing/julia/core/qcomparer_2023.jl")
+include("../../../../../../src/postprocessing/julia/core/qslicer.jl")
 
 obs = init_hainich_obs()
 
@@ -94,23 +94,24 @@ function calculate_vpd(t_k, q_gkg, p_hpa)
     return max(0.0, es - ea)
 end
 
-ide = "sum03"
-colors = [:purple, :blue, :green, :red]
-var_avails=  ["gpp_avg", "stem_flow_per_sap_area_avg", "G_per_sap_area_avg", "psi_stem_avg", "psi_leaf_avg", "beta_gs", "gc_avg"]
-target_midday_1 = DateTime("2003-06-01T12:00:00")
-target_midday_2 = DateTime("2003-07-20T12:00:00")
-d1, d2 = DateTime("2003-05-15"), DateTime("2003-09-30")
+ide = "f3_sum03"
+colors = [:blue, :green, :red]
+var_avails=  ["qle_avg", "gpp_avg", "stem_flow_per_sap_area_avg", "G_per_sap_area_avg", "psi_stem_avg", "psi_leaf_avg", "beta_gs", "gc_avg"]
+target_midday_1 = DateTime("2003-07-21T12:00:00")
+target_midday_2 = DateTime("2003-08-10T12:00:00")
+d1, d2 = DateTime("2003-07-20"), DateTime("2003-08-30")
 
-# ide = "sum03"
-# colors = [:purple, :blue, :green, :red]
-# var_avails=  ["npp_avg", "total_veg_c", "gpp_avg", "stem_flow_per_sap_area_avg", "G_per_sap_area_avg", "psi_stem_avg", "psi_leaf_avg", "beta_gs", "gc_avg"]
-# target_midday_1 = DateTime("2003-06-01T12:00:00")
-# target_midday_2 = DateTime("2003-08-05T12:00:00")
-# d1, d2 = DateTime("2003-05-15"), DateTime("2003-09-30")
+
+# ide = "f3_sum23"
+# colors = [:blue, :green, :red]
+# var_avails=  ["qle_avg", "gpp_avg", "stem_flow_per_sap_area_avg", "G_per_sap_area_avg", "psi_stem_avg", "psi_leaf_avg", "beta_gs", "gc_avg"]
+# target_midday_1 = DateTime("2023-06-15T12:00:00")
+# target_midday_2 = DateTime("2023-07-15T12:00:00")
+# d1, d2 = DateTime("2023-05-15"), DateTime("2023-08-01")
 
 
 # ide = "sum18"
-# colors = [:purple, :blue, :green, :red]
+# colors = [:blue, :green, :red]
 # var_avails=  ["npp_avg", "total_veg_c", "gpp_avg", "stem_flow_per_sap_area_avg", "G_per_sap_area_avg", "psi_stem_avg", "psi_leaf_avg", "beta_gs", "gc_avg"]
 # target_midday_1 = DateTime("2018-06-01T12:00:00")
 # target_midday_2 = DateTime("2018-08-05T12:00:00")

@@ -11,8 +11,8 @@ using StatsPlots
 using CategoricalArrays 
 
 
-include("../../../src/postprocessing/julia/core/qcomparer_2023.jl")
-include("../../../src/postprocessing/julia/core/qslicer.jl")
+include("../../../../../src/postprocessing/julia/core/qcomparer_2023.jl")
+include("../../../../../src/postprocessing/julia/core/qslicer.jl")
 
 
 function format_unit_to_latex(unit_str::String)
@@ -58,14 +58,14 @@ end
 df_plot_all = DataFrame(Parameter=String[], Value=Float64[], Scenario=String[])
 ide = "dist"
 colors = [:purple, :blue, :green, :red]
-scen_order = ["U", L"\psi_{s}", L"\psi_{s} + \psi_{L}", L"\psi_{s} + \psi_{L} + J"]
+scen_order = ["U", L"\psi_{L}", L"\psi_{s} + \psi_{L}", L"\psi_{s} + \psi_{L} + J"]
 scenarios = [
-    "df_ind" => "U",
-    "df_psi_stem_ind" => L"\psi_{s}",
+    #"df_ind" => "U",
+    "df_psi_leaf_ind" => L"\psi_{L}",
     "df_psi_stem_leaf_ind" => L"\psi_{s} + \psi_{L}",
     "df_psi_stem_leaf_stem_flow_ind" => L"\psi_{s} + \psi_{L} + J"
 ]
-rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/63_run_transient_3days/output"
+rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/68_run_transient_3days_new_mort_new_phen_fix/output"
 post_process_dir = joinpath(rt_path_hyd, "../post", ide)
 !isdir(post_process_dir) && mkdir(post_process_dir)
 # Read parameter data
@@ -117,7 +117,7 @@ for param in cols_interest
         title = param,
         ylabel = "Value",
         legend = false,
-        xticks = :all,
+        # xticks = :all,  <-- REMOVE THIS LINE
         xrotation = 45,
         trim = true,
         frame = :box
@@ -125,7 +125,6 @@ for param in cols_interest
         
     push!(plot_list, p)
 end
-
 # Create the final 3x3 grid
 final_violin_plot = plot(plot_list..., 
     layout = (3, 3), 
