@@ -29,8 +29,7 @@ function format_unit_to_latex(unit_str::String)
         end
     end
     joined_str = join(formatted_parts, " \\cdot ")
-    final_latex_string = "\\mathrm{$(joined_str)}"
-    return latexstring(final_latex_string)
+    return latexstring("\\mathrm{$(joined_str)}")
 end
 
 function to_datetime(y, d, h)
@@ -38,7 +37,7 @@ function to_datetime(y, d, h)
 end
 
 function read_input_df(root_output_folder)
-    df  =  CSV.read(joinpath(root_output_folder , "climate.dat"), DataFrame, delim=' ', ignorerepeated=true,header=1, skipto=3)
+    df = CSV.read(joinpath(root_output_folder , "climate.dat"), DataFrame, delim=' ', ignorerepeated=true, header=1, skipto=3)
     transform!(df, [:year, :doy, :hour] => ByRow(to_datetime) => :DateTime)
     return df
 end
@@ -57,8 +56,8 @@ colors = [:blue, :green, :red]
 var_avails = ["qle_avg", "gpp_avg", "stem_flow_per_sap_area_avg", "G_per_sap_area_avg", "psi_stem_avg", "psi_leaf_avg", "beta_gs", "gc_avg"]
 series = ThirtyMinSeries
 
-rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/70_run_transient_3days_new_mort_new_phen_fix/output"
-post_process_dir = joinpath(rt_path_hyd, "../post", "f3_combined_03_23")
+rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/68_run_transient_3days_new_mort_new_phen_fix/output"
+post_process_dir = joinpath(rt_path_hyd, "../post", "f3_combined_incremental_with_obs")
 !isdir(post_process_dir) && mkdir(post_process_dir)
 
 scenarios = [
@@ -73,6 +72,12 @@ years_config = [
     (year=2023, d1=DateTime("2023-05-15"), d2=DateTime("2023-08-01"), t1=DateTime("2023-06-15T12:00:00"), t2=DateTime("2023-07-15T12:00:00"))
 ]
 
+df_fnet_22 = obs.df_fnet_22
+df_fnet_24 = obs.df_fnet_24
+df_psi_stem_obs = obs.df_psi_stem_obs
+df_psi_leaf_obs = obs.df_psi_leaf_obs
+df_sap_flow_2023 = obs.df_sap_flow_2023
+
 # --- 2. Data Extraction Loop ---
 yearly_data = Dict{Int, Any}()
 
@@ -84,6 +89,23 @@ for conf in years_config
     println("Processing Data for $yr...")
     all_data = Dict()
 
+    # Get Observations for the current year
+    df_fnet = yr < 2022 ? df_fnet_22 : df_fnet_24
+    df_obs_gpp_slice = get_single_file_slice(df_fnet, "GPP", series, 0.05, 0.95, slice_dates, d1, d2)
+    df_obs_le_slice = get_single_file_slice(df_fnet, "LE", series, 0.05, 0.95, slice_dates, d1, d2)
+    df_obs_le_slice.mean .= -df_obs_le_slice.mean # Invert LE
+
+    df_obs_sapflow_slice = nothing
+    df_obs_psi_stem_slice = nothing
+    df_obs_psi_leaf_slice = nothing
+
+    if yr == 2023
+        df_obs_sapflow_slice = get_single_file_slice(df_sap_flow_2023, "Ji_Fasy", series, 0.1, 0.9, slice_dates, d1, d2)
+        df_obs_psi_stem_slice = get_single_file_slice(df_psi_stem_obs, "FAG", series, 0.25, 0.75, slice_dates, d1, d2)    
+        df_obs_psi_leaf_slice = get_single_file_slice(df_psi_leaf_obs, "psi_leaf_midday_avg", series, 0.25, 0.75, slice_dates, d1, d2)    
+    end
+
+    # Extract Model Data
     for (scen_name, label) in scenarios
         ids_file = joinpath(rt_path_hyd, "../post/ana", "$(scen_name).csv")
         ids = CSV.read(ids_file, DataFrame)[!, :fid]
@@ -129,12 +151,7 @@ for conf in years_config
                 if isempty(clean_vals)
                     return (mean=NaN, qlow=NaN, qup=NaN, raw=Float64[])
                 end
-                return (
-                    mean = mean(clean_vals),
-                    qlow = quantile(clean_vals, 0.1),
-                    qup  = quantile(clean_vals, 0.9),
-                    raw  = clean_vals
-                )
+                return (mean=mean(clean_vals), qlow=quantile(clean_vals, 0.1), qup=quantile(clean_vals, 0.9), raw=clean_vals)
             end) => AsTable)
 
             df.DateOnly = Date.(df.DateTime)
@@ -152,9 +169,7 @@ for conf in years_config
             end
             all_data[variable][scen_name] = (daily = df_daily, diurnal = df_diurnal)
 
-            val_cols = names(df_ensemble, Not(:DateTime))
-
-            # Violin extractions using year-specific targets
+            # Violin extractions
             idx1 = findfirst(==(target_1), df_ensemble.DateTime)
             idx2 = findfirst(==(target_2), df_ensemble.DateTime)
 
@@ -162,7 +177,6 @@ for conf in years_config
                 row_values = collect(values(df_ensemble[idx1, val_cols]))
                 all_data[variable]["violin_data_1"][scen_name] = filter(v -> !ismissing(v) && !isnan(v), row_values)
             else
-                @warn "Target time $target_1 not found in $(variable) $(scen_name)"
                 all_data[variable]["violin_data_1"][scen_name] = Float64[]
             end
 
@@ -171,6 +185,35 @@ for conf in years_config
                 all_data[variable]["violin_data_2"][scen_name] = filter(v -> !ismissing(v) && !isnan(v), row_values)
             else
                 all_data[variable]["violin_data_2"][scen_name] = Float64[]
+            end
+            
+            # Aggregate and Save Observations (do this only once per variable, ignoring scen_name loops)
+            if !haskey(all_data[variable], "Obs")
+                obs_df_raw = if variable == "gpp_avg"
+                    df_obs_gpp_slice
+                elseif variable == "qle_avg" && df_obs_le_slice !== nothing
+                    df_obs_le_slice
+                elseif variable == "stem_flow_per_sap_area_avg" && df_obs_sapflow_slice !== nothing
+                    df_obs_sapflow_slice
+                elseif variable == "psi_stem_avg" && df_obs_psi_stem_slice !== nothing
+                    df_obs_psi_stem_slice
+                elseif variable == "psi_leaf_avg" && df_obs_psi_leaf_slice !== nothing
+                    df_obs_psi_leaf_slice
+                else
+                    nothing
+                end
+
+                if obs_df_raw !== nothing
+                    obs_clean = dropmissing(obs_df_raw, :mean)
+                    obs_clean.DateOnly = Date.(obs_clean.DateTime)
+                    obs_daily = combine(groupby(obs_clean, :DateOnly), :mean => mean => :mean)
+                    
+                    obs_clean.Hour = hour.(obs_clean.DateTime) .+ minute.(obs_clean.DateTime) ./ 60
+                    obs_diurnal = combine(groupby(obs_clean, :Hour), :mean => mean => :mean)
+                    sort!(obs_diurnal, :Hour)
+                    
+                    all_data[variable]["Obs"] = (daily = obs_daily, diurnal = obs_diurnal)
+                end
             end
         end
     end
@@ -188,38 +231,37 @@ presentation_style = (
     gridalpha = 0.2
 )
 
-# --- 3. Incremental Plotting Loop (2-Row Layout) ---
-println("Generating combined plots...")
+# --- 3. Incremental Plotting Loop (2-Row Layout with Obs & Insets) ---
+println("Generating combined incremental plots...")
+# Use length(scenarios) + 0.5 to keep violin x-axis static across steps
+v_xlims = (0.5, length(scenarios) + 0.5)
+
 for i in 1:length(scenarios)
     for variable in var_avails
-        # Ensure we have data for both years
         if !haskey(yearly_data[2003], variable) || !haskey(yearly_data[2023], variable)
             continue
         end
 
         unit_label = yearly_data[2003][variable]["unit"]
         
-        # 1. Initialize 2x2 Layout
+        # Initialize 2x2 Layout
         l = @layout [
             a{0.67w} b
             c{0.67w} d
         ]
-        # Boosted height to 1100 to fit both rows plus insets gracefully
         final_plot = plot(layout=l, size=(1400, 1100), margin=12Plots.mm)
         
-        # 2. Add Insets (Subplots 5 & 6 attach to 2003 Daily, 7 & 8 attach to 2023 Daily)
+        # Add Insets (Subplots 5 & 6 attach to 2003 Daily [1], 7 & 8 attach to 2023 Daily [3])
         plot!(final_plot, inset=(1, bbox(0.07, 0.55, 0.22, 0.38)), subplot=5, bg_inside=:white)
         plot!(final_plot, inset=(1, bbox(0.76, 0.05, 0.22, 0.38)), subplot=6, bg_inside=:white)
         
         plot!(final_plot, inset=(3, bbox(0.07, 0.55, 0.22, 0.38)), subplot=7, bg_inside=:white)
         plot!(final_plot, inset=(3, bbox(0.76, 0.05, 0.22, 0.38)), subplot=8, bg_inside=:white)
         
-        # Loop through both years to draw components
         for (row_idx, conf) in enumerate(years_config)
             yr = conf.year
             all_data = yearly_data[yr]
             
-            # Map layout index logic
             p_daily = (row_idx - 1) * 2 + 1   # 1 or 3
             p_diurn = (row_idx - 1) * 2 + 2   # 2 or 4
             p_in1   = row_idx == 1 ? 5 : 7    # 5 or 7
@@ -229,21 +271,29 @@ for i in 1:length(scenarios)
             plot!(final_plot[p_daily], title="$(variable) Daily ($yr)", ylabel=unit_label, legend=false; presentation_style...)
             plot!(final_plot[p_diurn], title="Diurnal Cycle ($yr)", xlabel="Hour", xticks=0:6:24, xlims=(0,24); presentation_style...)
 
-            # Violin Inset Styling (Using the correct year's target dates)
-            plot!(final_plot[p_in1], titlefontsize=14, xticks=:none, framestyle=:box, xlabel = Dates.format(conf.t1, "yyyy-mm-dd"), legend=false, xlims=(0.5, 4.5), fontfamily="Computer Modern", guidefontsize=10)
-            plot!(final_plot[p_in2], titlefontsize=14, xticks=:none, framestyle=:box, xlabel = Dates.format(conf.t2, "yyyy-mm-dd"), legend=false, xlims=(0.5, 4.5), fontfamily="Computer Modern", guidefontsize=10)
+            # Violin Inset Styling
+            plot!(final_plot[p_in1], titlefontsize=14, xticks=:none, framestyle=:box, xlabel = Dates.format(conf.t1, "yyyy-mm-dd"), legend=false, xlims=v_xlims, fontfamily="Computer Modern", guidefontsize=10)
+            plot!(final_plot[p_in2], titlefontsize=14, xticks=:none, framestyle=:box, xlabel = Dates.format(conf.t2, "yyyy-mm-dd"), legend=false, xlims=v_xlims, fontfamily="Computer Modern", guidefontsize=10)
             
-            # Plot specific scenarios sequentially
+            # Plot Obs First (so it stays in the background)
+            if haskey(all_data[variable], "Obs")
+                o_daily = all_data[variable]["Obs"].daily
+                o_diurn = all_data[variable]["Obs"].diurnal
+                plot!(final_plot[p_daily], o_daily.DateOnly, o_daily.mean, color=:black, label="Obs", linestyle=:dash, linewidth=2.5)
+                plot!(final_plot[p_diurn], o_diurn.Hour, o_diurn.mean, color=:black, label="Obs", linestyle=:dash, linewidth=2.5)
+            end
+
+            # Plot Incremental Scenarios
             for j in 1:i
                 s_name, s_label = scenarios[j]
                 d_daily = all_data[variable][s_name].daily
                 d_diurn = all_data[variable][s_name].diurnal
                 
-                # Daily & Diurnal
+                # Main lines and ribbons
                 plot!(final_plot[p_daily], d_daily.DateOnly, d_daily.mean, ribbon=(d_daily.mean .- d_daily.qlow, d_daily.qup .- d_daily.mean), fillalpha=0.15, color=colors[j], label=s_label)
                 plot!(final_plot[p_diurn], d_diurn.Hour, d_diurn.mean, ribbon=(d_diurn.mean .- d_diurn.qlow, d_diurn.qup .- d_diurn.mean), fillalpha=0.15, color=colors[j], label=s_label)
                 
-                # Violins
+                # Inset violins
                 v1_vals = all_data[variable]["violin_data_1"][s_name]
                 v2_vals = all_data[variable]["violin_data_2"][s_name]
                 
@@ -256,9 +306,8 @@ for i in 1:length(scenarios)
             end
         end
 
-        # Save the stepped file
         fname = "comparison_$(variable)_step_$(i).png"
         savefig(final_plot, joinpath(post_process_dir, fname))
     end
 end
-println("All plots completed!")
+println("All incremental combined plots completed!")

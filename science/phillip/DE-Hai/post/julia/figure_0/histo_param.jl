@@ -11,8 +11,8 @@ using StatsPlots
 using CategoricalArrays 
 
 
-include("../../../../../src/postprocessing/julia/core/qcomparer_2023.jl")
-include("../../../../../src/postprocessing/julia/core/qslicer.jl")
+include("../../../../../../src/postprocessing/julia/core/qcomparer_2023.jl")
+include("../../../../../../src/postprocessing/julia/core/qslicer.jl")
 
 
 function format_unit_to_latex(unit_str::String)
@@ -56,9 +56,9 @@ function format_unit_to_latex(unit_str::String)
 end
 
 df_plot_all = DataFrame(Parameter=String[], Value=Float64[], Scenario=String[])
-ide = "dist"
+ide = "fig_0"
 colors = [:blue, :green, :red]
-scen_order = [\, L"\psi_{L}", L"\psi_{s} + \psi_{L}", L"\psi_{s} + \psi_{L} + J"]
+scen_order = [L"\psi_{L}", L"\psi_{s} + \psi_{L}", L"\psi_{s} + \psi_{L} + J"]
 scenarios = [
     #"df_ind" => "U",
     "df_psi_leaf_ind" => L"\psi_{L}",
@@ -71,8 +71,8 @@ post_process_dir = joinpath(rt_path_hyd, "../post", ide)
 # Read parameter data
 df_params = CSV.read(joinpath(rt_path_hyd, "../post", "params_rmse_2023.csv"), DataFrame)
 
-cols_interest = ["k_xylem_sats", "gamma_stem_max", "gamma_leaf", "k_latosa", 
-                 "g1", "psi50_close", "root_dist", "root_scale", "g0"]
+cols_interest = ["k_xylem_sats", "k_latosa", "g0",
+                 "g1", "psi50_close", "root_dist"]
 
 # --- 2. Build Combined Dataframe for Plotting ---
 # We want a long-format DF: [ParameterName, Value, ScenarioLabel]
@@ -127,8 +127,8 @@ for param in cols_interest
 end
 # Create the final 3x3 grid
 final_violin_plot = plot(plot_list..., 
-    layout = (3, 3), 
-    size = (1200, 1000), 
+    layout = (2, 3), 
+    size = (1200, 600), 
     margin = 5Plots.mm
 )
 

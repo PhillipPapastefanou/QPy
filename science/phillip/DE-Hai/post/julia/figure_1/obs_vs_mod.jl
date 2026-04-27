@@ -45,7 +45,7 @@ d1_sap, d2_sap = DateTime("2023-06-01"), DateTime("2023-08-01")
 d1_leaf = DateTime("2023-06-01")
 d2_leaf = DateTime("2023-10-01") # Set to the 2nd to capture the full 24h of the 1st
 
-rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/68_run_transient_3days_new_mort_new_phen_fix/output"
+rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/70_run_transient_3days_new_mort_new_phen_fix/output"
 post_process_dir = joinpath(rt_path_hyd, "../post", ide)
 !isdir(post_process_dir) && mkdir(post_process_dir)
 

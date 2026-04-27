@@ -32,7 +32,7 @@ end
 
 # --- 3. Setup Parameters & Paths ---
 ide = "f4_corr"
-rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/68_run_transient_3days_new_mort_new_phen_fix/output"
+rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/70_run_transient_3days_new_mort_new_phen_fix/output"
 post_process_dir = joinpath(rt_path_hyd, "../post", ide)
 
 !isdir(post_process_dir) && mkpath(post_process_dir)
@@ -106,7 +106,7 @@ for (idx, (scen_file, scen_label)) in enumerate(scenarios)
     cor_mat = cor(data_matrix)
 
     # --- Matrix Logic: Filter and Prep for Dynamic Thickness ---
-    threshold = 0.2
+    threshold = 0.15
     min_thick = 1.5
     max_thick = 12.0
 

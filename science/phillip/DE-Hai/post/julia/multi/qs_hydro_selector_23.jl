@@ -22,7 +22,7 @@ rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/
 rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/63_run_transient_3days"
 rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/63_run_transient_3days"
 rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/64_run_transient_3days_new_mort_new_phen"
-rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/69_run_transient_3days_new_mort_new_phen_fix"
+rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/70_run_transient_3days_new_mort_new_phen_fix"
 #rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2024_bench/56_refix_run_transient_g1_low_gamma_leaf"
 
 rmse_data_path = joinpath(rt_path_hyd, "post", "params_rmse_2023.csv")
@@ -38,9 +38,9 @@ df = df[:, .!map(col -> all(x -> ismissing(x) || (x isa Number && isnan(x)), col
 df = df[.!isnan.(df.psi_stem_rmse_23), :]
 
 
-psi_leaf_err_ref = 0.45 
-psi_stem_err_ref = 0.12 
-stem_flow_err_ref = 6.8
+psi_leaf_err_ref = 0.47 
+psi_stem_err_ref = 0.11
+stem_flow_err_ref = 6.65
 
 #vscodedisplay(df)
 
