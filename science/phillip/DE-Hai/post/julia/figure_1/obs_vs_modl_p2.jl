@@ -34,7 +34,7 @@ ide = "fig_1_2023_timeseries_and_diurnal"
 
 var_avails = ["psi_leaf_avg", "psi_stem_avg", "G_per_sap_area_avg"]
 
-# 1) DICTIONARY FOR VARIABLE TITLES
+# DICTIONARY FOR VARIABLE TITLES
 var_titles = Dict(
     "psi_leaf_avg" => "Leaf Water Potential",
     "psi_stem_avg" => "Stem Water Potential",
@@ -55,8 +55,11 @@ rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/
 post_process_dir = joinpath(rt_path_hyd, "../post", ide)
 !isdir(post_process_dir) && mkdir(post_process_dir)
 
+# EXPANDED SCENARIOS WITH COLORS
 scenarios = [
-    (dir="df_psi_stem_leaf_stem_flow_ind", label=L"\psi_{s} + \psi_{L} + J", id_filter=:all)
+    (dir="df_psi_leaf_ind", label=L"\psi_{L}", id_filter=:all, color=:blue),
+    (dir="df_psi_stem_leaf_ind", label=L"\psi_{s} + \psi_{L}", id_filter=:all, color=:green),
+    (dir="df_psi_stem_leaf_stem_flow_ind", label=L"\psi_{s} + \psi_{L} + J", id_filter=:all, color=:red)
 ]
 
 series = ThirtyMinSeries
@@ -72,6 +75,7 @@ end
 all_data = Dict()
 
 # --- 3. Data Processing Loop ---
+# This loop now elegantly processes all 3 model scenarios into memory
 for scen in scenarios
     if scen.id_filter == :all
         ids_file = joinpath(rt_path_hyd, "../post/ana", "$(scen.dir).csv")
@@ -143,24 +147,29 @@ for scen in scenarios
         df_for_diurnal = df
 
         if obs_df_raw !== nothing
+            obs_ts_full = copy(obs_df_raw)
+            obs_ts_full.DateOnly = Date.(obs_ts_full.DateTime)
+            if !hasproperty(obs_ts_full, :qlow)
+                obs_ts_full.qlow = obs_ts_full.mean
+                obs_ts_full.qup = obs_ts_full.mean
+            end
+
             obs_clean = dropmissing(obs_df_raw, :mean)
             obs_clean.DateOnly = Date.(obs_clean.DateTime)
-            # Round hours for diurnal join
             obs_clean.Hour = round.((hour.(obs_clean.DateTime) .+ minute.(obs_clean.DateTime) ./ 60) .* 2) ./ 2
             
-            # Safely handle quantiles if they are not present in the raw extraction
             if !hasproperty(obs_clean, :qlow)
                 obs_clean.qlow = obs_clean.mean
                 obs_clean.qup = obs_clean.mean
             end
 
-            # Propagate observation uncertainties into the diurnal aggregation
             obs_diurnal = combine(groupby(obs_clean, :Hour), 
                 :mean => (x -> mean(skipmissing(x))) => :mean,
                 :qlow => (x -> mean(skipmissing(x))) => :qlow,
                 :qup  => (x -> mean(skipmissing(x))) => :qup
             )
-            all_data[variable]["Obs"] = (raw_ts = obs_clean, diurnal = sort!(obs_diurnal, :Hour))
+            
+            all_data[variable]["Obs"] = (raw_ts = obs_ts_full, diurnal = sort!(obs_diurnal, :Hour))
 
             # Filter model diurnal to exact observation timestamps for psi_stem_avg
             if variable == "psi_stem_avg"
@@ -169,30 +178,35 @@ for scen in scenarios
             end
         end
         
-        # Calculate diurnal model using either full df or filtered df_for_diurnal
         mod_diurnal = combine(groupby(df_for_diurnal, :Hour), :mean => mean => :mean, :qlow => mean => :qlow, :qup => mean => :qup)
         
+        # Store data under the scenario label
         all_data[variable][scen.label] = (raw_ts = df, diurnal = sort!(mod_diurnal, :Hour))
     end
 end
 
-# --- 4. Plotting (3 Rows x 2 Columns) - Iterating for Model On/Off ---
+# --- 4. Plotting (3 Rows x 2 Columns) - Iterating through passes ---
 presentation_style = (fontfamily="Computer Modern", guidefontsize=16, tickfontsize=12, titlefontsize=16, legendfontsize=10, linewidth=2.5, grid=true, gridalpha=0.2)
 
-# Containers to save the axes limits from the 'model=true' run
+# Containers to save the axes limits from the 'red model' run
 saved_ylims_ts = Dict()
 saved_xlims_ts = Dict()
 saved_ylims_di = Dict()
 
-# 2) RUN TRUE FIRST: This ensures we capture the max bounds required for BOTH plots
-for include_model in [true, false]
-    plots_array = []
-    main_scen_label = L"\psi_{s} + \psi_{L} + J"
-    col = :red 
+# Define the plot passes (Red must be first to capture the global maximums)
+plot_passes = [
+    (scen=scenarios[3], suffix="with_model_red",   capture_bounds=true),  # psi_s + psi_L + J
+    (scen=nothing,      suffix="obs_only",         capture_bounds=false), # Obs only
+    (scen=scenarios[1], suffix="with_model_blue",  capture_bounds=false), # psi_L
+    (scen=scenarios[2], suffix="with_model_green", capture_bounds=false)  # psi_s + psi_L
+]
 
+for pass in plot_passes
+    plots_array = []
+    
     for (i, variable) in enumerate(var_avails)
         unit_label = all_data[variable]["unit"]
-        title_text = var_titles[variable] # Extracting from dict
+        title_text = var_titles[variable] 
         is_leaf = variable == "psi_leaf_avg"
         is_sap  = variable == "G_per_sap_area_avg" 
         
@@ -210,7 +224,8 @@ for include_model in [true, false]
                 
                 # Plot TS Observations
                 if is_leaf
-                    scatter!(p_ts, obs_ts.DateTime, obs_ts.mean, color=:black, label="Obs", markersize=6, markerstrokewidth=0)
+                    y_mean = [ismissing(x) ? NaN : Float64(x) for x in obs_ts.mean]
+                    scatter!(p_ts, obs_ts.DateTime, y_mean, color=:black, label="Obs", markersize=6, markerstrokewidth=0)
                 elseif is_sap
                     obs_ts_daily = combine(groupby(obs_ts, :DateOnly), 
                         :mean => (x -> mean(skipmissing(x))) => :mean,
@@ -220,8 +235,12 @@ for include_model in [true, false]
                     rib_obs_ts = (coalesce.(obs_ts_daily.mean .- obs_ts_daily.qlow, 0.0), coalesce.(obs_ts_daily.qup .- obs_ts_daily.mean, 0.0))
                     plot!(p_ts, obs_ts_daily.DateOnly, obs_ts_daily.mean, ribbon=rib_obs_ts, fillalpha=0.15, color=:black, label="Obs (Sapflow)", linealpha=0.9)
                 else
-                    rib_obs_ts = (coalesce.(obs_ts.mean .- obs_ts.qlow, 0.0), coalesce.(obs_ts.qup .- obs_ts.mean, 0.0))
-                    plot!(p_ts, obs_ts.DateTime, obs_ts.mean, ribbon=rib_obs_ts, fillalpha=0.15, color=:black, label="Obs", linealpha=0.9)
+                    y_mean = [ismissing(x) ? NaN : Float64(x) for x in obs_ts.mean]
+                    y_low  = [ismissing(x) ? NaN : Float64(x) for x in obs_ts.qlow]
+                    y_up   = [ismissing(x) ? NaN : Float64(x) for x in obs_ts.qup]
+                    
+                    rib_obs_ts = (y_mean .- y_low, y_up .- y_mean)
+                    plot!(p_ts, obs_ts.DateTime, y_mean, ribbon=rib_obs_ts, fillalpha=0.15, color=:black, label="Obs", linealpha=0.9)
                 end
                 
                 # Plot Diurnal Observations
@@ -232,10 +251,11 @@ for include_model in [true, false]
             end
         end
 
-        # Plot Model Data
-        if include_model && haskey(all_data[variable], main_scen_label)
-            mod_ts_full = all_data[variable][main_scen_label].raw_ts
-            mod_di = all_data[variable][main_scen_label].diurnal
+        # Plot Model Data (conditionally based on current pass)
+        if pass.scen !== nothing && haskey(all_data[variable], pass.scen.label)
+            mod_ts_full = all_data[variable][pass.scen.label].raw_ts
+            mod_di = all_data[variable][pass.scen.label].diurnal
+            col = pass.scen.color
             
             mod_ts = filter(r -> r.DateTime >= t_min && r.DateTime <= t_max, mod_ts_full)
             
@@ -249,7 +269,7 @@ for include_model in [true, false]
                 elseif is_sap
                     mod_ts_daily = combine(groupby(mod_ts, :DateOnly), :mean => mean => :mean, :qlow => mean => :qlow, :qup => mean => :qup)
                     rib_ts = (mod_ts_daily.mean .- mod_ts_daily.qlow, mod_ts_daily.qup .- mod_ts_daily.mean)
-                    plot!(p_ts, mod_ts_daily.DateOnly, mod_ts_daily.mean, ribbon=rib_ts, fillalpha=0.2, color=col, label="Model (G)")
+                    plot!(p_ts, mod_ts_daily.DateOnly, mod_ts_daily.mean, ribbon=rib_ts, fillalpha=0.2, color=col, label="Model")
                 else
                     rib_ts = (mod_ts.mean .- mod_ts.qlow, mod_ts.qup .- mod_ts.mean)
                     plot!(p_ts, mod_ts.DateTime, mod_ts.mean, ribbon=rib_ts, fillalpha=0.2, color=col, label="Model")
@@ -262,14 +282,12 @@ for include_model in [true, false]
             end
         end
         
-        # 2) CAPTURE OR APPLY AXIS LIMITS
-        if include_model
-            # Save the bounds while the larger dataset is plotted
+        # CAPTURE OR APPLY AXIS LIMITS
+        if pass.capture_bounds
             saved_ylims_ts[variable] = ylims(p_ts)
             saved_xlims_ts[variable] = xlims(p_ts)
             saved_ylims_di[variable] = ylims(p_di)
         else
-            # Force the previous bounds onto the obs-only plots
             ylims!(p_ts, saved_ylims_ts[variable])
             xlims!(p_ts, saved_xlims_ts[variable])
             ylims!(p_di, saved_ylims_di[variable])
@@ -282,10 +300,9 @@ for include_model in [true, false]
     l = @layout [grid(3, 2)]
     final_figure = plot(plots_array..., layout=l, size=(1600, 1000), margin=8Plots.mm)
 
-    suffix = include_model ? "with_model" : "obs_only"
-    filepath = joinpath(post_process_dir, "timeseries_and_diurnal_3x2_$(suffix).png")
+    filepath = joinpath(post_process_dir, "timeseries_and_diurnal_3x2_$(pass.suffix).png")
     savefig(final_figure, filepath)
     println("Saved: ", filepath)
 end
 
-println("Processing complete. Both plots generated successfully with fixed axes.")
+println("Processing complete. Generated 4 separate 3x2 plots with corresponding models/colors.")

@@ -37,10 +37,9 @@ post_process_dir = joinpath(rt_path_hyd, "../post", ide)
 
 !isdir(post_process_dir) && mkpath(post_process_dir)
 
-colors = [:purple, :blue, :green, :red]
-scen_order = ["U", L"\psi_{L}", L"\psi_{s} + \psi_{L}", L"\psi_{s} + \psi_{L} + J"]
+colors = [:blue, :green, :red]
+scen_order = [L"\psi_{L}", L"\psi_{s} + \psi_{L}", L"\psi_{s} + \psi_{L} + J"]
 scenarios = [
-    "df_ind" => "U",
     "df_psi_leaf_ind" => L"\psi_{L}",
     "df_psi_stem_leaf_ind" => L"\psi_{s} + \psi_{L}",
     "df_psi_stem_leaf_stem_flow_ind" => L"\psi_{s} + \psi_{L} + J"
