@@ -86,26 +86,28 @@ function calculate_vpd(t_k, q_gkg, p_hpa)
 end
 
 # --- 1. Setup ---
-ide = "fig5_future_violin_std"
-colors = [:blue, :purple, :red]
-#var_avails = ["total_veg_c","psi_stem_avg", "psi_leaf_avg", "beta_gs", "gc_avg"]
+ide = "fig5_future_violin_std2"
+colors = [:purple, :blue, :brown, :red]
 var_avails = ["total_veg_c"]
 d1, d2 = DateTime("2020-01-01"), DateTime("2101-01-01")
 
-rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/68_run_transient_3days_new_mort_new_phen_fix/output"
-rt_path_std = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/63_run_transient_3days/output"
+# Base path just for saving the final plots
+rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/70_run_transient_3days_new_mort_new_phen_fix/output"
 post_process_dir = joinpath(rt_path_hyd, "../post", ide)
 !isdir(post_process_dir) && mkdir(post_process_dir)
 
-ismip_path = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/isimip/ismip_selection_68"
-ismip_path_std = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/isimip/ismip_selection_58"
+# --- INDIVIDUAL ISIMIP PATHS ---
+path_std  = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/isimip/ismip_selection_68"
+path_blue = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/isimip/ismip_selection_68"
+path_red  = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/isimip/ismip_selection_70" # UPDATE ME
 
+# Expanded scenarios mapping to individual ismip base paths
 scenarios = [
-    (dir="df_std_ind", label="std", id_filter=[0]),
-    (dir="df_ind", label=L"U", id_filter=:all),
-    (dir="df_psi_stem_leaf_stem_flow_ind", label=L"\psi_{s} + \psi_{L} + J", id_filter=:all)
+    (dir="df_ind", label="std", id_filter=[0], ismip_base=path_std),
+    (dir="df_psi_leaf_ind", label=L"\psi_{L}", id_filter=:all, ismip_base=path_blue),
+    (dir="df_psi_stem_leaf_ind", label=L"\psi_{L} + \psi_{s}", id_filter=:all, ismip_base=path_blue),
+    (dir="df_psi_stem_leaf_stem_flow_ind", label=L"\psi_{L} + \psi_{s} + J", id_filter=:all, ismip_base=path_red)
 ]
-
 
 series = DailySeries
 SSPS = ["ssp126", "ssp370", "ssp585"]
@@ -122,14 +124,16 @@ for model in MODELS
         end
 
         # Phase A: Data Extraction
-        for (scen_folder, scen_label, id_filter) in scenarios
-            println("Extracting Data for Model: $model | SSP: $ssp | Scenario: $scen_label")
+        for scen in scenarios
+            println("Extracting Data for Model: $model | SSP: $ssp | Scenario: $(scen.label)")
             
-                if id_filter == :all
-                    folder = "$(ismip_path)_$scen_folder/$model/$ssp/output/"
-                else
-                    folder = "$(ismip_path_std)_$scen_folder/$model/$ssp/output/"
-                end
+            # Dynamically build the folder path using the scenario's specific base path
+            folder = "$(scen.ismip_base)_$(scen.dir)/$model/$ssp/output/"
+
+            if !isdir(folder)
+                @warn "Directory not found: $folder"
+                continue
+            end
 
             all_names = readdir(folder)
             indexes = filter(x -> isdir(joinpath(folder, x)), all_names)
@@ -166,25 +170,24 @@ for model in MODELS
                 df_vec = get_multi_file_slice(run_collection, var, Fluxnetdata, DailySeries, 0.1, 0.9, slice_dates, d1, d2)
                 
                 # Extract the last day across all members to build the distribution
-                df_snapshots = ensemble_last_day_snapshots(df_vec, scen_label)
+                df_snapshots = ensemble_last_day_snapshots(df_vec, scen.label)
                 
                 println("  Processed $var")
-                yearly_data[var][scen_label] = df_snapshots
+                yearly_data[var][scen.label] = df_snapshots
             end
         end
 
         # Phase B: Violin Plotting Routine
-# Phase B: Violin Plotting Routine
         for var in var_avails
             println("Plotting building steps for Variable: $var")
             
             # 1. Combine all available scenarios for this variable into one master DataFrame
-            dfs = [yearly_data[var][s[2]] for s in scenarios if haskey(yearly_data[var], s[2])]
+            dfs = [yearly_data[var][s.label] for s in scenarios if haskey(yearly_data[var], s.label)]
             isempty(dfs) && continue
             df_all = vcat(dfs...)
             
             # 2. Lock in Categories so layout and colors never shuffle
-            scen_order = [s[2] for s in scenarios]
+            scen_order = [s.label for s in scenarios]
             df_all.Scenario = categorical(df_all.Scenario, levels=scen_order)
             
             bin_levels = unique(sort(df_all, :BinStart).Bin)
@@ -192,17 +195,15 @@ for model in MODELS
 
             # 3. The Build-up Loop
             for i in 1:length(scenarios)
-                visible_scens = [s[2] for s in scenarios[1:i]]
+                visible_scens = [s.label for s in scenarios[1:i]]
                 
                 # MASKING TRICK 2.0: Transparency and Dynamic Labels
-                # If a scenario is in 'visible_scens', it gets an alpha of 0.7 and a label.
-                # If it's a "future" scenario, it gets an alpha of 0.0 (invisible) and an empty label ("").
                 c_alphas = [s in visible_scens ? 0.7 : 0.0 for s in scen_order]
                 c_lines  = [s in visible_scens ? 1.0 : 0.0 for s in scen_order]
                 c_labels = [s in visible_scens ? s   : ""  for s in scen_order]
                 
                 # Plot grouped violins
-                p = groupedviolin(
+p = groupedviolin(
                     df_all.Bin,             # The 15-year interval bins
                     df_all.Value,
                     group = df_all.Scenario,
@@ -210,9 +211,12 @@ for model in MODELS
                     fillalpha = reshape(c_alphas, 1, :),   
                     linealpha = reshape(c_lines, 1, :),    
                     label = reshape(c_labels, 1, :),       
-                    title = "Building Scenarios: $var ($model - $ssp)\nStep $i",
+                    title = "Building Scenarios: $var ($model - $ssp)",
                     xlabel = "15-Year Interval",
-                    ylabel = "Value",
+                    ylabel = L"\mathrm{veg.\ carbon \; [mol \cdot m^{-2}]}",
+                    guidefontsize = 20, # Made axis labels EVEN BIGGER (was 16)
+                    tickfontsize = 14,  # Bumped tick labels slightly to match
+                    legendfontsize = 12,
                     legend = :outertopright,
                     size = (1400, 700),
                     grid = true,
@@ -220,7 +224,8 @@ for model in MODELS
                     framestyle = :box,
                     linewidth = 1,
                     trim = true,
-                    spacing = 0.1 # Optional: controls the gap between the violins in a group
+                    left_margin = 15Plots.mm,   # FIX: Prevents y-axis label from cutting off
+                    bottom_margin = 10Plots.mm  # FIX: Prevents x-axis label from cutting off
                 )
 
                 # Save step

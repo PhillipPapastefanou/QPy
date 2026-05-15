@@ -1,6 +1,5 @@
 #include("../../../../src/postprocessing/julia/core/qcomparer_2023.jl")
 
-
 using CSV
 using DataFrames
 using Dates
@@ -31,7 +30,7 @@ end
 
 
 rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/66_run_transient_3days_new_mort_new_phen"
-rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/67_run_transient_3days_new_mort_new_phen_fix"
+rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/70_run_transient_3days_new_mort_new_phen_fix"
 #rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2024_bench/56_refix_run_transient_g1_low_gamma_leaf"
 
 rmse_data_path = joinpath(rt_path_hyd, "post", "params_rmse_2023.csv")
@@ -53,7 +52,7 @@ psi_leaf_err_ref = 0.47
 psi_stem_err_ref = 0.11
 stem_flow_err_ref = 6.65
 
-#vscodedisplay(df)
+#
 
 # Psi_leaf constrain
 df_psi_leaf= filter(row -> (row.psi_leaf_rmse_23 < psi_leaf_err_ref), df);
@@ -67,7 +66,9 @@ df_psi_stem_leaf_stem_flow = filter(row -> (row.psi_stem_rmse_23 < psi_stem_err_
  (row.stem_flow_rmse_05_23 < stem_flow_err_ref), df);
 print(size(df_psi_stem_leaf_stem_flow))
 
+vscodedisplay(df_psi_stem_leaf)
 
+df_psi_stem_leaf
 v = :gpp_rmse_18
 export_indexes(df, ana_path ,v, "df")
 export_indexes(df_psi_leaf, ana_path ,v, "df_psi_leaf")

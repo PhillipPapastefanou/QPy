@@ -52,19 +52,25 @@ function calculate_vpd(t_k, q_gkg, p_hpa)
 end
 
 # --- 1. Shared Setup & Configurations ---
-colors = [:blue, :green, :red]
+colors = [:purple, :brown, :red]
 var_avails = ["qle_avg", "gpp_avg", "stem_flow_per_sap_area_avg", "G_per_sap_area_avg", "psi_stem_avg", "psi_leaf_avg", "beta_gs", "gc_avg"]
 series = ThirtyMinSeries
 
-rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/68_run_transient_3days_new_mort_new_phen_fix/output"
-post_process_dir = joinpath(rt_path_hyd, "../post", "f3_combined_incremental_with_obs")
-!isdir(post_process_dir) && mkdir(post_process_dir)
+# --- INDIVIDUAL PATHS ---
+path_blue  = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/67_run_transient_3days_new_mort_new_phen_fix/output"
+path_green = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/67_run_transient_3days_new_mort_new_phen_fix/output" # UPDATE ME
+path_red   = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/70_run_transient_3days_new_mort_new_phen_fix/output" # UPDATE ME
 
+# Expanded scenarios mapping to individual paths
 scenarios = [
-    "df_psi_leaf_ind" => L"\psi_{L}",
-    "df_psi_stem_leaf_ind" => L"\psi_{s} + \psi_{L}",
-    "df_psi_stem_leaf_stem_flow_ind" => L"\psi_{s} + \psi_{L} + J"
+    (name="df_psi_leaf_ind", label=L"\psi_{L}", rt_path=path_blue),
+    (name="df_psi_stem_leaf_ind", label=L"\psi_{L} + \psi_{s}", rt_path=path_green),
+    (name="df_psi_stem_leaf_stem_flow_ind", label=L"\psi_{L} + \psi_{s} + J", rt_path=path_red)
 ]
+
+# Set post-processing dir based on the third scenario (red)
+post_process_dir = joinpath(scenarios[3].rt_path, "../post", "f3_combined_incremental_with_obs")
+!isdir(post_process_dir) && mkdir(post_process_dir)
 
 # Define parameters for both years
 years_config = [
@@ -105,11 +111,15 @@ for conf in years_config
         df_obs_psi_leaf_slice = get_single_file_slice(df_psi_leaf_obs, "psi_leaf_midday_avg", series, 0.25, 0.75, slice_dates, d1, d2)    
     end
 
-    # Extract Model Data
-    for (scen_name, label) in scenarios
-        ids_file = joinpath(rt_path_hyd, "../post/ana", "$(scen_name).csv")
+    # Extract Model Data dynamically using each scenario's path
+    for scen in scenarios
+        scen_name = scen.name
+        label = scen.label
+        scen_path = scen.rt_path
+
+        ids_file = joinpath(scen_path, "../post/ana", "$(scen_name).csv")
         ids = CSV.read(ids_file, DataFrame)[!, :fid]
-        full_dir_paths = [joinpath(rt_path_hyd, string(id)) for id in ids]
+        full_dir_paths = [joinpath(scen_path, string(id)) for id in ids]
         
         first_index = true
         qoutput = nothing
@@ -285,7 +295,8 @@ for i in 1:length(scenarios)
 
             # Plot Incremental Scenarios
             for j in 1:i
-                s_name, s_label = scenarios[j]
+                s_name = scenarios[j].name
+                s_label = scenarios[j].label
                 d_daily = all_data[variable][s_name].daily
                 d_diurn = all_data[variable][s_name].diurnal
                 

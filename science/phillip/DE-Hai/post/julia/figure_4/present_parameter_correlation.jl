@@ -32,18 +32,24 @@ end
 
 # --- 3. Setup Parameters & Paths ---
 ide = "f4_corr"
-rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/70_run_transient_3days_new_mort_new_phen_fix/output"
-post_process_dir = joinpath(rt_path_hyd, "../post", ide)
-
-!isdir(post_process_dir) && mkpath(post_process_dir)
-
-colors = [:blue, :green, :red]
+colors = [:blue, :brown, :red]
 scen_order = [L"\psi_{L}", L"\psi_{s} + \psi_{L}", L"\psi_{s} + \psi_{L} + J"]
+
+# --- INDIVIDUAL PATHS ---
+path_blue  = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/67_run_transient_3days_new_mort_new_phen_fix/output"
+path_green = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/67_run_transient_3days_new_mort_new_phen_fix/output" # UPDATE ME
+path_red   = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/70_run_transient_3days_new_mort_new_phen_fix/output" # UPDATE ME
+
+# Expanded scenarios mapping to individual paths
 scenarios = [
-    "df_psi_leaf_ind" => L"\psi_{L}",
-    "df_psi_stem_leaf_ind" => L"\psi_{s} + \psi_{L}",
-    "df_psi_stem_leaf_stem_flow_ind" => L"\psi_{s} + \psi_{L} + J"
+    (file="df_psi_leaf_ind", label=L"\psi_{L}", rt_path=path_blue),
+    (file="df_psi_stem_leaf_ind", label=L"\psi_{s} + \psi_{L}", rt_path=path_green),
+    (file="df_psi_stem_leaf_stem_flow_ind", label=L"\psi_{s} + \psi_{L} + J", rt_path=path_red)
 ]
+
+# Set post-processing dir based on the third scenario (red)
+post_process_dir = joinpath(scenarios[3].rt_path, "../post", ide)
+!isdir(post_process_dir) && mkpath(post_process_dir)
 
 cols_interest = ["k_xylem_sats", "gamma_stem_max", "gamma_leaf", "k_latosa", 
                  "g1", "psi50_close", "root_dist", "root_scale", "g0"]
@@ -64,15 +70,22 @@ col_names_map = Dict(
 # Create the display list for GraphRecipes
 display_names = [get(col_names_map, col, col) for col in cols_interest]
 
-params_path = joinpath(rt_path_hyd, "../post", "params_rmse_2023.csv")
-if !isfile(params_path)
-    error("Master parameter file not found at: $params_path")
-end
-df_params = CSV.read(params_path, DataFrame)
-
 # --- 4. Main Processing Loop ---
-for (idx, (scen_file, scen_label)) in enumerate(scenarios)
-    ids_path = joinpath(rt_path_hyd, "../post/ana", "$(scen_file)_all.csv")
+for (idx, scen) in enumerate(scenarios)
+    scen_file = scen.file
+    scen_label = scen.label
+    current_rt_path = scen.rt_path
+    
+    # 1. Load the params data explicitly from each scenario's path
+    params_path = joinpath(current_rt_path, "../post", "params_rmse_2023.csv")
+    if !isfile(params_path)
+        @warn "Master parameter file not found for scenario $scen_label at: $params_path"
+        continue
+    end
+    df_params = CSV.read(params_path, DataFrame)
+
+    # 2. Filter using IDs
+    ids_path = joinpath(current_rt_path, "../post/ana", "$(scen_file)_all.csv")
     n = length(cols_interest)
     
     if !isfile(ids_path)
@@ -177,8 +190,8 @@ for (idx, (scen_file, scen_label)) in enumerate(scenarios)
         plot!(p_graph, rect, fillcolor=:white, linecolor=:black, label="")
         
         # Overlay the text perfectly centered in the new box
-annotate!(p_graph, x_c, y_c, 
-    text(display_names[i], font(16, "Computer Modern", :black, :center)))
+        annotate!(p_graph, x_c, y_c, 
+            text(display_names[i], font(16, "Computer Modern", :black, :center)))
     end
 
     # 3. Add Edge Labels (Correlation values)

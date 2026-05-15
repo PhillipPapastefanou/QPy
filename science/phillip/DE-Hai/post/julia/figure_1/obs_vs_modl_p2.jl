@@ -51,16 +51,22 @@ d1_sap, d2_sap = DateTime("2023-06-01"), DateTime("2023-08-01")
 d1_leaf = DateTime("2023-06-01")
 d2_leaf = DateTime("2023-10-01") # Set to the 2nd to capture the full 24h of the 1st
 
-rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/70_run_transient_3days_new_mort_new_phen_fix/output"
-post_process_dir = joinpath(rt_path_hyd, "../post", ide)
-!isdir(post_process_dir) && mkdir(post_process_dir)
+# --- INDIVIDUAL PATHS ---
+# Replace these with the actual paths for your different simulation runs
+path_blue  = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/67_run_transient_3days_new_mort_new_phen_fix/output"
+path_brown = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/67_run_transient_3days_new_mort_new_phen_fix/output" # UPDATE ME
+path_red   = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/70_run_transient_3days_new_mort_new_phen_fix/output" # UPDATE ME
 
-# EXPANDED SCENARIOS WITH COLORS
+# EXPANDED SCENARIOS WITH COLORS AND UNIQUE PATHS
 scenarios = [
-    (dir="df_psi_leaf_ind", label=L"\psi_{L}", id_filter=:all, color=:blue),
-    (dir="df_psi_stem_leaf_ind", label=L"\psi_{s} + \psi_{L}", id_filter=:all, color=:green),
-    (dir="df_psi_stem_leaf_stem_flow_ind", label=L"\psi_{s} + \psi_{L} + J", id_filter=:all, color=:red)
+    (dir="df_psi_leaf_ind", label=L"\psi_{L}", id_filter=:all, color=:blue, rt_path=path_blue),
+    (dir="df_psi_stem_leaf_ind", label=L"\psi_{s} + \psi_{L}", id_filter=:all, color=:brown, rt_path=path_brown),
+    (dir="df_psi_stem_leaf_stem_flow_ind", label=L"\psi_{s} + \psi_{L} + J", id_filter=:all, color=:red, rt_path=path_red)
 ]
+
+# Set post-processing directory relative to the first scenario's path
+post_process_dir = joinpath(scenarios[3].rt_path, "../post", ide)
+!isdir(post_process_dir) && mkdir(post_process_dir)
 
 series = ThirtyMinSeries
 df_fnet = year(d1) < 2022 ? obs.df_fnet_22 : obs.df_fnet_24
@@ -75,16 +81,16 @@ end
 all_data = Dict()
 
 # --- 3. Data Processing Loop ---
-# This loop now elegantly processes all 3 model scenarios into memory
+# This loop now elegantly processes all 3 model scenarios using their specific paths
 for scen in scenarios
     if scen.id_filter == :all
-        ids_file = joinpath(rt_path_hyd, "../post/ana", "$(scen.dir).csv")
+        ids_file = joinpath(scen.rt_path, "../post/ana", "$(scen.dir).csv")
         ids = CSV.read(ids_file, DataFrame)[!, :fid]
     else
         ids = scen.id_filter
     end
 
-    full_dir_paths = [joinpath(rt_path_hyd, string(id)) for id in ids]
+    full_dir_paths = [joinpath(scen.rt_path, string(id)) for id in ids]
     qcol = QMultiRunCollections(QOutputCollection[], String[])
 
     first_index = true
@@ -305,4 +311,4 @@ for pass in plot_passes
     println("Saved: ", filepath)
 end
 
-println("Processing complete. Generated 4 separate 3x2 plots with corresponding models/colors.")
+println("Processing complete. Generated 4 separate plots using discrete paths.")

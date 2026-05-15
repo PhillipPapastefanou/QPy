@@ -22,7 +22,7 @@ rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/
 rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/63_run_transient_3days"
 rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/64_run_transient_3days_new_mort_new_phen"
 rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/70_run_transient_3days_new_mort_new_phen_fix"
-rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/67_run_transient_3days_new_mort_new_phen_fix"
+rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/70_run_transient_3days_new_mort_new_phen_fix"
 #rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2024_bench/56_refix_run_transient_g1_low_gamma_leaf"
 
 rmse_data_path = joinpath(rt_path_hyd, "post", "params_rmse_2023.csv")
@@ -42,7 +42,7 @@ psi_leaf_err_ref = 0.47
 psi_stem_err_ref = 0.11
 stem_flow_err_ref = 6.65
 
-#vscodedisplay(df)
+vscodedisplay(df_psi_stem_leaf)
 
 # Psi_leaf constrain
 df_psi_leaf= filter(row -> (row.psi_leaf_rmse_23 < psi_leaf_err_ref), df);
@@ -53,7 +53,7 @@ print(size(df_psi_stem_leaf))
 
 # Psi_stem and stem flow constrain
 df_psi_stem_leaf_stem_flow = filter(row -> (row.psi_stem_rmse_23 < psi_stem_err_ref)& (row.psi_leaf_rmse_23 < psi_leaf_err_ref) &
- (row.stem_flow_rmse_05_23 < stem_flow_err_ref), df);
+ (row.G_rmse_05_23 < stem_flow_err_ref), df);
 print(size(df_psi_stem_leaf_stem_flow))
 
 vscodedisplay(df_psi_stem_leaf[:, [1;15:end]] )

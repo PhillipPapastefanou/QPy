@@ -37,14 +37,14 @@ rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2024_bench/
 #rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2024_bench/255_run_transient_no_texture"
 rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2024_bench/55_run_transient_g1_low_gamma_leaf"
 rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/66_run_transient_3days_new_mort_new_phen"
-rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/70_run_transient_3days_new_mort_new_phen_fix"
+rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/71_run_transient_3days_new_mort_new_phen_fix"
 
 #rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/jsbach_spq/2026_36_run_transient_slurm_array_mort_hyd_fail_mort_g1"
 
 
 #calculate_mod_obs_rmse_2024(rt_path_hyd, hainich_obs)                                     
 #calculate_mod_obs_rmse_2023(rt_path_hyd, hainich_obs)                                     
-#calculate_mod_obs_rmse_parallel(rt_path_hyd, hainich_obs)
+#calculate_mod_obs_rmse_parallel(rt_path_hyd, hainich_obs)x
 
 
 if abspath(PROGRAM_FILE) == @__FILE__

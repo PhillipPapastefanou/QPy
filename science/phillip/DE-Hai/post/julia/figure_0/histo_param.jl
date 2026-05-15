@@ -43,12 +43,12 @@ end
 
 # Dictionary mapping raw columns to (Math Name, Units)
 param_info = Dict(
-    "k_xylem_sats" => ("k_{xylem,sat}", "kg m-1 s-1 MPa-1"),
-    "k_latosa"     => ("k_{latosa}", "kg m-2 s-1 MPa-1"),
+    "k_xylem_sats" => ("K_{xylem,sat}", "kg m-1 s-1 MPa-1"),
+    "k_latosa"     => ("\\mathrm{Leaf area :Sapwood area}", "kg m-2 s-1 MPa-1"),
     "g0"           => ("g_{0}", "mol m-2 s-1"),
-    "g1"           => ("g_{1}", "kPa0.5"),
+    "g1"           => ("g_{1}\\mathrm{(water\\ use\\ strategy)}", "kPa0.5"),
     "psi50_close"  => ("\\psi_{Leaf,close}", "MPa"),
-    "root_dist"    => ("z_{root}", "m")
+    "root_dist"    => ("z_{root} \\mathrm{(Inv\\ root\\ depth)}", "1/m")
 )
 
 # Pre-render the labels for the plot titles
@@ -59,28 +59,37 @@ param_labels = Dict(
 
 df_plot_all = DataFrame(Parameter=String[], Value=Float64[], Scenario=String[])
 ide = "fig_0"
-colors = [:blue, :green, :red]
-scen_order = [L"\psi_{L}", L"\psi_{s} + \psi_{L}", L"\psi_{s} + \psi_{L} + J"]
+colors = [:blue, :brown, :red]
+scen_order = [L"\psi_{L}", L"\psi_{L} + \psi_{s}", L"\psi_{L} + \psi_{s} + J"]
+
+# --- INDIVIDUAL PATHS ---
+path_blue  = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/67_run_transient_3days_new_mort_new_phen_fix/output"
+path_brown = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/67_run_transient_3days_new_mort_new_phen_fix/output" # UPDATE ME
+path_red   = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/70_run_transient_3days_new_mort_new_phen_fix/output" # UPDATE ME
+
+# Expanded scenarios with individual paths
 scenarios = [
-    "df_psi_leaf_ind" => L"\psi_{L}",
-    "df_psi_stem_leaf_ind" => L"\psi_{s} + \psi_{L}",
-    "df_psi_stem_leaf_stem_flow_ind" => L"\psi_{s} + \psi_{L} + J"
+    (file="df_psi_leaf_ind", label=L"\psi_{L}", rt_path=path_blue),
+    (file="df_psi_stem_leaf_ind", label=L"\psi_{L} + \psi_{s}", rt_path=path_brown),
+    (file="df_psi_stem_leaf_stem_flow_ind", label=L"\psi_{L} + \psi_{s} + J", rt_path=path_red)
 ]
 
-rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/70_run_transient_3days_new_mort_new_phen_fix/output"
-post_process_dir = joinpath(rt_path_hyd, "../post", ide)
+# Set post-processing dir based on the first scenario
+post_process_dir = joinpath(scenarios[3].rt_path, "../post", ide)
 !isdir(post_process_dir) && mkdir(post_process_dir)
 
-# Read parameter data
-df_params = CSV.read(joinpath(rt_path_hyd, "../post", "params_rmse_2023.csv"), DataFrame)
 cols_interest = ["k_xylem_sats", "k_latosa", "g0", "g1", "psi50_close", "root_dist"]
 
 # --- 3. Data Processing ---
 
 df_plot_all.Scenario = categorical(df_plot_all.Scenario, levels=scen_order)
 
-for (scen_file, scen_label) in scenarios
-    ids_file = joinpath(rt_path_hyd, "../post/ana", "$(scen_file)_all.csv")
+for scen in scenarios
+    # Load the params data explicitly from each scenario's path
+    params_file = joinpath(scen.rt_path, "../post", "params_rmse_2023.csv")
+    df_params = CSV.read(params_file, DataFrame)
+    
+    ids_file = joinpath(scen.rt_path, "../post/ana", "$(scen.file)_all.csv")
     if isfile(ids_file)
         fids = CSV.read(ids_file, DataFrame)[!, :fid]
         df_scen = filter(row -> row.fid in fids, df_params)
@@ -91,7 +100,7 @@ for (scen_file, scen_label) in scenarios
                 append!(df_plot_all, DataFrame(
                     Parameter = fill(param, length(vals)),
                     Value = vals,
-                    Scenario = fill(scen_label, length(vals))
+                    Scenario = fill(scen.label, length(vals))
                 ))
             end
         end
@@ -113,9 +122,7 @@ for param in cols_interest
         # Title gets the math symbol (e.g., \psi_{50,close})
         p_title = latexstring(math_sym) 
         
-        # Y-axis gets the LaTeX formatted unit
-        # (Optional: Add brackets by wrapping the call like this: 
-        # p_ylabel = latexstring("\\left[ $(format_unit_to_latex(raw_unit).s[2:end-1]) \\right]"))
+        # Y-axis gets the LaTeX formatted unitz
         p_ylabel = format_unit_to_latex(raw_unit) 
     else
         # Fallback if a parameter is missing from the dictionary
@@ -131,8 +138,15 @@ for param in cols_interest
         ylabel = p_ylabel,     # <--- Y-axis now uses the LaTeX unit
         legend = false,
         xrotation = 45,
+        tickfontsize = 14,      # <--- Increases size of both X and Y tick labels
+        titlefontsize = 18,     # <--- Optional: keeps title legible relative to ticks
+        guidefontsize = 14,
         trim = true,
-        frame = :box
+        frame = :box,
+
+        # --- POSITIONING FIXES ---
+    top_margin = 2Plots.mm,       # Pulls the plot area UP (reducing gap)
+    titlefontfamily = "Computer Modern",
     )
     
     push!(plot_list, p)
@@ -141,15 +155,16 @@ end
 # Create the final grid
 final_violin_plot = plot(plot_list..., 
     layout = (2, 3), 
-    size = (1200, 600), 
-    margin = 5Plots.mm
+    size = (1200, 800), 
+    margin = 10Plots.mm
 )
 
 # Save output
 savefig(final_violin_plot, joinpath(post_process_dir, "parameter_distributions_violin.png"))
 
-# Cleanup / Metadata
-cols = names(df_params) .|> String
+# Cleanup / Metadata (using names from the first scenario's params file to keep variable active)
+df_params_meta = CSV.read(joinpath(scenarios[3].rt_path, "../post", "params_rmse_2023.csv"), DataFrame)
+cols = names(df_params_meta) .|> String
 exclude = ["RMSE", "ID", "FID", "USE_JSB_PHYSICS"]
 cols_no_rmse = filter(col -> all(p -> !occursin(p, uppercase(col)), exclude), cols)
 cols_rmse = filter(col -> occursin("RMSE", uppercase(col)), cols)
