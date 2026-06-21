@@ -47,7 +47,7 @@ d1_sap, d2_sap = DateTime("2023-06-01"), DateTime("2023-10-01")
 d1_overlap = DateTime("2023-05-01")
 d2_overlap = DateTime("2023-11-01")
 
-rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/68_run_transient_3days_new_mort_new_phen_fix/output"
+rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/71_run_transient_3days_new_mort_new_phen_fix/output"
 post_process_dir = joinpath(rt_path_hyd, "../post", ide)
 !isdir(post_process_dir) && mkdir(post_process_dir)
 

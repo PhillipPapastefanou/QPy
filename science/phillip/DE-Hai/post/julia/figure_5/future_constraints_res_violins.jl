@@ -88,18 +88,19 @@ end
 # --- 1. Setup ---
 ide = "fig5_future_violin_std2"
 colors = [:purple, :blue, :brown, :red]
-var_avails = ["total_veg_c"]
+#var_avails = ["gpp_avg", "total_veg_c"]
+var_avails = ["npp_avg"]
 d1, d2 = DateTime("2020-01-01"), DateTime("2101-01-01")
 
 # Base path just for saving the final plots
-rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/70_run_transient_3days_new_mort_new_phen_fix/output"
+rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/72_run_transient_3days_new_mort_new_phen_fix/output"
 post_process_dir = joinpath(rt_path_hyd, "../post", ide)
 !isdir(post_process_dir) && mkdir(post_process_dir)
 
 # --- INDIVIDUAL ISIMIP PATHS ---
-path_std  = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/isimip/ismip_selection_68"
-path_blue = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/isimip/ismip_selection_68"
-path_red  = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/isimip/ismip_selection_70" # UPDATE ME
+path_std  = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/isimip/ismip_selection_72"
+path_blue = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/isimip/ismip_selection_72"
+path_red  = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/isimip/ismip_selection_72" # UPDATE ME
 
 # Expanded scenarios mapping to individual ismip base paths
 scenarios = [

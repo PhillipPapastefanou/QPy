@@ -57,9 +57,9 @@ var_avails = ["qle_avg", "gpp_avg", "stem_flow_per_sap_area_avg", "G_per_sap_are
 series = ThirtyMinSeries
 
 # --- INDIVIDUAL PATHS ---
-path_blue  = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/67_run_transient_3days_new_mort_new_phen_fix/output"
-path_green = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/67_run_transient_3days_new_mort_new_phen_fix/output" # UPDATE ME
-path_red   = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/70_run_transient_3days_new_mort_new_phen_fix/output" # UPDATE ME
+path_blue  = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/71_run_transient_3days_new_mort_new_phen_fix/output"
+path_green = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/71_run_transient_3days_new_mort_new_phen_fix/output" # UPDATE ME
+path_red   = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/71_run_transient_3days_new_mort_new_phen_fix/output" # UPDATE ME
 
 # Expanded scenarios mapping to individual paths
 scenarios = [

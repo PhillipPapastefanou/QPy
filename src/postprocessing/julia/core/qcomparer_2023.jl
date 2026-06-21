@@ -55,7 +55,8 @@ rtobspath = "/Net/Groups/BSI/work_scratch/ppapastefanou/data/Fluxnet_detail/eval
     rename!(df_psi_stem_obs, :date => :DateTime)
 
     # Sap flow
-    full_path_sap_flow_2023_2024 = joinpath(rtobspath, "DE-Hai_forcing_30min_20230101_20251227.csv")
+    #full_path_sap_flow_2023_2024 = joinpath(rtobspath, "DE-Hai_forcing_30min_20230101_20251227.csv")
+    full_path_sap_flow_2023_2024 = joinpath(rtobspath, "Sapflow2023-2024_offset.csv")
     df_sap_flow_2023 = CSV.read(
         full_path_sap_flow_2023_2024,
         DataFrame;

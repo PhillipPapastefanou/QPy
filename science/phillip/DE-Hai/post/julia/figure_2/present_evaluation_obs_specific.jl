@@ -75,7 +75,7 @@ df_psi_leaf_obs = obs.df_psi_leaf_obs
 df_sap_flow_2023 = obs.df_sap_flow_2023
 
 # Make sure rt_path_hyd is defined (your original snippet used rt_path_hyd but defined rt_path_std)
-rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/70_run_transient_3days_new_mort_new_phen_fix/output"
+rt_path_hyd = "/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/72_run_transient_3days_new_mort_new_phen_fix/output"
 post_process_dir = joinpath(rt_path_hyd, "../post", "f2_combined_2003_2023")
 !isdir(post_process_dir) && mkdir(post_process_dir)
 

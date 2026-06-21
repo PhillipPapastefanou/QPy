@@ -1,0 +1,105 @@
+Extracting Data for Model: mri-esm2-0 | SSP: ssp126 | Scenario: $\psi_{L}$
+Extracting Data for Model: mri-esm2-0 | SSP: ssp126 | Scenario: $\psi_{L} + \psi_{s}$
+Extracting Data for Model: mri-esm2-0 | SSP: ssp126 | Scenario: $\psi_{L} + \psi_{s} + J$
+Extracting Data for Model: mri-esm2-0 | SSP: ssp370 | Scenario: $\psi_{L}$
+Extracting Data for Model: mri-esm2-0 | SSP: ssp370 | Scenario: $\psi_{L} + \psi_{s}$
+Extracting Data for Model: mri-esm2-0 | SSP: ssp370 | Scenario: $\psi_{L} + \psi_{s} + J$
+Extracting Data for Model: mri-esm2-0 | SSP: ssp585 | Scenario: $\psi_{L}$
+Extracting Data for Model: mri-esm2-0 | SSP: ssp585 | Scenario: $\psi_{L} + \psi_{s}$
+Extracting Data for Model: mri-esm2-0 | SSP: ssp585 | Scenario: $\psi_{L} + \psi_{s} + J$
+Extracting Data for Model: gfdl-esm4 | SSP: ssp126 | Scenario: $\psi_{L}$
+Extracting Data for Model: gfdl-esm4 | SSP: ssp126 | Scenario: $\psi_{L} + \psi_{s}$
+Extracting Data for Model: gfdl-esm4 | SSP: ssp126 | Scenario: $\psi_{L} + \psi_{s} + J$
+Extracting Data for Model: gfdl-esm4 | SSP: ssp370 | Scenario: $\psi_{L}$
+Extracting Data for Model: gfdl-esm4 | SSP: ssp370 | Scenario: $\psi_{L} + \psi_{s}$
+Extracting Data for Model: gfdl-esm4 | SSP: ssp370 | Scenario: $\psi_{L} + \psi_{s} + J$
+Extracting Data for Model: gfdl-esm4 | SSP: ssp585 | Scenario: $\psi_{L}$
+Extracting Data for Model: gfdl-esm4 | SSP: ssp585 | Scenario: $\psi_{L} + \psi_{s}$
+Extracting Data for Model: gfdl-esm4 | SSP: ssp585 | Scenario: $\psi_{L} + \psi_{s} + J$
+Extracting Data for Model: ukesm1-0 | SSP: ssp126 | Scenario: $\psi_{L}$
+Extracting Data for Model: ukesm1-0 | SSP: ssp126 | Scenario: $\psi_{L} + \psi_{s}$
+Extracting Data for Model: ukesm1-0 | SSP: ssp126 | Scenario: $\psi_{L} + \psi_{s} + J$
+Extracting Data for Model: ukesm1-0 | SSP: ssp370 | Scenario: $\psi_{L}$
+Extracting Data for Model: ukesm1-0 | SSP: ssp370 | Scenario: $\psi_{L} + \psi_{s}$
+Extracting Data for Model: ukesm1-0 | SSP: ssp370 | Scenario: $\psi_{L} + \psi_{s} + J$
+Extracting Data for Model: ukesm1-0 | SSP: ssp585 | Scenario: $\psi_{L}$
+Extracting Data for Model: ukesm1-0 | SSP: ssp585 | Scenario: $\psi_{L} + \psi_{s}$
+Extracting Data for Model: ukesm1-0 | SSP: ssp585 | Scenario: $\psi_{L} + \psi_{s} + J$
+[ Info: Progress 10.0% | step 3/30 | elapsed 00:00:05 | remaining ≈ 00:00:47
+[ Info: Progress 40.0% | step 12/30 | elapsed 00:00:10 | remaining ≈ 00:00:15
+[ Info: Progress 76.7% | step 23/30 | elapsed 00:00:15 | remaining ≈ 00:00:05
+[ Info: Progress 56.7% | step 17/30 | elapsed 00:00:05 | remaining ≈ 00:00:04
+[ Info: Progress 46.7% | step 14/30 | elapsed 00:00:05 | remaining ≈ 00:00:06
+[ Info: Progress 96.7% | step 29/30 | elapsed 00:00:10 | remaining ≈ 00:00:00
+[ Info: Progress 60.0% | step 18/30 | elapsed 00:00:06 | remaining ≈ 00:00:04
+[ Info: Progress 50.0% | step 15/30 | elapsed 00:00:05 | remaining ≈ 00:00:05
+[ Info: Progress 100.0% | step 30/30 | elapsed 00:00:10 | remaining ≈ 00:00:00
+[ Info: Progress 66.7% | step 20/30 | elapsed 00:00:05 | remaining ≈ 00:00:03
+[ Info: Progress 50.0% | step 15/30 | elapsed 00:00:05 | remaining ≈ 00:00:05
+[ Info: Progress 100.0% | step 30/30 | elapsed 00:00:10 | remaining ≈ 00:00:00
+[ Info: Progress 63.3% | step 19/30 | elapsed 00:00:05 | remaining ≈ 00:00:03
+[ Info: Progress 53.3% | step 16/30 | elapsed 00:00:05 | remaining ≈ 00:00:05
+[ Info: Progress 63.3% | step 19/30 | elapsed 00:00:05 | remaining ≈ 00:00:03
+[ Info: Progress 50.0% | step 15/30 | elapsed 00:00:05 | remaining ≈ 00:00:05
+[ Info: Progress 96.7% | step 29/30 | elapsed 00:00:10 | remaining ≈ 00:00:00
+[ Info: Progress 63.3% | step 19/30 | elapsed 00:00:05 | remaining ≈ 00:00:03
+[ Info: Progress 50.0% | step 15/30 | elapsed 00:00:05 | remaining ≈ 00:00:05
+[ Info: Progress 56.7% | step 17/30 | elapsed 00:00:05 | remaining ≈ 00:00:04
+[ Info: Progress 46.7% | step 14/30 | elapsed 00:00:05 | remaining ≈ 00:00:06
+[ Info: Progress 96.7% | step 29/30 | elapsed 00:00:10 | remaining ≈ 00:00:00
+[ Info: Progress 60.0% | step 18/30 | elapsed 00:00:05 | remaining ≈ 00:00:03
+[ Info: Progress 46.7% | step 14/30 | elapsed 00:00:05 | remaining ≈ 00:00:06
+[ Info: Progress 93.3% | step 28/30 | elapsed 00:00:10 | remaining ≈ 00:00:01
+[ Info: Progress 60.0% | step 18/30 | elapsed 00:00:05 | remaining ≈ 00:00:03
+[ Info: Progress 50.0% | step 15/30 | elapsed 00:00:05 | remaining ≈ 00:00:05
+[ Info: Progress 100.0% | step 30/30 | elapsed 00:00:10 | remaining ≈ 00:00:00
+[ Info: Progress 60.0% | step 18/30 | elapsed 00:00:05 | remaining ≈ 00:00:03
+[ Info: Progress 46.7% | step 14/30 | elapsed 00:00:05 | remaining ≈ 00:00:06
+[ Info: Progress 96.7% | step 29/30 | elapsed 00:00:10 | remaining ≈ 00:00:00
+[ Info: Progress 63.3% | step 19/30 | elapsed 00:00:06 | remaining ≈ 00:00:03
+[ Info: Progress 53.3% | step 16/30 | elapsed 00:00:05 | remaining ≈ 00:00:05
+[ Info: Progress 63.3% | step 19/30 | elapsed 00:00:06 | remaining ≈ 00:00:03
+[ Info: Progress 53.3% | step 16/30 | elapsed 00:00:05 | remaining ≈ 00:00:05
+[ Info: Progress 60.0% | step 18/30 | elapsed 00:00:05 | remaining ≈ 00:00:03
+[ Info: Progress 50.0% | step 15/30 | elapsed 00:00:05 | remaining ≈ 00:00:05
+[ Info: Progress 96.7% | step 29/30 | elapsed 00:00:10 | remaining ≈ 00:00:00
+[ Info: Progress 60.0% | step 18/30 | elapsed 00:00:05 | remaining ≈ 00:00:03
+[ Info: Progress 50.0% | step 15/30 | elapsed 00:00:05 | remaining ≈ 00:00:05
+[ Info: Progress 66.7% | step 20/30 | elapsed 00:00:05 | remaining ≈ 00:00:03
+[ Info: Progress 50.0% | step 15/30 | elapsed 00:00:06 | remaining ≈ 00:00:06
+[ Info: Progress 63.3% | step 19/30 | elapsed 00:00:05 | remaining ≈ 00:00:03
+[ Info: Progress 50.0% | step 15/30 | elapsed 00:00:05 | remaining ≈ 00:00:05
+[ Info: Progress 63.3% | step 19/30 | elapsed 00:00:06 | remaining ≈ 00:00:03
+[ Info: Progress 53.3% | step 16/30 | elapsed 00:00:06 | remaining ≈ 00:00:05
+[ Info: Progress 60.0% | step 18/30 | elapsed 00:00:05 | remaining ≈ 00:00:04
+[ Info: Progress 53.3% | step 16/30 | elapsed 00:00:05 | remaining ≈ 00:00:05
+[ Info: Progress 60.0% | step 18/30 | elapsed 00:00:05 | remaining ≈ 00:00:03
+[ Info: Progress 46.7% | step 14/30 | elapsed 00:00:05 | remaining ≈ 00:00:06
+[ Info: Progress 93.3% | step 28/30 | elapsed 00:00:10 | remaining ≈ 00:00:01
+[ Info: Progress 63.3% | step 19/30 | elapsed 00:00:05 | remaining ≈ 00:00:03
+[ Info: Progress 50.0% | step 15/30 | elapsed 00:00:05 | remaining ≈ 00:00:05
+[ Info: Progress 63.3% | step 19/30 | elapsed 00:00:06 | remaining ≈ 00:00:03
+[ Info: Progress 50.0% | step 15/30 | elapsed 00:00:05 | remaining ≈ 00:00:05
+[ Info: Progress 63.3% | step 19/30 | elapsed 00:00:06 | remaining ≈ 00:00:03
+[ Info: Progress 50.0% | step 15/30 | elapsed 00:00:05 | remaining ≈ 00:00:05
+[ Info: Progress 60.0% | step 18/30 | elapsed 00:00:05 | remaining ≈ 00:00:04
+[ Info: Progress 50.0% | step 15/30 | elapsed 00:00:05 | remaining ≈ 00:00:05
+[ Info: Progress 63.3% | step 19/30 | elapsed 00:00:06 | remaining ≈ 00:00:03
+[ Info: Progress 50.0% | step 15/30 | elapsed 00:00:05 | remaining ≈ 00:00:05
+[ Info: Progress 63.3% | step 19/30 | elapsed 00:00:05 | remaining ≈ 00:00:03
+[ Info: Progress 46.7% | step 14/30 | elapsed 00:00:05 | remaining ≈ 00:00:06
+[ Info: Progress 96.7% | step 29/30 | elapsed 00:00:10 | remaining ≈ 00:00:00
+[ Info: Progress 60.0% | step 18/30 | elapsed 00:00:05 | remaining ≈ 00:00:03
+[ Info: Progress 50.0% | step 15/30 | elapsed 00:00:05 | remaining ≈ 00:00:05
+[ Info: Progress 100.0% | step 30/30 | elapsed 00:00:10 | remaining ≈ 00:00:00
+[ Info: Progress 63.3% | step 19/30 | elapsed 00:00:05 | remaining ≈ 00:00:03
+Saving Master Data to CSV...
+Saved CSV to: /Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/72_run_transient_3days_new_mort_new_phen_fix/output/../post/fig6_future_timeseries_yearly_indiv_diff/master_data_timeseries_yearly.csv
+Starting Makie Plotting...
+Saved figure: /Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/72_run_transient_3days_new_mort_new_phen_fix/output/../post/fig6_future_timeseries_yearly_indiv_diff/makie_histogram_per_model_npp_avg_ssp126.png
+Saved figure: /Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/72_run_transient_3days_new_mort_new_phen_fix/output/../post/fig6_future_timeseries_yearly_indiv_diff/makie_histogram_per_model_npp_avg_ssp370.png
+Saved figure: /Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/72_run_transient_3days_new_mort_new_phen_fix/output/../post/fig6_future_timeseries_yearly_indiv_diff/makie_histogram_per_model_npp_avg_ssp585.png
+Saved figure: /Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/72_run_transient_3days_new_mort_new_phen_fix/output/../post/fig6_future_timeseries_yearly_indiv_diff/makie_histogram_per_model_total_veg_c_ssp126.png
+Saved figure: /Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/72_run_transient_3days_new_mort_new_phen_fix/output/../post/fig6_future_timeseries_yearly_indiv_diff/makie_histogram_per_model_total_veg_c_ssp370.png
+Saved figure: /Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/2023_bench/72_run_transient_3days_new_mort_new_phen_fix/output/../post/fig6_future_timeseries_yearly_indiv_diff/makie_histogram_per_model_total_veg_c_ssp585.png
+Processing Complete.
