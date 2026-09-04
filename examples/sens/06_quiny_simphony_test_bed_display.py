@@ -33,7 +33,7 @@ OUTPUT_DIR = 'output/06_quincy_simphony_test_bed'
 # Classic sensitivity analysis where we are apply differnt Namelist or Lctlib files to ONE climate file
 # The basic forcing path
 # We need a base namelist and lctlib which we then modify accordingly
-namelist_root_path = os.path.join(QUINCY_ROOT_PATH,'contrib', 'namelist' ,'namelist.slm')
+namelist_root_path = os.path.join(QUINCY_ROOT_PATH,'contrib', 'namelist' ,'qs.namelist')
 lctlib_root_path = os.path.join(QUINCY_ROOT_PATH,'data', 'lctlib_quincy_nlct14.def')
 # Path where to save the setup
 setup_root_path = os.path.join(THIS_DIR, OUTPUT_DIR)
@@ -65,13 +65,13 @@ namelist_base, forcing_file = env_input.parse_single_site(namelist=namelist_base
 ApplyDefaultTestbed(namelist=namelist_base)        
 
 # Apply the standard selected output variables    
-namelist_base.base_ctl.file_sel_output_variables.value = os.path.join(QUINCY_ROOT_PATH,
+namelist_base.base_ctl.netcdf_output_var_list.value = os.path.join(QUINCY_ROOT_PATH,
                                                                         'data', 
                                                                         'basic_output_variables.txt')
 
 # Set Plant hydraulics on
-namelist_base.assimilation_ctl.gs_beta_type = GsBetaType.PLANT
-namelist_base.phyd_ctl.use_plant_hydraulics = True
+namelist_base.lnd_q_assimi_nml.gs_beta_type = GsBetaType.PLANT
+namelist_base.lnd_phyd_nml.use_plant_hydraulics = True
 
 
 # Parse base lctlibe path
@@ -96,7 +96,7 @@ quincy_single_run_config.generate_files()
 
 t1 = perf_counter()
 
-quincy_binary_path = os.path.join(QUINCY_ROOT_PATH, "x86_64-gfortran", "bin", "land.x")
+quincy_binary_path = os.path.join(QUINCY_ROOT_PATH, "x86_64-gfortran", "bin", "qs.bin")
 
 p = subprocess.Popen(quincy_binary_path,
                         cwd=setup_root_path)

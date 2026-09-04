@@ -60,7 +60,7 @@ class UserGitInformation:
         else:
             self.compiled_with_netcdf = "FALSE"
                 
-        quincy_potential_path = os.path.join(self.quincy_root_path, self.compiler_str, "bin", "land.x")
+        quincy_potential_path = os.path.join(self.quincy_root_path, self.compiler_str, "bin", "qs.bin")
         
         if os.path.exists(quincy_potential_path):
             self.quincy_binary_path = quincy_potential_path

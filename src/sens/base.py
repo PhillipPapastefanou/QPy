@@ -28,7 +28,9 @@ class Quincy_Setup:
         os.makedirs(self.folder, exist_ok=True)
 
         nlm_writer = NamelistWriter(self.namelist)
-        nlm_writer.export(path.join(self.folder, "namelist.slm"))
+        # quincy's driver (quincy_qs_model_driver.f90) hardcodes the namelist filename
+        # it reads to "qs.namelist" - it is no longer configurable.
+        nlm_writer.export(path.join(self.folder, "qs.namelist"))
 
         lctlib_writer = LctlibWriter(self.lctlib)
         lctlib_writer.export(path.join(self.folder, "lctlib_quincy_nlct14.def"))

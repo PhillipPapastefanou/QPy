@@ -14,7 +14,7 @@ else:
     print("Please set QUINCY to the directory of your quincy root path")
     exit(99)
 
-QUINCY_BIN = os.path.join(QUINCY_ROOT_PATH, "x86_64-gfortran", "bin", "land.x")   
+QUINCY_BIN = os.path.join(QUINCY_ROOT_PATH, "x86_64-gfortran", "bin", "qs.bin")   
 
 setup_path = os.getcwd()
 

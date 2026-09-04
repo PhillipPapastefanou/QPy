@@ -66,17 +66,17 @@ namelist_base, forcing_file = env_input.parse_single_site(namelist=namelist_base
 ApplyDefaultTestbed(namelist=namelist_base)        
 
 # Apply the standard selected output variables    
-namelist_base.base_ctl.file_sel_output_variables.value = os.path.join(QUINCY_ROOT_PATH,
+namelist_base.base_ctl.netcdf_output_var_list.value = os.path.join(QUINCY_ROOT_PATH,
                                                                         'data', 
                                                                         'basic_output_variables.txt')
 
 
-namelist_base.assimilation_ctl.gs_beta_type.value = GsBetaType.PLANT
-namelist_base.phyd_ctl.use_plant_hydraulics.value = True   
+namelist_base.lnd_q_assimi_nml.gs_beta_type.value = GsBetaType.PLANT
+namelist_base.lnd_phyd_nml.use_plant_hydraulics.value = True   
 
 
 #Obtain pft_id from namelist
-pft_id = namelist_base.vegetation_ctl.plant_functional_type_id.value
+pft_id = namelist_base.lnd_veg_nml.plant_functional_type_id.value
 
 # This the PFT object you need to modifiy the LCTLIB file
 pft = list(PftQuincy)[pft_id - 1]
@@ -108,7 +108,7 @@ quincy_single_run_config.generate_files()
 t1 = perf_counter()
 
 
-quincy_binary_path = os.path.join(QUINCY_ROOT_PATH, "x86_64-gfortran", "bin", "land.x")
+quincy_binary_path = os.path.join(QUINCY_ROOT_PATH, "x86_64-gfortran", "bin", "qs.bin")
 
 p = subprocess.Popen(quincy_binary_path,
                         cwd=setup_root_path)

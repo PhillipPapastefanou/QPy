@@ -30,7 +30,7 @@ class QuincyPathFinder:
         
         # Check if QUINCY is already in the env variables
         self.found_quincy = False
-        if 'QUINCYs' in os.environ:        
+        if 'QUINCY' in os.environ:        
             self.quincy_root_path = os.environ.get("QUINCY")
             self.found_quincy = True
             self.set_derived_path()
@@ -83,7 +83,7 @@ class QuincyPathFinder:
         return results
     
     def set_derived_path(self):
-        self.namelist_root_path = os.path.join(self.quincy_root_path,'contrib','namelist', 'namelist.slm')
+        self.namelist_root_path = os.path.join(self.quincy_root_path,'contrib','namelist', 'qs.namelist')
         self.lctlib_root_path = os.path.join(self.quincy_root_path,'data', 'lctlib_quincy_nlct14.def')
         self.sel_out_var_root_path = os.path.join(self.quincy_root_path,
                                                                         'data', 

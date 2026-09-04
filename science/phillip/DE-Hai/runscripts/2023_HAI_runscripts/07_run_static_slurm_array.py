@@ -81,7 +81,7 @@ namelist_base, forcing_file = env_input.parse_single_site(namelist=namelist_base
 # Apply the testbed configuration 
 ApplyDefaultTestbed(namelist=namelist_base)
 
-namelist_base.base_ctl.file_sel_output_variables.value = os.path.join(QUINCY_ROOT_PATH, 'data', 'basic_output_variables.txt')
+namelist_base.base_ctl.netcdf_output_var_list.value = os.path.join(QUINCY_ROOT_PATH, 'data', 'basic_output_variables.txt')
 
 
 # Parse base lctlibe path
@@ -89,7 +89,7 @@ lctlib_reader = LctlibReader(lctlib_root_path)
 lctlib_base = lctlib_reader.parse()
 
 #Obtain pft_id from namelist
-pft_id = namelist_base.vegetation_ctl.plant_functional_type_id.value
+pft_id = namelist_base.lnd_veg_nml.plant_functional_type_id.value
 pft = PftQuincy(pft_id)
 
 # Generate empty paramlist
@@ -215,26 +215,17 @@ for j in range(0, 2):
         
         # Write one standard simulation without plant hydraulics  
         if i == 0:
-            nlm.assimilation_ctl.gs_beta_type.value = GsBetaType.SOIL
-            nlm.phyd_ctl.use_plant_hydraulics.value = False      
+            nlm.lnd_q_assimi_nml.gs_beta_type.value = GsBetaType.SOIL
+            nlm.lnd_phyd_nml.use_plant_hydraulics.value = False      
         
         else:
-            nlm.assimilation_ctl.gs_beta_type.value = GsBetaType.PLANT
-            nlm.phyd_ctl.use_plant_hydraulics.value = True    
+            nlm.lnd_q_assimi_nml.gs_beta_type.value = GsBetaType.PLANT
+            nlm.lnd_phyd_nml.use_plant_hydraulics.value = True    
                
         
-        if j ==0 :
-            nlm.base_ctl.use_soil_phys_jsbach.value = False
-            nlm.spq_ctl.spq_deactivate_spq.value = False
-        else:
-            nlm.base_ctl.use_soil_phys_jsbach.value = True
-            nlm.spq_ctl.spq_deactivate_spq.value = True
-        
-        
-        
         # Set GDD air temperature according from array
-        paramlist.phenology_ctl.gdd_t_air_threshold.value = float(gdd_t_air_thresholds[i])
-        paramlist.phenology_ctl.gdd_t_air_threshold.parsed = True
+        paramlist.lnd_q_pheno_nml.gdd_t_air_threshold.value = float(gdd_t_air_thresholds[i])
+        paramlist.lnd_q_pheno_nml.gdd_t_air_threshold.parsed = True
         
         lctlib[pft].gdd_req_max = float(gdd_t_air_reqs[i])
         lctlib[pft].k_gdd_dormance = float(k_gdd_s[i])
@@ -252,9 +243,6 @@ for j in range(0, 2):
         lctlib[pft].psi50_xylem = -3.8        
         lctlib[pft].slope_leaf_close = float(slope_leaf_closes[i])
         
-        nlm.spq_ctl.spq_soil_silt.value = float(silts[i])
-        nlm.spq_ctl.spq_soil_sand.value = float(sands[i])
-        nlm.spq_ctl.spq_soil_clay.value = 1.0 - nlm.spq_ctl.spq_soil_silt.value - nlm.spq_ctl.spq_soil_sand.value       
         
         nlm.jsb_sse_nml.qs_soil_silt.value = float(silts[i])
         nlm.jsb_sse_nml.qs_soil_sand.value = float(sands[i])
@@ -305,7 +293,7 @@ df_parameter_setup['k_gdd']= np.round(np.tile(k_gdd_s,2), 5)
 
 df_parameter_setup.to_csv(os.path.join(setup_root_path, "parameters.csv"), index=False)
 
-quincy_binary_path = os.path.join(QUINCY_ROOT_PATH, "x86_64-gfortran", "bin", "land.x")
+quincy_binary_path = os.path.join(QUINCY_ROOT_PATH, "x86_64-gfortran", "bin", "qs.bin")
 
 GenerateSlurmScriptArrayBased(
                     ntasks        = number_of_runs,
@@ -328,7 +316,7 @@ stdout, stderr = p.communicate()
 
 # t1 = perf_counter()
 
-# quincy_binary_path = os.path.join(QUINCY_ROOT_PATH, "x86_64-gfortran", "bin", "land.x")
+# quincy_binary_path = os.path.join(QUINCY_ROOT_PATH, "x86_64-gfortran", "bin", "qs.bin")
 
 # p = subprocess.Popen(quincy_binary_path,
 #                         cwd=setup_root_path)

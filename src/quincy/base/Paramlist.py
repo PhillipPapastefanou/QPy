@@ -2,28 +2,24 @@ from src.quincy.base.NamelistTypes import *
 
 
 def Generate_CTL_Categories(ctl_category):
-    if ctl_category == NamelistCategories.ASSIMILATION_CTL:
-        return ASSIMILATION_CTL()
-    elif ctl_category == NamelistCategories.PHENOLOGY_CTL:
-        return PHENOLOGY_CTL()
-    elif ctl_category == NamelistCategories.VEGETATION_CTL:
-        return VEGETATION_CTL()
-    elif ctl_category == NamelistCategories.ATMLAND_CTL:
-        return ATMLAND_CTL()
-    elif ctl_category == NamelistCategories.RADIATION_CTL:
-        return RADIATION_CTL()
-    elif ctl_category == NamelistCategories.SHARED_CTL:
-        return SHARED_CTL()
-    elif ctl_category == NamelistCategories.SPQ_CTL:
-        return SPQ_CTL()
-    elif ctl_category == NamelistCategories.SB_CTL:
-        return SB_CTL()
+    if ctl_category == NamelistCategories.LND_Q_ASSIMI_NML:
+        return LND_Q_ASSIMI_NML()
+    elif ctl_category == NamelistCategories.LND_Q_PHENO_NML:
+        return LND_Q_PHENO_NML()
+    elif ctl_category == NamelistCategories.LND_VEG_NML:
+        return LND_VEG_NML()
+    elif ctl_category == NamelistCategories.JSB_RAD_NML:
+        return JSB_RAD_NML()
+    elif ctl_category == NamelistCategories.QS_SHARED_NML:
+        return QS_SHARED_NML()
+    elif ctl_category == NamelistCategories.LND_SB_NML:
+        return LND_SB_NML()
     else:
         print(f"Unknown CTL: {ctl_category}")
         return 0
 
 
-class ASSIMILATION_CTL:
+class LND_Q_ASSIMI_NML:
     def __init__(self):
         self.jmax2n  = NamelistItem(0.0)
         self.vcmax2n  = NamelistItem(0.0)
@@ -64,18 +60,14 @@ class ASSIMILATION_CTL:
         self.soa_b=NamelistItem(0.0)
         self.soa_t_s=NamelistItem(0.0)
 
-class ATMLAND_CTL:
-    def __init__(self):
-        # No values here, yet
-        dummy = 0
-
-class PHENOLOGY_CTL:
+class LND_Q_PHENO_NML:
     def __init__(self):
         # LAI at the site, used to set pheno:lai_max
         self.gdd_t_air_threshold = NamelistItem(0.0)
+        self.k_leafon_canopy = NamelistItem(0.0)
         
         
-class RADIATION_CTL:
+class JSB_RAD_NML:
     def __init__(self):
         # No values here, yet
         self.kbl0_vis=NamelistItem(0.0)
@@ -87,7 +79,7 @@ class RADIATION_CTL:
         self.min_cos_zenith_angle_rad=NamelistItem(0.0)
         self.rad2ppfd=NamelistItem(0.0)
         
-class SHARED_CTL:
+class QS_SHARED_NML:
     def __init__(self):
         self.mavg_period_weekly=NamelistItem(0.0)
         self.mavg_period_monthly=NamelistItem(0.0)
@@ -107,47 +99,7 @@ class SHARED_CTL:
         self.mavg_period_tgrowth=NamelistItem(0.0)
         self.mavg_period_tvegdyn=NamelistItem(0.0)
         
-class SPQ_CTL:
-    def __init__(self):
-        self.soil_heat_cap=NamelistItem(0.0)
-        self.soil_therm_cond=NamelistItem(0.0)
-        self.InterceptionEfficiency=NamelistItem(0.0)
-        self.w_skin_max=NamelistItem(0.0)
-        self.drain_frac=NamelistItem(0.0)
-        self.fdrain_srf_runoff=NamelistItem(0.0)
-        self.height_wind=NamelistItem(0.0)
-        self.wpot_pwp=NamelistItem(0.0)
-        self.wpot_fc=NamelistItem(0.0)
-        self.wpot_min=NamelistItem(0.0)
-        self.k_pwp_a=NamelistItem(0.0)
-        self.k_pwp_c=NamelistItem(0.0)
-        self.k_pwp_s=NamelistItem(0.0)
-        self.k_pwp_sc=NamelistItem(0.0)
-        self.k_pwp_at=NamelistItem(0.0)
-        self.k_pwp_bt=NamelistItem(0.0)
-        self.k_fc_a=NamelistItem(0.0)
-        self.k_fc_c=NamelistItem(0.0)
-        self.k_fc_s=NamelistItem(0.0)
-        self.k_fc_sc=NamelistItem(0.0)
-        self.k_fc_at=NamelistItem(0.0)
-        self.k_fc_bt=NamelistItem(0.0)
-        self.k_fc_ct=NamelistItem(0.0)
-        self.k_sat_a=NamelistItem(0.0)
-        self.k_sat_c=NamelistItem(0.0)
-        self.k_sat_s=NamelistItem(0.0)
-        self.k_sat_sc=NamelistItem(0.0)
-        self.k_sat_at=NamelistItem(0.0)
-        self.k_sat_bt=NamelistItem(0.0)
-        self.k_sat_ct=NamelistItem(0.0)
-        self.k_sat_dt=NamelistItem(0.0)
-        self.kdiff_sat_max=NamelistItem(0.0)
-        self.f_psensi_soil_sand=NamelistItem(0.0)
-        self.f_psensi_soil_silt=NamelistItem(0.0)
-        self.f_psensi_soil_awc_prescribe=NamelistItem(0.0)
-        self.f_psensi_bulk_density=NamelistItem(0.0)
-        
-        
-class VEGETATION_CTL:
+class LND_VEG_NML:
     def __init__(self):      
         self.fresp_growth=NamelistItem(0.0)
         self.fmaint_rate_base=NamelistItem(0.0)
@@ -203,8 +155,6 @@ class VEGETATION_CTL:
         self.transform_cost_org=NamelistItem(0.0)
         self.f_nacq_nh4=NamelistItem(0.0)
         self.f_nacq_no3=NamelistItem(0.0)
-        self.vmax_symb_bnf=NamelistItem(0.0)
-        self.km_symb_bnf=NamelistItem(0.0)
         self.eta_nfixation=NamelistItem(0.0)
         self.k0_fn_chl_C3=NamelistItem(0.0)
         self.k0_fn_chl_C4=NamelistItem(0.0)
@@ -214,7 +164,6 @@ class VEGETATION_CTL:
         self.min_lai=NamelistItem(0.0)
         self.target_lai_max=NamelistItem(0.0)
         self.max_leaf_shedding_rate=NamelistItem(0.0)
-        self.k_leafon_canopy=NamelistItem(0.0)
         self.background_mort_rate_tree=NamelistItem(0.0)
         self.background_mort_rate_grass=NamelistItem(0.0)
         self.lambda_mort_light=NamelistItem(0.0)
@@ -249,7 +198,7 @@ class VEGETATION_CTL:
         self.rfr_ratio_toc=NamelistItem(0.0)
         self.k_r2fr_chl=NamelistItem(0.0)
         
-class SB_CTL:
+class LND_SB_NML:
     def __init__(self):
         self.tau_soluable_litter=NamelistItem(0.0)
         self.tau_metabolic_litter=NamelistItem(0.0)
@@ -437,14 +386,12 @@ class SB_CTL:
 class Paramlist:
     def __init__(self):
         # Initialise paramlist categories with defaults
-        self.assimilation_ctl          = ASSIMILATION_CTL()
-        self.atmland_ctl               = ATMLAND_CTL()
-        self.phenology_ctl             = PHENOLOGY_CTL()
-        self.radiation_ctl             = RADIATION_CTL()
-        self.shared_ctl                = SHARED_CTL()
-        self.spq_ctl                   = SPQ_CTL()
-        self.vegetation_ctl            = VEGETATION_CTL()
-        self.sb_ctl                    = SB_CTL()
+        self.lnd_q_assimi_nml           = LND_Q_ASSIMI_NML()
+        self.lnd_q_pheno_nml            = LND_Q_PHENO_NML()
+        self.jsb_rad_nml                = JSB_RAD_NML()
+        self.qs_shared_nml              = QS_SHARED_NML()
+        self.lnd_veg_nml                = LND_VEG_NML()
+        self.lnd_sb_nml                 = LND_SB_NML()
 
     def check_if_parsed(self):
         for cat_str in vars(self):

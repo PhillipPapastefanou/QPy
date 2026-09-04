@@ -19,8 +19,8 @@ class Test_Paramlist(unittest.TestCase):
                 item = getattr(cat, var_str)
                 self.assertFalse(item.parsed, f"Did not parse {var_str} in {cat_str}")
         
-        paramlist.phenology_ctl.gdd_t_air_threshold.value = 12.0
-        paramlist.phenology_ctl.gdd_t_air_threshold.parsed = True
+        paramlist.lnd_q_pheno_nml.gdd_t_air_threshold.value = 12.0
+        paramlist.lnd_q_pheno_nml.gdd_t_air_threshold.parsed = True
         
         writer = ParamlistWriter(paramlist)
         writer.export("parameter_slm.list")

@@ -23,7 +23,16 @@ from src.quincy.base.user_git_information import UserGitInformation
 from src.quincy.run_scripts.default import ApplyDefaultSiteLevel
 from time import perf_counter
 
-class Test_U31(unittest.TestCase):    
+class Test_U31(unittest.TestCase):
+    # STATUS (2026-09-04): test_standard_config() is NOT fully validated. 4 of 5 sites
+    # (ESP_01, FIN_01, PUE_01, US2_01) complete cleanly, but HAI_01 stops during spin-up
+    # with only 12 of the expected 24 output .nc files and a log flooded with
+    # "mo_q_veg_update_pools:update_veg_pools: Negative value of vegetation pool ..."
+    # messages - this looks like a JSM soil-model numerical-stability issue for that
+    # specific site rather than a QPy namelist/lctlib config bug (config is read and
+    # applied correctly; the run gets through several output-writing cycles first).
+    # compare_outputs() has consequently never been run to completion and is untested.
+    # Treat this whole test as unverified until the HAI_01/JSM behavior is understood.
     def init(self):
         if 'QUINCY' in os.environ:        
             self.QUINCY_ROOT_PATH = os.environ.get("QUINCY")
@@ -46,7 +55,7 @@ class Test_U31(unittest.TestCase):
         # Classic sensitivity analysis where we are apply differnt Namelist or Lctlib files to ONE climate file
         # The basic forcing path
         # We need a base namelist and lctlib which we then modify accordingly
-        namelist_root_path = os.path.join(self.QUINCY_ROOT_PATH,'contrib', 'namelist' ,'namelist.slm')
+        namelist_root_path = os.path.join(self.QUINCY_ROOT_PATH,'contrib', 'namelist' ,'qs.namelist')
         lctlib_root_path = os.path.join(self.QUINCY_ROOT_PATH,'data', 'lctlib_quincy_nlct14.def')
         # Path where to save the setup
         setup_root_path = os.path.join(THIS_DIR, self.OUTPUT_DIR)
@@ -69,7 +78,7 @@ class Test_U31(unittest.TestCase):
         ApplyDefaultSiteLevel(namelist=namelist_base)        
         
         # Apply the standard selected output variables    
-        namelist_base.base_ctl.file_sel_output_variables.value = os.path.join(self.QUINCY_ROOT_PATH,
+        namelist_base.base_ctl.netcdf_output_var_list.value = os.path.join(self.QUINCY_ROOT_PATH,
                                                                               'data', 
                                                                               'basic_output_variables.txt')
         
@@ -82,7 +91,7 @@ class Test_U31(unittest.TestCase):
         namelist_base.jsb_forcing_ctl.simulation_length_number.value = 4
         
         
-        namelist_base.soil_biogeochemistry_ctl.sb_model_scheme.value = SbModelScheme.JSM
+        namelist_base.lnd_sb_nml.sb_model_scheme.value = SbModelScheme.JSM
         
         
         # Parse paths of the forcing
@@ -144,7 +153,7 @@ class Test_U31(unittest.TestCase):
             p.join() 
             
         # Get results from the queue
-        results = [results_queue.get() for _ in range(2)]       
+        results = [results_queue.get() for _ in range(len(self.sites))]       
    
         for i, (success, stdout, stderr) in enumerate(results):
             print(f"Results for quincy runs")
@@ -190,7 +199,7 @@ class Test_U31(unittest.TestCase):
     def irun_QPY_test_bed(self, QUINCY_ROOT_PATH, setup_root_path, q, qpy_delta):
         
         t1 = perf_counter()
-        quincy_binary_path = os.path.join(QUINCY_ROOT_PATH,"x86_64-gfortran", "bin", "land.x")
+        quincy_binary_path = os.path.join(QUINCY_ROOT_PATH,"x86_64-gfortran", "bin", "qs.bin")
         
         p = subprocess.Popen(quincy_binary_path,
                              cwd=setup_root_path)
@@ -213,7 +222,7 @@ class Test_U31(unittest.TestCase):
         
     def compare_outputs(self):
         
-        ref_path = '/Net/Groups/BSI/work/quincy/model/reference_runs/cruncepv7_subset_u30_31/20250220_develop_342ef5f8/exp_31_progress_options_short_transient_cruncep_jsm_342ef5f8'
+        ref_path = '/Net/Groups/BSI/work/quincy/model/reference_runs/cruncepv7_subset_u30_31/20260120_develop_e0ccbbd2/exp_31_progress_options_short_transient_cruncep_jsm_e0ccbbd2'
         
         if not os.path.exists(ref_path):
             print("Could not find usecase 30 ref output")
@@ -224,7 +233,7 @@ class Test_U31(unittest.TestCase):
         
         for site in self.sites:
             print(f"Testing {site}: ")
-            df_org = pd.read_csv(os.path.join(ref_path, site , "output", "vegpoolC_daily.txt"), sep= "\s+")
+            df_org = pd.read_csv(os.path.join(ref_path, site , "output", "vegpool_c_daily.txt"), sep= "\s+")
             org_veg_c = df_org['Total_C'].values
             
             ds_new = xr.open_dataset(os.path.join(THIS_DIR, self.OUTPUT_DIR,"output", site,"VEG_transient_daily.nc"), decode_times=True)

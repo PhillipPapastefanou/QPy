@@ -83,13 +83,13 @@ user_git_info = UserGitInformation(QUINCY_ROOT_PATH,
 forcing_file = '/Net/Groups/BSI/work_scratch/alipavskii/tmp/drylands_t_forc_03_03_26_lai_modis/Au-GiT_t_1901-2020.dat'
 
 
-namelist_base.base_ctl.file_sel_output_variables.value = os.path.join(QUINCY_ROOT_PATH, 'data', 'basic_output_variables.txt')
+namelist_base.base_ctl.netcdf_output_var_list.value = os.path.join(QUINCY_ROOT_PATH, 'data', 'basic_output_variables.txt')
 
 # C only
-# namelist_base.vegetation_ctl.veg_bnf_scheme.value = VegBnfScheme.UNLIMITED
-# namelist_base.vegetation_ctl.leaf_stoichom_scheme.value = LeafStoichomScheme.FIXED
-# namelist_base.soil_biogeochemistry_ctl.flag_sb_prescribe_po4.value = True
-# namelist_base.soil_biogeochemistry_ctl.sb_bnf_scheme.value = SbBnfScheme.UNLIMITED
+# namelist_base.lnd_veg_nml.veg_bnf_scheme.value = VegBnfScheme.UNLIMITED
+# namelist_base.lnd_veg_nml.leaf_stoichom_scheme.value = LeafStoichomScheme.FIXED
+# namelist_base.lnd_sb_nml.flag_sb_prescribe_po4.value = True
+# namelist_base.lnd_sb_nml.sb_bnf_scheme.value = SbBnfScheme.UNLIMITED
 # namelist_base.base_ctl.flag_slow_sb_pool_spinup_accelerator.value = False
 
 namelist_base.jsb_forcing_ctl.transient_spinup_years.value = 1000
@@ -109,7 +109,7 @@ namelist_base.base_ctl.fluxnet_static_forc_last_yr.value = 2020
 
 namelist_base.base_ctl.quincy_model_name.value = QuincyModelName.LAND
 
-namelist_base.vegetation_ctl.flag_dynamic_roots.value = False
+namelist_base.lnd_veg_nml.flag_dynamic_roots.value = False
 
 
 # Parse base lctlibe path
@@ -117,7 +117,7 @@ lctlib_reader = LctlibReader(lctlib_root_path)
 lctlib_base = lctlib_reader.parse()
 
 #Obtain pft_id from namelist
-pft_id = namelist_base.vegetation_ctl.plant_functional_type_id.value
+pft_id = namelist_base.lnd_veg_nml.plant_functional_type_id.value
 pft = PftQuincy(pft_id)
 
 # Generate empty paramlist
@@ -266,18 +266,16 @@ for j in range(0, n_soil_combs):
         
         # Write one standard simulation without plant hydraulics  
         if i == 0:
-            nlm.assimilation_ctl.gs_beta_type.value = GsBetaType.SOIL
-            nlm.phyd_ctl.use_plant_hydraulics.value = False      
+            nlm.lnd_q_assimi_nml.gs_beta_type.value = GsBetaType.SOIL
+            nlm.lnd_phyd_nml.use_plant_hydraulics.value = False      
         
         else:
-            nlm.assimilation_ctl.gs_beta_type.value = GsBetaType.PLANT
-            nlm.phyd_ctl.use_plant_hydraulics.value = True    
-            nlm.phyd_ctl.use_hydaulic_failure_mort.value = True    
+            nlm.lnd_q_assimi_nml.gs_beta_type.value = GsBetaType.PLANT
+            nlm.lnd_phyd_nml.use_plant_hydraulics.value = True    
+            nlm.lnd_phyd_nml.use_hydaulic_failure_mort.value = True    
                
         soil_model_str = ""
         
-        nlm.base_ctl.use_soil_phys_jsbach.value = True
-        nlm.spq_ctl.spq_deactivate_spq.value = True
             
         if j == 0:
             nlm.jsb_hydro_nml.soilhydmodel.value = JSBSoilHydModelType.VANGENUCHTEN
@@ -291,8 +289,8 @@ for j in range(0, n_soil_combs):
                 
         
         # Set GDD air temperature according from array
-        paramlist.phenology_ctl.gdd_t_air_threshold.value = float(gdd_t_air_thresholds[i])
-        paramlist.phenology_ctl.gdd_t_air_threshold.parsed = True
+        paramlist.lnd_q_pheno_nml.gdd_t_air_threshold.value = float(gdd_t_air_thresholds[i])
+        paramlist.lnd_q_pheno_nml.gdd_t_air_threshold.parsed = True
         
 
         
@@ -319,9 +317,6 @@ for j in range(0, n_soil_combs):
         lctlib[pft].vmax_uptake_p = 0.012 #Ten times higher
         lctlib[pft].k_rtos = float(rtos_s[i])
         
-        nlm.spq_ctl.spq_soil_silt.value = float(silts[i])
-        nlm.spq_ctl.spq_soil_sand.value = float(sands[i])
-        nlm.spq_ctl.spq_soil_clay.value = 1.0 - nlm.spq_ctl.spq_soil_silt.value - nlm.spq_ctl.spq_soil_sand.value       
         
         nlm.jsb_sse_nml.qs_soil_silt.value = float(silts[i])
         nlm.jsb_sse_nml.qs_soil_sand.value = float(sands[i])
@@ -379,7 +374,7 @@ df_parameter_setup['rtos_s']= np.round(np.tile(rtos_s,n_soil_combs), 5)
 
 df_parameter_setup.to_csv(os.path.join(setup_root_path, "parameters.csv"), index=False)
 
-quincy_binary_path = os.path.join(QUINCY_ROOT_PATH, "x86_64-gfortran", "bin", "land.x")
+quincy_binary_path = os.path.join(QUINCY_ROOT_PATH, "x86_64-gfortran", "bin", "qs.bin")
 
 python_ex = "/Net/Groups/BSI/work_scratch/ppapastefanou/envs/QPy_gnu_mpich/bin/python"
 

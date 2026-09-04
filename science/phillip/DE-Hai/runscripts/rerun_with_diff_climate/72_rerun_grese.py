@@ -113,8 +113,8 @@ for name in names:
                         
                 
                 paramlist = Paramlist()
-                paramlist.phenology_ctl.gdd_t_air_threshold.value = 8.0
-                paramlist.phenology_ctl.gdd_t_air_threshold.parsed = True
+                paramlist.lnd_q_pheno_nml.gdd_t_air_threshold.value = 8.0
+                paramlist.lnd_q_pheno_nml.gdd_t_air_threshold.parsed = True
                         
                 namelist_base.base_ctl.output_end_last_day_year.value = 100
                 namelist_base.base_ctl.output_start_first_day_year.value = 1
@@ -155,7 +155,7 @@ for name in names:
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
     python_ex = "/Net/Groups/BSI/work_scratch/ppapastefanou/envs/QPy_gnu_mpich/bin/python"
-    quincy_binary_path = os.path.join(QUINCY_ROOT_PATH, "x86_64-gfortran", "bin", "land.x")
+    quincy_binary_path = os.path.join(QUINCY_ROOT_PATH, "x86_64-gfortran", "bin", "qs.bin")
 
     GenerateSlurmScriptArrayBased(
                         ntasks        = nruns,

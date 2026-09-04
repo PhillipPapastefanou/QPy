@@ -57,7 +57,7 @@ setup_root_path = os.path.join(THIS_DIR, RUN_DIRECTORY)
 # Classic sensitivity analysis where we are apply differnt Namelist or Lctlib files to ONE climate file
 # The basic forcing path
 # We need a base namelist and lctlib which we then modify accordingly
-namelist_root_path = os.path.join(QUINCY_ROOT_PATH,'contrib', 'namelist' ,'namelist.slm')
+namelist_root_path = os.path.join(QUINCY_ROOT_PATH,'contrib', 'namelist' ,'qs.namelist')
 lctlib_root_path = os.path.join(QUINCY_ROOT_PATH,'data', 'lctlib_quincy_nlct14.def')
 
 # Parse base namelist path
@@ -76,16 +76,16 @@ forcing_file = '/Net/Groups/BSI/work_scratch/ppapastefanou/data/Fluxnet_detail/Q
 # Apply the testbed configuration 
 ApplyDefaultSiteLevel(namelist=namelist_base)
 
-namelist_base.base_ctl.file_sel_output_variables.value = os.path.join(QUINCY_ROOT_PATH, 'data', 'basic_output_variables.txt')
+namelist_base.base_ctl.netcdf_output_var_list.value = os.path.join(QUINCY_ROOT_PATH, 'data', 'basic_output_variables.txt')
 
 # C only
-namelist_base.vegetation_ctl.veg_bnf_scheme.value = VegBnfScheme.UNLIMITED
-namelist_base.vegetation_ctl.leaf_stoichom_scheme.value = LeafStoichomScheme.FIXED
-namelist_base.soil_biogeochemistry_ctl.flag_sb_prescribe_po4.value = True
-namelist_base.soil_biogeochemistry_ctl.sb_bnf_scheme.value = SbBnfScheme.UNLIMITED
+namelist_base.lnd_veg_nml.veg_bnf_scheme.value = VegBnfScheme.UNLIMITED
+namelist_base.lnd_veg_nml.leaf_stoichom_scheme.value = LeafStoichomScheme.FIXED
+namelist_base.lnd_sb_nml.flag_sb_prescribe_po4.value = True
+namelist_base.lnd_sb_nml.sb_bnf_scheme.value = SbBnfScheme.UNLIMITED
 namelist_base.base_ctl.flag_slow_sb_pool_spinup_accelerator.value = False
 # use fixed allocation scheme (Sönke comment)
-namelist_base.vegetation_ctl.biomass_alloc_scheme.value = BiomassAllocScheme.FIXED
+namelist_base.lnd_veg_nml.biomass_alloc_scheme.value = BiomassAllocScheme.FIXED
 
 # For now 100 years of spinup are sufficient 
 namelist_base.base_ctl.output_end_last_day_year.value = 124
@@ -101,15 +101,15 @@ namelist_base.base_ctl.fluxnet_static_forc_last_yr.value = 2024
 
 
 # Turn on plant hydraulics
-namelist_base.assimilation_ctl.gs_beta_type.value = GsBetaType.PLANT
-namelist_base.phyd_ctl.use_plant_hydraulics.value = True
+namelist_base.lnd_q_assimi_nml.gs_beta_type.value = GsBetaType.PLANT
+namelist_base.lnd_phyd_nml.use_plant_hydraulics.value = True
 
 # Parse base lctlibe path
 lctlib_reader = LctlibReader(lctlib_root_path)
 lctlib_base = lctlib_reader.parse()
 
 #Obtain pft_id from namelist
-pft_id = namelist_base.vegetation_ctl.plant_functional_type_id.value
+pft_id = namelist_base.lnd_veg_nml.plant_functional_type_id.value
 pft = PftQuincy(pft_id)
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
@@ -210,8 +210,8 @@ for i in range(0, number_of_runs):
     
     # Write one standard simulation without plant hydraulics  
     if i == 0:
-        nlm.assimilation_ctl.gs_beta_type.value = GsBetaType.SOIL
-        nlm.phyd_ctl.use_plant_hydraulics.value = False        
+        nlm.lnd_q_assimi_nml.gs_beta_type.value = GsBetaType.SOIL
+        nlm.lnd_phyd_nml.use_plant_hydraulics.value = False        
         
     else:     
         #... and change the value of psi50
@@ -231,11 +231,6 @@ for i in range(0, number_of_runs):
         lctlib[pft].slope_leaf_close = float(slope_leaf_closes[i])
         lctlib[pft].g_res = 0.0   
              
-        nlm.spq_ctl.saxtonA.value = float(sAs[i])
-        nlm.spq_ctl.saxtonB.value = float(sBs[i])
-        nlm.spq_ctl.kdiff_sat_sl.value = float(10**kdiff_sats_log[i])
-        nlm.spq_ctl.theta_sat_sl.value = float(theta_ss[i])
-        # nlm.spq_ctl.soil_clay.value = 1.0 - nlm.spq_ctl.soil_silt.value - nlm.spq_ctl.soil_sand.value
         
         
 

@@ -71,7 +71,7 @@ class Test_Test_Bed(unittest.TestCase):
         ApplyDefaultTestbed(namelist=namelist_base)        
         
         # Apply the standard selected output variables    
-        namelist_base.base_ctl.file_sel_output_variables.value = os.path.join(self.QUINCY_ROOT_PATH,
+        namelist_base.base_ctl.netcdf_output_var_list.value = os.path.join(self.QUINCY_ROOT_PATH,
                                                                               'data', 
                                                                               'basic_output_variables.txt')
 
@@ -160,7 +160,7 @@ class Test_Test_Bed(unittest.TestCase):
     def irun_QPY_test_bed(self, QUINCY_ROOT_PATH, setup_root_path, q, qpy_delta):
         
         t1 = perf_counter()
-        quincy_binary_path = os.path.join(QUINCY_ROOT_PATH,"x86_64-gfortran", "bin", "land.x")
+        quincy_binary_path = os.path.join(QUINCY_ROOT_PATH,"x86_64-gfortran", "bin", "qs.bin")
         
         p = subprocess.Popen(quincy_binary_path,
                              cwd=setup_root_path)

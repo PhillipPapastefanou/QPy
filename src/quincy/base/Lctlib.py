@@ -79,9 +79,6 @@ class Lctlib_Item:
         # cn_leaf_min: Minimum leaf N for dynamic stoichiometry  (mgN/gDW)
         # Tuned from OCN
         self.cn_leaf_min = 0.0
-        # cn_leaf_min: Minimum leaf N for dynamic stoichiometry  (mgN/gDW)
-        # Tuned from OCN
-        self.cn_leaf_min = 0.0
         # cn_leaf_max: Maximum leaf N for dynamic stoichiometry  (mgN/gDW)
         # Tuned from OCN
         self.cn_leaf_max = 0.0
@@ -260,8 +257,6 @@ class Lctlib_Item:
         self.slope_leaf_close = 0.0
         # (mol m-1 s-1 MPa-1)
         self.k_xylem_sat = 0.0
-        # (1)
-        self.root_area_index = 0.0
         # (1?)
         self.eta_stem = 0.0
         # (mol m-2 MPa-1)

@@ -5,25 +5,23 @@ class NamelistItem:
         self.value = value
         self.parsed = False
 
+# Category names double as the namelist group name quincy's Fortran position_nml()
+# actually searches for (case-insensitive literal text match, see mo_namelist.f90),
+# so these must match the real quincy namelist group names, not arbitrary labels.
 class NamelistCategories(Enum):
-    VEGETATION_CTL      = 0
-    DIST_FIRE_CTL       = 1
-    ASSIMILATION_CTL    = 2
-    PHENOLOGY_CTL       = 3
-    PHYD_CTL            = 4
-    RADIATION_CTL       = 5
+    LND_VEG_NML         = 0   # was VEGETATION_CTL
+    LND_DIST_FIRE_NML   = 1   # was DIST_FIRE_CTL
+    LND_Q_ASSIMI_NML    = 2   # was ASSIMILATION_CTL
+    LND_Q_PHENO_NML     = 3   # was PHENOLOGY_CTL
+    LND_PHYD_NML        = 4   # was PHYD_CTL
     GRID_CTL            = 6
-    SPQ_CTL             = 7
-    SOIL_BIOGEOCHEMISTRY_CTL = 8
+    LND_SB_NML          = 8   # was SOIL_BIOGEOCHEMISTRY_CTL; also used by Paramlist's SB_CTL (same real group)
     BASE_CTL            = 9
     JSB_FORCING_CTL     = 10
-    JSB_RAD_NML         = 12
-    ATMLAND_CTL         = 13 #For Paramlist
-    SHARED_CTL          = 14 #For Paramlist
-    SB_CTL              = 15 #For Paramlist
-    HYDRO_CTL           = 16
-    Q_SYL_CTL           = 17
-    Q_AGR_CTL           = 18
+    JSB_RAD_NML         = 12  # also used by Paramlist's JSB_RAD_NML (same real group)
+    QS_SHARED_NML       = 14 #For Paramlist; was SHARED_CTL
+    LND_Q_SYL_NML       = 17  # was Q_SYL_CTL
+    LND_Q_AGR_NML       = 18  # was Q_AGR_CTL
     JSB_TURB_NML        = 19
     JSB_HYDRO_NML       = 20
     JSB_SSE_NML         = 21
@@ -92,3 +90,19 @@ class JSBSoilHydModelType(Enum):
     VANGENUCHTEN = 0
     BROOKSCOREY = 1
     CAMPBELL = 2
+
+# Namelist group names as previously (incorrectly) used by QPy, mapped to the
+# current, correct NamelistCategories member. Namelist.slm files written by older
+# QPy versions contain these old spellings (e.g. "&VEGETATION_CTL") in their
+# group headers; NamelistReader falls back to this table so such files - often
+# used as "base" templates by run scripts - still parse correctly.
+LEGACY_NAMELIST_CATEGORY_ALIASES = {
+    "DIST_FIRE_CTL":            "LND_DIST_FIRE_NML",
+    "VEGETATION_CTL":           "LND_VEG_NML",
+    "ASSIMILATION_CTL":         "LND_Q_ASSIMI_NML",
+    "PHENOLOGY_CTL":            "LND_Q_PHENO_NML",
+    "PHYD_CTL":                 "LND_PHYD_NML",
+    "Q_AGR_CTL":                "LND_Q_AGR_NML",
+    "Q_SYL_CTL":                "LND_Q_SYL_NML",
+    "SOIL_BIOGEOCHEMISTRY_CTL": "LND_SB_NML",
+}

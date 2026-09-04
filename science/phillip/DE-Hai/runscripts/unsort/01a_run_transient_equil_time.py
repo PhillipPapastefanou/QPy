@@ -69,13 +69,13 @@ namelist_base, forcing_file = env_input.parse_single_site(namelist=namelist_base
 # Apply the testbed configuration 
 ApplyDefaultSiteLevel(namelist=namelist_base)
 
-namelist_base.base_ctl.file_sel_output_variables.value = os.path.join(QUINCY_ROOT_PATH, 'data', 'basic_output_variables.txt')
+namelist_base.base_ctl.netcdf_output_var_list.value = os.path.join(QUINCY_ROOT_PATH, 'data', 'basic_output_variables.txt')
 
 # C only
-namelist_base.vegetation_ctl.veg_bnf_scheme.value = VegBnfScheme.UNLIMITED
-namelist_base.vegetation_ctl.leaf_stoichom_scheme.value = LeafStoichomScheme.FIXED
-namelist_base.soil_biogeochemistry_ctl.flag_sb_prescribe_po4.value = True
-namelist_base.soil_biogeochemistry_ctl.sb_bnf_scheme.value = SbBnfScheme.UNLIMITED
+namelist_base.lnd_veg_nml.veg_bnf_scheme.value = VegBnfScheme.UNLIMITED
+namelist_base.lnd_veg_nml.leaf_stoichom_scheme.value = LeafStoichomScheme.FIXED
+namelist_base.lnd_sb_nml.flag_sb_prescribe_po4.value = True
+namelist_base.lnd_sb_nml.sb_bnf_scheme.value = SbBnfScheme.UNLIMITED
 namelist_base.base_ctl.flag_slow_sb_pool_spinup_accelerator.value = False
 
 
@@ -98,7 +98,7 @@ lctlib_reader = LctlibReader(lctlib_root_path)
 lctlib_base = lctlib_reader.parse()
 
 #Obtain pft_id from namelist
-pft_id = namelist_base.vegetation_ctl.plant_functional_type_id.value
+pft_id = namelist_base.lnd_veg_nml.plant_functional_type_id.value
 pft = PftQuincy(pft_id)
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
@@ -123,9 +123,6 @@ for i in range(0, number_of_runs):
     # lctlib[pft].slope_leaf_close = float(slope_leaf_closes[i])
     # lctlib[pft].g_res = float(10**g_res_logs[i])
     
-    # nlm.spq_ctl.soil_silt.value = float(silts[i])
-    # nlm.spq_ctl.soil_sand.value = float(sands[i])
-    #nlm.spq_ctl.soil_clay.value = 1.0 - nlm.spq_ctl.soil_silt.value - nlm.spq_ctl.soil_sand.value
     
     user_git_info = UserGitInformation(QUINCY_ROOT_PATH, 
                                         os.path.join(setup_root_path, "output", str(i)), 
@@ -178,7 +175,7 @@ stdout, stderr = p.communicate()
 
 # t1 = perf_counter()
 
-# quincy_binary_path = os.path.join(QUINCY_ROOT_PATH, "x86_64-gfortran", "bin", "land.x")
+# quincy_binary_path = os.path.join(QUINCY_ROOT_PATH, "x86_64-gfortran", "bin", "qs.bin")
 
 # p = subprocess.Popen(quincy_binary_path,
 #                         cwd=setup_root_path)

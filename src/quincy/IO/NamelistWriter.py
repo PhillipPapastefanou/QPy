@@ -31,13 +31,9 @@ class NamelistWriter:
     def iadd_category(self, instance):
 
         # Beginning string
+        # The CTL class name IS the namelist group name quincy's Fortran
+        # position_nml() searches for (case-insensitive), see NamelistTypes.py.
         cat_name = type(instance).__name__
-        
-        if "JSB" in cat_name:
-            cat_name = cat_name.lower()              
-            if cat_name == "JSB_FORCING_CTL":
-                cat_name = cat_name.upper()
-        
         str_start = f"&{cat_name}"
         self.lines.append(str_start)
 

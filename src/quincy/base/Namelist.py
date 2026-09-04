@@ -1,34 +1,30 @@
 from src.quincy.base.NamelistTypes import *
 
 def Generate_CTL_Categories(ctl_category):
-    if ctl_category == NamelistCategories.DIST_FIRE_CTL:
-        return DIST_FIRE_CTL()
-    elif ctl_category == NamelistCategories.ASSIMILATION_CTL:
-        return ASSIMILATION_CTL()
-    elif ctl_category == NamelistCategories.PHENOLOGY_CTL:
-        return PHENOLOGY_CTL()
-    elif ctl_category == NamelistCategories.VEGETATION_CTL:
-        return VEGETATION_CTL()
-    elif ctl_category == NamelistCategories.PHYD_CTL:
-        return PHYD_CTL()
-    elif ctl_category == NamelistCategories.RADIATION_CTL:
-        return RADIATION_CTL()
+    if ctl_category == NamelistCategories.LND_DIST_FIRE_NML:
+        return LND_DIST_FIRE_NML()
+    elif ctl_category == NamelistCategories.LND_Q_ASSIMI_NML:
+        return LND_Q_ASSIMI_NML()
+    elif ctl_category == NamelistCategories.LND_Q_PHENO_NML:
+        return LND_Q_PHENO_NML()
+    elif ctl_category == NamelistCategories.LND_VEG_NML:
+        return LND_VEG_NML()
+    elif ctl_category == NamelistCategories.LND_PHYD_NML:
+        return LND_PHYD_NML()
     elif ctl_category == NamelistCategories.GRID_CTL:
         return GRID_CTL()
-    elif ctl_category == NamelistCategories.SPQ_CTL:
-        return SPQ_CTL()
-    elif ctl_category == NamelistCategories.SOIL_BIOGEOCHEMISTRY_CTL:
-        return SOIL_BIOGEOCHEMISTRY_CTL()
+    elif ctl_category == NamelistCategories.LND_SB_NML:
+        return LND_SB_NML()
     elif ctl_category == NamelistCategories.BASE_CTL:
         return BASE_CTL()
     elif ctl_category == NamelistCategories.JSB_FORCING_CTL:
         return JSB_FORCING_CTL()
     elif ctl_category == NamelistCategories.JSB_RAD_NML:
         return JSB_RAD_NML()
-    elif ctl_category == NamelistCategories.Q_SYL_CTL:
-        return Q_SYL_CTL()
-    elif ctl_category == NamelistCategories.Q_AGR_CTL:
-        return Q_AGR_CTL()
+    elif ctl_category == NamelistCategories.LND_Q_SYL_NML:
+        return LND_Q_SYL_NML()
+    elif ctl_category == NamelistCategories.LND_Q_AGR_NML:
+        return LND_Q_AGR_NML()
     elif ctl_category == NamelistCategories.JSB_TURB_NML:
         return JSB_TURB_NML()
     elif ctl_category == NamelistCategories.JSB_HYDRO_NML:
@@ -41,7 +37,7 @@ def Generate_CTL_Categories(ctl_category):
         print(f"Unknown CTL: {ctl_category}")
         return 0
 
-class VEGETATION_CTL:
+class LND_VEG_NML:
     def __init__(self):        
         self.veg_bnf_scheme             = NamelistItem(VegBnfScheme.DYNAMIC)
         self.veg_dynamics_scheme        = NamelistItem(VegDynamicsScheme.POPULATION)        
@@ -58,12 +54,12 @@ class VEGETATION_CTL:
         self.flag_log_negative_vegpool  = NamelistItem(True)
         self.flag_log_c_conservation    = NamelistItem(True)
 
-class PHENOLOGY_CTL:
+class LND_Q_PHENO_NML:
     def __init__(self):
         # LAI at the site, used to set pheno:lai_max
         self.lai_max    =   NamelistItem(3.0)
 
-class DIST_FIRE_CTL:
+class LND_DIST_FIRE_NML:
     def __init__(self):
         # flags for the disturbance fire process
         self.flag_dfire                 = NamelistItem(False)
@@ -71,7 +67,7 @@ class DIST_FIRE_CTL:
         self.dfire_modelname            = NamelistItem(DfireModelname.SPITFIRE)
         self.density_human_population   = NamelistItem(10.0)
 
-class ASSIMILATION_CTL:
+class LND_Q_ASSIMI_NML:
     def __init__(self):
         # flags
         self.flag_optimal_Nfraction  = NamelistItem(False)
@@ -83,58 +79,33 @@ class ASSIMILATION_CTL:
         # calculation[standard = 0.5, fapar]
         self.canopy_layer_scheme        = NamelistItem(CanopyLayerScheme.FAPAR)
         # calculation of gs_cl following Medlyn [default] or Ball/Berry
-        self.canopy_conductance_scheme  = NamelistItem(CanopyConductanceScheme.MEDLYN)
+        # NOTE: quincy's namelist member is "canopy_conductance_scheme_string" (not "canopy_conductance_scheme")
+        self.canopy_conductance_scheme_string = NamelistItem(CanopyConductanceScheme.MEDLYN)
         # Determines if stomatal conductances should be regulated by the plant or the soil
         self.gs_beta_type               = NamelistItem(GsBetaType.PLANT)
 
-class PHYD_CTL:
+class LND_PHYD_NML:
     def __init__(self):
         self.use_plant_hydraulics = NamelistItem(False)
         self.use_hydaulic_failure_mort = NamelistItem(False)
-
-class RADIATION_CTL:
-    def __init__(self):
-        # No values here, yet
-        dummy = 0
 
 class GRID_CTL:
     def __init__(self):
         self.longitude = NamelistItem(0.0)
         self.latitude  = NamelistItem(50.0)
 
-class SPQ_CTL:
-    def __init__(self):
-        self.spq_deactivate_spq = NamelistItem(False)
-        self.flag_snow     = NamelistItem(False)
-        
-        self.spq_soil_depth    = NamelistItem(5.7)
-        self.spq_soil_awc_prescribe     = NamelistItem(300.0)
-        self.spq_soil_theta_prescribe   = NamelistItem(1.0)
-        self.spq_elevation = NamelistItem(0.0)
-        
-        self.spq_soil_sand    = NamelistItem(0.4)
-        self.spq_soil_silt    = NamelistItem(0.3)
-        self.spq_soil_clay    = NamelistItem(0.3)
-        
-        self.spq_bulk_density = NamelistItem(1500.0)
-        
-        # self.saxtonA = NamelistItem(-0.2E-4)
-        # self.saxtonB    = NamelistItem(-10.0)
-        # self.kdiff_sat_sl    = NamelistItem(1E-6)
-        # self.theta_sat_sl    = NamelistItem(0.5)
-
-class Q_AGR_CTL:
+class LND_Q_AGR_NML:
     def __init__(self):
         self.active = NamelistItem(False)
 
-class Q_SYL_CTL:
+class LND_Q_SYL_NML:
     def __init__(self):
         self.active                = NamelistItem(True)
         self.flag_stand_harvest    = NamelistItem(False)
         self.stand_replacing_year  = NamelistItem(1500)
         self.harvest_fraction      = NamelistItem(1.0)
         self.harvest_active_in_qs  = NamelistItem(False)
-class SOIL_BIOGEOCHEMISTRY_CTL:
+class LND_SB_NML:
     def __init__(self):
         self.sb_model_scheme  = NamelistItem(SbModelScheme.SIMPLE_1D)
         self.sb_nloss_scheme  = NamelistItem(SbNlossScheme.FIXED)
@@ -172,7 +143,6 @@ class BASE_CTL:
         self.dtime_step_length_sec = NamelistItem(1800.0)
         #  QUINCY model: land plant soil canopy test_canopy test_radiation
         self.quincy_model_name = NamelistItem(QuincyModelName.LAND)
-        self.use_soil_phys_jsbach = NamelistItem(False)
         # git repository commit
         self.git_branch = NamelistItem("not_set")
         self.git_commit_SHA = NamelistItem("not_set")
@@ -208,8 +178,6 @@ class BASE_CTL:
         self.set_parameter_values_proportional = NamelistItem(False)
         # use only the 1st year of climate input [FALSE TRUE]
         self.flag_climate_forcing_one_year = NamelistItem(False)
-        # flag for site-set SPP_1685; soil layer specific texture information for simple_1d and jsm
-        self.flag_spp1685 = NamelistItem(False)
         # element variables (infrastructure) used in bgc_material (carbon is assumed to be always TRUE)
         self.include_nitrogen   = NamelistItem(True)
         self.include_phosphorus = NamelistItem(True)
@@ -217,7 +185,12 @@ class BASE_CTL:
         self.include_carbon14   = NamelistItem(True)
         self.include_nitrogen15 = NamelistItem(True)
         # File (with path) to a file containing a list of selected output variables (only used for NetCDF output)
-        self.file_sel_output_variables = NamelistItem("not_set")
+        # NOTE: quincy's namelist member is "netcdf_output_var_list" (not "file_sel_output_variables")
+        self.netcdf_output_var_list = NamelistItem("not_set")
+        # set of ascii txt files for model output (options: mo_qs_output_txt_util)
+        self.output_txt_file_set = NamelistItem("basic")
+        # descriptor for water balance handling: 'ignore', 'logging', or 'error'
+        self.enforce_water_budget = NamelistItem("ignore")
 
         self.flag_slow_sb_pool_spinup_accelerator           = NamelistItem(True)
         self.slow_sb_pool_spinup_accelerator_frequency      = NamelistItem(100)
@@ -298,16 +271,15 @@ class JSB_SEB_NML:
 class Namelist:
     def __init__(self):
         # Initialise namelist categories with defaults
-        self.dist_fire_ctl             = DIST_FIRE_CTL()
-        self.vegetation_ctl            = VEGETATION_CTL()
-        self.assimilation_ctl          = ASSIMILATION_CTL()
-        self.phenology_ctl             = PHENOLOGY_CTL()
-        self.phyd_ctl                  = PHYD_CTL()
+        self.lnd_dist_fire_nml             = LND_DIST_FIRE_NML()
+        self.lnd_veg_nml            = LND_VEG_NML()
+        self.lnd_q_assimi_nml          = LND_Q_ASSIMI_NML()
+        self.lnd_q_pheno_nml             = LND_Q_PHENO_NML()
+        self.lnd_phyd_nml                  = LND_PHYD_NML()
         self.grid_ctl                  = GRID_CTL()
-        self.spq_ctl                   = SPQ_CTL()        
-        self.q_agr_ctl                 = Q_AGR_CTL()
-        self.q_syl_ctl                 = Q_SYL_CTL()
-        self.soil_biogeochemistry_ctl  = SOIL_BIOGEOCHEMISTRY_CTL()
+        self.lnd_q_agr_nml                 = LND_Q_AGR_NML()
+        self.lnd_q_syl_nml                 = LND_Q_SYL_NML()
+        self.lnd_sb_nml  = LND_SB_NML()
         self.base_ctl                  = BASE_CTL()
         self.jsb_forcing_ctl           = JSB_FORCING_CTL()
         self.jsb_rad_nml               = JSB_RAD_NML()

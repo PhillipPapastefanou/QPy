@@ -44,7 +44,7 @@ RUN_DIRECTORY = "output/04_transient_fluxnet_test"
 # Classic sensitivity analysis where we are apply differnt Namelist or Lctlib files to ONE climate file
 # The basic forcing path
 # We need a base namelist and lctlib which we then modify accordingly
-namelist_root_path = os.path.join(QUINCY_ROOT_PATH,'contrib', 'namelist' ,'namelist.slm')
+namelist_root_path = os.path.join(QUINCY_ROOT_PATH,'contrib', 'namelist' ,'qs.namelist')
 lctlib_root_path = os.path.join(QUINCY_ROOT_PATH,'data', 'lctlib_quincy_nlct14.def')
 
 # Parse base namelist path
@@ -66,14 +66,14 @@ ApplyDefaultSiteLevel(namelist=namelist_base)
 
 # Dummy change to be reset to 500-1000 years
 #namelist_base.jsb_forcing_ctl.transient_spinup_years = 500
-namelist_base.base_ctl.file_sel_output_variables.value = os.path.join(QUINCY_ROOT_PATH, 'data', 'basic_output_variables.txt')
+namelist_base.base_ctl.netcdf_output_var_list.value = os.path.join(QUINCY_ROOT_PATH, 'data', 'basic_output_variables.txt')
 
 
 # C only
-namelist_base.vegetation_ctl.veg_bnf_scheme.value = VegBnfScheme.UNLIMITED
-namelist_base.vegetation_ctl.leaf_stoichom_scheme.value = LeafStoichomScheme.FIXED
-namelist_base.soil_biogeochemistry_ctl.flag_sb_prescribe_po4.value = True
-namelist_base.soil_biogeochemistry_ctl.sb_bnf_scheme.value = SbBnfScheme.UNLIMITED
+namelist_base.lnd_veg_nml.veg_bnf_scheme.value = VegBnfScheme.UNLIMITED
+namelist_base.lnd_veg_nml.leaf_stoichom_scheme.value = LeafStoichomScheme.FIXED
+namelist_base.lnd_sb_nml.flag_sb_prescribe_po4.value = True
+namelist_base.lnd_sb_nml.sb_bnf_scheme.value = SbBnfScheme.UNLIMITED
 namelist_base.base_ctl.flag_slow_sb_pool_spinup_accelerator.value = False
 
 
@@ -96,7 +96,7 @@ lctlib_reader = LctlibReader(lctlib_root_path)
 lctlib_base = lctlib_reader.parse()
 
 #Obtain pft_id from namelist
-pft_id = namelist_base.vegetation_ctl.plant_functional_type_id.value
+pft_id = namelist_base.lnd_veg_nml.plant_functional_type_id.value
 pft = list(PftQuincy)[pft_id - 1]
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 

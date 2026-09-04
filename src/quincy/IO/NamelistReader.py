@@ -43,6 +43,10 @@ class NamelistReader:
                 ctl_str = line[1:]
                 # Because of inconsistencies in the naming lets make all categories upper in python
                 ctl_str = ctl_str.upper()
+                # Accept namelist.slm files written by older QPy versions that used
+                # the (incorrect) old category names as group headers
+                if ctl_str not in NamelistCategories.__members__ and ctl_str in LEGACY_NAMELIST_CATEGORY_ALIASES:
+                    ctl_str = LEGACY_NAMELIST_CATEGORY_ALIASES[ctl_str]
                 try:
                     ctl_enum = NamelistCategories[ctl_str]
                 except:

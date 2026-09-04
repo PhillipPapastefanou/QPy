@@ -104,13 +104,13 @@ for i, slope in  zip(range(len(SLOPES)), SLOPES):
             nlm_reader = NamelistReader(namelist_path)
             namelist_base = nlm_reader.parse()
             #Obtain pft_id from namelist
-            pft_id = namelist_base.vegetation_ctl.plant_functional_type_id.value
+            pft_id = namelist_base.lnd_veg_nml.plant_functional_type_id.value
             pft = PftQuincy(pft_id)
             
             
             paramlist = Paramlist()
-            paramlist.phenology_ctl.gdd_t_air_threshold.value = 8.0
-            paramlist.phenology_ctl.gdd_t_air_threshold.parsed = True
+            paramlist.lnd_q_pheno_nml.gdd_t_air_threshold.value = 8.0
+            paramlist.lnd_q_pheno_nml.gdd_t_air_threshold.parsed = True
             
             lctlib_base[pft].slope_leaf_close = slope
                        
@@ -139,7 +139,7 @@ quincy_multi_run.generate_files()
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
 python_ex = "/Net/Groups/BSI/work_scratch/ppapastefanou/envs/QPy_gnu_mpich/bin/python"
-quincy_binary_path = os.path.join(QUINCY_ROOT_PATH, "x86_64-gfortran", "bin", "land.x")
+quincy_binary_path = os.path.join(QUINCY_ROOT_PATH, "x86_64-gfortran", "bin", "qs.bin")
 
 GenerateSlurmScriptArrayBased(
                     ntasks        = nruns,

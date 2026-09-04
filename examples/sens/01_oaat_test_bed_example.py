@@ -41,7 +41,7 @@ RUN_DIRECTORY = "output/01_oaat_test_bed_example/"
 # Classic sensitivity analysis where we are apply differnt Namelist or Lctlib files to ONE climate file
 # The basic forcing path
 # We need a base namelist and lctlib which we then modify accordingly
-namelist_root_path = os.path.join(QUINCY_ROOT_PATH,'contrib', 'namelist' ,'namelist.slm')
+namelist_root_path = os.path.join(QUINCY_ROOT_PATH,'contrib', 'namelist' ,'qs.namelist')
 lctlib_root_path = os.path.join(QUINCY_ROOT_PATH,'data', 'lctlib_quincy_nlct14.def')
 
 # Parse base namelist path
@@ -63,14 +63,14 @@ ApplyDefaultTestbed(namelist=namelist_base)
 
 # Dummy change to be reset to 500-1000 years
 #namelist_base.jsb_forcing_ctl.transient_spinup_years = 500
-namelist_base.base_ctl.file_sel_output_variables.value = os.path.join(QUINCY_ROOT_PATH, 'data', 'basic_output_variables.txt')
+namelist_base.base_ctl.netcdf_output_var_list.value = os.path.join(QUINCY_ROOT_PATH, 'data', 'basic_output_variables.txt')
 
 # Parse base lctlibe path
 lctlib_reader = LctlibReader(lctlib_root_path)
 lctlib_base = lctlib_reader.parse()
 
 #Obtain pft_id from namelist
-pft_id = namelist_base.vegetation_ctl.plant_functional_type_id.value
+pft_id = namelist_base.lnd_veg_nml.plant_functional_type_id.value
 pft = list(PftQuincy)[pft_id - 1]
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
@@ -132,7 +132,7 @@ df_parameter_setup['id'] = np.arange(0, nslice)
 df_parameter_setup['fid'] = np.arange(0, nslice)
 df_parameter_setup.to_csv(os.path.join(setup_root_path, "parameters.csv"), index=False)
 
-quincy_binary_path = os.path.join(QUINCY_ROOT_PATH, "x86_64-gfortran", "bin", "land.x")
+quincy_binary_path = os.path.join(QUINCY_ROOT_PATH, "x86_64-gfortran", "bin", "qs.bin")
 python_ex = "/Net/Groups/BSI/work_scratch/ppapastefanou/envs/QPy_gnu_mpich/bin/python"
 
 GenerateSlurmScriptArrayBased(

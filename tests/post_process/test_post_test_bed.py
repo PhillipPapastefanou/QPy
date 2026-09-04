@@ -9,8 +9,8 @@ from time import perf_counter
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(THIS_DIR, os.pardir, os.pardir))
 
-from src.postprocessing.qnc_std_output_factory import Output_format
-from src.postprocessing.qnc_std_output_factory import QNC_std_output_factory
+from src.postprocessing.py.qnc_std_output_factory import Output_format
+from src.postprocessing.py.qnc_std_output_factory import QNC_std_output_factory
 from src.quincy.IO.NamelistReader import NamelistReader
 from src.quincy.IO.LctlibReader import LctlibReader
 from src.quincy.base import Namelist
@@ -40,7 +40,7 @@ class Test_Post_Process_Test_Bed(unittest.TestCase):
         # Classic sensitivity analysis where we are apply differnt Namelist or Lctlib files to ONE climate file
         # The basic forcing path
         # We need a base namelist and lctlib which we then modify accordingly
-        namelist_root_path = os.path.join(self.QUINCY_ROOT_PATH,'contrib', 'namelist' ,'namelist.slm')
+        namelist_root_path = os.path.join(self.QUINCY_ROOT_PATH,'contrib', 'namelist' ,'qs.namelist')
         lctlib_root_path = os.path.join(self.QUINCY_ROOT_PATH,'data', 'lctlib_quincy_nlct14.def')
         # Path where to save the setup
         self.setup_root_path = os.path.join(THIS_DIR, self.OUTPUT_DIR)
@@ -72,7 +72,7 @@ class Test_Post_Process_Test_Bed(unittest.TestCase):
         ApplyDefaultTestbed(namelist=namelist_base)        
 
         # Apply the standard selected output variables    
-        namelist_base.base_ctl.file_sel_output_variables.value = os.path.join(self.QUINCY_ROOT_PATH,
+        namelist_base.base_ctl.netcdf_output_var_list.value = os.path.join(self.QUINCY_ROOT_PATH,
                                                                                 'data', 
                                                                                 'basic_output_variables.txt')
 
@@ -99,7 +99,7 @@ class Test_Post_Process_Test_Bed(unittest.TestCase):
 
         t1 = perf_counter()
 
-        quincy_binary_path = os.path.join(self.QUINCY_ROOT_PATH, "x86_64-gfortran", "bin", "land.x")
+        quincy_binary_path = os.path.join(self.QUINCY_ROOT_PATH, "x86_64-gfortran", "bin", "qs.bin")
 
         p = subprocess.Popen(quincy_binary_path,
                                 cwd=self.setup_root_path)
