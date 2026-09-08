@@ -1,0 +1,10 @@
+# core, needed by every script
+xarray
+netCDF4
+requests
+numpy
+pandas
+
+# optional, only needed by the scripts that use them
+cdsapi>=0.7.7      # download_era5_monthly.py, download_wfde5_monthly.py
+isimip-client      # download_gswp3_w5e5.py

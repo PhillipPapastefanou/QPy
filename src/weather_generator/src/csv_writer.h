@@ -13,6 +13,7 @@ class CSV_Writer {
     public:
         CSV_Writer(std::string filename, Gridcell gridcell);
         void Export(std::vector<Sudaily_Forcing> forcing);
+        void Export(std::vector<Daily_Forcing> forcing);
 
 
     private:

@@ -27,6 +27,9 @@ add_subdirectory(src)
 project(generator)
 add_executable(generator ${sources} src/main.cpp)
 
+project(generator_daily)
+add_executable(generator_daily ${sources} src/main_daily.cpp)
+
 project(generator_tests)
 add_executable(generator_tests ${sources} tests/main_tests.cpp)
 

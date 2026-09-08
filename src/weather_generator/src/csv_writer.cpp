@@ -44,3 +44,42 @@ void CSV_Writer::Export(std::vector<Sudaily_Forcing> forcing) {
     myfile.close();
 
 }
+
+void CSV_Writer::Export(std::vector<Daily_Forcing> forcing) {
+
+    // Column layout matches QUINCY's daily-forcing reader (is_daily_forcing = .TRUE.
+    // in &JSB_FORCING_CTL, see read_or_calculate_forcing() in mo_qs_atmland_forcing.f90):
+    // instead of a single t_air column (used for timestep/sub-daily forcing), daily
+    // forcing carries tmin/tmax, from which QUINCY reconstructs the diurnal course of
+    // temperature, shortwave and longwave radiation internally. "hour" is still read
+    // but unused in daily mode and is written as a constant placeholder.
+    std::ofstream myfile;
+    myfile.open (filename);
+    myfile << "year day hour ";
+    myfile << "swvis_srf_down lw_srf_down tmin tmax ";
+    myfile << "q_air press_srf rain snow wind_air\n";
+    myfile << "- - - ";
+    myfile << "W/m2 W/m2 K K ";
+    myfile << "g/kg hPa mm/day mm/day m/s\n";
+
+    for (int d = 0; d < forcing.size(); ++d) {
+
+        Daily_Forcing& df = forcing[d];
+
+        myfile << min_year + df.year << " ";
+        myfile << df.day_of_year + 1 << " ";
+        myfile << 0.0 << " ";
+        myfile << df.d_sw_rad << " ";
+        myfile << df.d_lw_rad_mean << " ";
+        myfile << df.d_tmin << " ";
+        myfile << df.d_tmax << " ";
+        myfile << df.d_sph * 1000.0 << " ";
+        myfile << df.d_pressure / 100.0 << " ";
+        myfile << df.d_rain << " ";
+        myfile << 0.0 << " ";
+        myfile << df.d_wind << "\n";
+    }
+
+    myfile.close();
+
+}
