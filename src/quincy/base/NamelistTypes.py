@@ -3,6 +3,7 @@ from enum import Enum
 class NamelistItem:
     def __init__(self, value):
         self.value = value
+        self.default = value
         self.parsed = False
 
 # Category names double as the namelist group name quincy's Fortran position_nml()

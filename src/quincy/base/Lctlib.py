@@ -5,8 +5,8 @@ class Lctlib:
     def __init__(self):
         # Generate PFT Lct items and initialize with dummies
         self.data = {i : Lctlib_Item(i) for i in PftQuincy}
-
         self.title_string = "not_set"
+        self.parsed_rows = set()
 
     def __getitem__(self, key):
         return self.data[key]

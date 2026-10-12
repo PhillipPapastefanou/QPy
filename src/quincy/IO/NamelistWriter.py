@@ -14,6 +14,10 @@ class NamelistWriter:
         self.iadd_comment("Instruction file generate with QPy generator.", False)
         self.iadd_comment(f"File created on {t_string}.", False)
 
+        # If the namelist was read from a file, that file defines which entries the
+        # QUINCY version knows. Writing anything else makes the Fortran read fail.
+        self.only_parsed = self.iany_parsed()
+
         for cat_str in vars(self.namelist):
             cat = getattr(self.namelist, cat_str)
             self.iadd_category(cat)
@@ -46,7 +50,13 @@ class NamelistWriter:
             if type(item) is not NamelistItem:
                 print(f"Could not write {var_str} in cat {instance}. Not a NameListItem")
                 continue
-            
+
+            if self.only_parsed and not item.parsed:
+                if item.value != item.default:
+                    print(f"{var_str} in {cat_name} is not in the base namelist (not supported by this QUINCY version?). "
+                          f"Ignoring the value {item.value}.")
+                continue
+
             value = item.value
             var_type =  type(value)
 
@@ -75,5 +85,13 @@ class NamelistWriter:
 
     def iadd_string(self, str):
         self.lines.append(f"  {str}")
+
+    def iany_parsed(self):
+        for cat_str in vars(self.namelist):
+            cat = getattr(self.namelist, cat_str)
+            for item in vars(cat).values():
+                if type(item) is NamelistItem and item.parsed:
+                    return True
+        return False
 
 

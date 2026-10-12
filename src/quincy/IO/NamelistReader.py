@@ -65,19 +65,24 @@ class NamelistReader:
             # Parse information of class
             else:
                 if ctl_class != 0:
-                    arr = line.split('=')
-                    name = arr[0]
+                    arr = line.split('=', 1)
+                    if len(arr) != 2:
+                        print(f"Could not parse line: {line}")
+                        continue
                     #Remove whitespaces
-                    name = name.strip()
+                    name = arr[0].strip()
 
-                    value = arr[1]
-                    #Remove the redundant quotes
-                    value = value.strip('\"')
-                    try:
-                        item_type = type(getattr(ctl_class, name))
-                    except:
+                    #Remove whitespaces, a trailing comma and the quotes (QUINCY uses both ' and ")
+                    value = arr[1].strip().rstrip(',').strip()
+                    value = value.strip('\"').strip('\'')
+
+                    # Fortran names are case-insensitive, e.g. git_commit_SHA vs git_commit_sha
+                    attr_names = {k.lower(): k for k in vars(ctl_class)}
+                    if name.lower() not in attr_names:
                         print(f"Could not find {name} in {ctl_class}")
                         continue
+                    name = attr_names[name.lower()]
+                    item_type = type(getattr(ctl_class, name))
                     
                     if item_type is not NamelistItem:
                         print(f"Invalid item {item_type}.")
@@ -88,7 +93,7 @@ class NamelistReader:
 
                     # Parsing primitive types
                     if var_type is bool:
-                        if value == ".TRUE.":
+                        if value.upper() in (".TRUE.", "T"):
                             item.value = True
                         else:
                             item.value = False

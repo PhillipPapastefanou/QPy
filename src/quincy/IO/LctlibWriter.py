@@ -33,6 +33,11 @@ class LctlibWriter:
             if var_str == "name":
                 continue
 
+            # If read from a file, only write the rows of that file. Other rows are
+            # unknown to this QUINCY version (NLCT is already part of the title string)
+            if instance.parsed_rows and var_str not in instance.parsed_rows:
+                continue
+
             for pft in PftQuincy:
 
                 data_pft = instance[pft]

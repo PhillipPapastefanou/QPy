@@ -9,6 +9,7 @@ import numpy as np
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(THIS_DIR, os.pardir, os.pardir))
+sys.path.append(THIS_DIR)
 
 from src.quincy.IO.NamelistReader import NamelistReader
 from src.quincy.IO.LctlibReader import LctlibReader
@@ -21,6 +22,7 @@ from src.quincy.base.NamelistTypes import ForcingMode
 from src.quincy.base.EnvironmentalInput import EnvironmentalInputSite
 from src.quincy.base.user_git_information import UserGitInformation
 from src.quincy.run_scripts.default import ApplyDefaultTestbed
+from quincy_test_utils import binary_command
 from time import perf_counter
 
 class Test_Test_Bed(unittest.TestCase):
@@ -160,7 +162,7 @@ class Test_Test_Bed(unittest.TestCase):
         t1 = perf_counter()
         quincy_binary_path = self.qpf.binary_path
         
-        p = subprocess.Popen(quincy_binary_path,
+        p = subprocess.Popen(binary_command(quincy_binary_path),
                              cwd=setup_root_path)
         
         stdout, stderr = p.communicate()

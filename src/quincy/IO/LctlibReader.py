@@ -47,6 +47,7 @@ class LctlibReader:
 
             try:
                 lctlib.set_row(var_name, values)
+                lctlib.parsed_rows.add(var_name)
             except Exception as error:
                 print(f"Can't parse: {raw_str_array}. Error message:")
                 print(error)

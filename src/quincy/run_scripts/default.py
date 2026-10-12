@@ -97,4 +97,37 @@ def ApplyDefaultSiteLevel(namelist : Namelist):
     namelist.jsb_rad_nml.use_alb_mineralsoil_const.value = True
     namelist.jsb_forcing_ctl.flag_forcing_with_snow_data.value = False
 
-            
+
+def ApplyUseCase30(namelist : Namelist):
+    # QUINCY usecase 30: short transient CNP run with the simple soil model on the
+    # CRUNCEP site subset (contrib/usecases/30_short_transient_cnp_cruncep_ssm_def.incl)
+    ApplyDefaultSiteLevel(namelist=namelist)
+
+    namelist.lnd_sb_nml.flag_sb_prescribe_po4.value = False
+    namelist.lnd_veg_nml.flag_veg_interactive_n.value = True
+    namelist.lnd_veg_nml.flag_veg_interactive_p.value = True
+    namelist.lnd_sb_nml.flag_sb_interactive_n.value = True
+    namelist.lnd_sb_nml.flag_sb_interactive_p.value = True
+
+    # Defaults of prepare_sim_quincy.sh which differ from ApplyDefaultSiteLevel
+    namelist.base_ctl.flag_slow_sb_pool_spinup_accelerator.value = False
+    namelist.jsb_forcing_ctl.flag_forcing_with_snow_data.value = True
+    namelist.base_ctl.output_txt_file_set.value = "all"
+
+    namelist.jsb_forcing_ctl.transient_simulation_start_year.value = 1901
+    namelist.jsb_forcing_ctl.transient_spinup_start_year.value = 1901
+    namelist.jsb_forcing_ctl.transient_spinup_end_year.value = 1930
+    namelist.jsb_forcing_ctl.transient_spinup_years.value = 2
+    namelist.jsb_forcing_ctl.simulation_length_number.value = 4
+    namelist.base_ctl.output_start_first_day_year.value = 1
+    namelist.base_ctl.output_end_last_day_year.value = 4
+    namelist.base_ctl.output_interval_pool.value = OutputIntervalPool.DAILY
+    namelist.base_ctl.output_interval_flux.value = OutputIntervalFlux.DAILY
+    namelist.base_ctl.output_interval_pool_spinup.value = OutputIntervalPool.YEARLY
+    namelist.base_ctl.output_interval_flux_spinup.value = OutputIntervalFlux.YEARLY
+
+
+def ApplyUseCase31(namelist : Namelist):
+    # QUINCY usecase 31: as usecase 30 but with the JSM soil model
+    ApplyUseCase30(namelist=namelist)
+    namelist.lnd_sb_nml.sb_model_scheme.value = SbModelScheme.JSM
