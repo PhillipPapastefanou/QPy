@@ -21,6 +21,7 @@ from src.quincy.base.NamelistTypes import ForcingMode
 from src.quincy.base.EnvironmentalInput import EnvironmentalInputSite
 from src.quincy.base.user_git_information import UserGitInformation
 from src.quincy.run_scripts.default import ApplyDefaultSiteLevel
+from src.quincy.auxil.find_quincy_paths import QuincyPathFinder
 from time import perf_counter
 
 class Test_U30(unittest.TestCase):
@@ -34,12 +35,10 @@ class Test_U30(unittest.TestCase):
     # Treat compare_outputs() as untested/unverified until a fresh reference run is
     # generated from the current quincy HEAD and this comment is updated.
     def init(self):
-        if 'QUINCY' in os.environ:        
-            self.QUINCY_ROOT_PATH = os.environ.get("QUINCY")
-        else:
-            print("Environmental variable QUINCY is not defined")
-            print("Please set QUINCY to the directory of your quincy root path")
-            exit(99)
+        self.qpf = QuincyPathFinder()
+        if not self.qpf.found_quincy:
+            self.skipTest("QUINCY directory not found")
+        self.QUINCY_ROOT_PATH = self.qpf.quincy_root_path
             
         self.OUTPUT_DIR = 'output_u30'
         self.org_delta = 0.0
@@ -55,8 +54,8 @@ class Test_U30(unittest.TestCase):
         # Classic sensitivity analysis where we are apply differnt Namelist or Lctlib files to ONE climate file
         # The basic forcing path
         # We need a base namelist and lctlib which we then modify accordingly
-        namelist_root_path = os.path.join(self.QUINCY_ROOT_PATH,'contrib', 'namelist' ,'qs.namelist')
-        lctlib_root_path = os.path.join(self.QUINCY_ROOT_PATH,'data', 'lctlib_quincy_nlct14.def')
+        namelist_root_path = self.qpf.namelist_root_path
+        lctlib_root_path = self.qpf.lctlib_root_path
         # Path where to save the setup
         setup_root_path = os.path.join(THIS_DIR, self.OUTPUT_DIR)
 
@@ -78,9 +77,7 @@ class Test_U30(unittest.TestCase):
         ApplyDefaultSiteLevel(namelist=namelist_base)        
         
         # Apply the standard selected output variables    
-        namelist_base.base_ctl.netcdf_output_var_list.value = os.path.join(self.QUINCY_ROOT_PATH,
-                                                                              'data', 
-                                                                              'basic_output_variables.txt')
+        namelist_base.base_ctl.netcdf_output_var_list.value = self.qpf.sel_out_var_root_path
         
         namelist_base.base_ctl.output_end_last_day_year.value = 4
         namelist_base.base_ctl.output_start_first_day_year.value = 1
@@ -203,7 +200,7 @@ class Test_U30(unittest.TestCase):
     def irun_QPY_test_bed(self, QUINCY_ROOT_PATH, setup_root_path, q, qpy_delta):
         
         t1 = perf_counter()
-        quincy_binary_path = os.path.join(QUINCY_ROOT_PATH,"x86_64-gfortran", "bin", "qs.bin")
+        quincy_binary_path = self.qpf.binary_path
         
         p = subprocess.Popen(quincy_binary_path,
                              cwd=setup_root_path)
@@ -238,7 +235,7 @@ class Test_U30(unittest.TestCase):
         
         for site in self.sites:
             print(f"Testing {site}: ")
-            df_org = pd.read_csv(os.path.join(ref_path, site , "output", "vegpool_c_daily.txt"), sep= "\s+")
+            df_org = pd.read_csv(os.path.join(ref_path, site , "output", "vegpool_c_daily.txt"), sep= r"\s+")
             org_veg_c = df_org['Total_C'].values
             
             ds_new = xr.open_dataset(os.path.join(THIS_DIR, self.OUTPUT_DIR, "output", site,"VEG_transient_daily.nc"), decode_times=True)

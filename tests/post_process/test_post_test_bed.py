@@ -21,15 +21,14 @@ from src.quincy.base.NamelistTypes import ForcingMode
 from src.quincy.base.EnvironmentalInput import EnvironmentalInputSite
 from src.quincy.base.user_git_information import UserGitInformation
 from src.quincy.run_scripts.default import ApplyDefaultTestbed
+from src.quincy.auxil.find_quincy_paths import QuincyPathFinder
 
 class Test_Post_Process_Test_Bed(unittest.TestCase):
     def init(self):
-        if 'QUINCY' in os.environ:        
-            self.QUINCY_ROOT_PATH = os.environ.get("QUINCY")
-        else:
-            print("Environmental variable QUINCY is not defined")
-            print("Please set QUINCY to the directory of your quincy root path")
-            exit(99)
+        self.qpf = QuincyPathFinder()
+        if not self.qpf.found_quincy:
+            self.skipTest("QUINCY directory not found")
+        self.QUINCY_ROOT_PATH = self.qpf.quincy_root_path
             
     def test_run_test_bed(self):
         
@@ -40,8 +39,8 @@ class Test_Post_Process_Test_Bed(unittest.TestCase):
         # Classic sensitivity analysis where we are apply differnt Namelist or Lctlib files to ONE climate file
         # The basic forcing path
         # We need a base namelist and lctlib which we then modify accordingly
-        namelist_root_path = os.path.join(self.QUINCY_ROOT_PATH,'contrib', 'namelist' ,'qs.namelist')
-        lctlib_root_path = os.path.join(self.QUINCY_ROOT_PATH,'data', 'lctlib_quincy_nlct14.def')
+        namelist_root_path = self.qpf.namelist_root_path
+        lctlib_root_path = self.qpf.lctlib_root_path
         # Path where to save the setup
         self.setup_root_path = os.path.join(THIS_DIR, self.OUTPUT_DIR)
 
@@ -72,9 +71,7 @@ class Test_Post_Process_Test_Bed(unittest.TestCase):
         ApplyDefaultTestbed(namelist=namelist_base)        
 
         # Apply the standard selected output variables    
-        namelist_base.base_ctl.netcdf_output_var_list.value = os.path.join(self.QUINCY_ROOT_PATH,
-                                                                                'data', 
-                                                                                'basic_output_variables.txt')
+        namelist_base.base_ctl.netcdf_output_var_list.value = self.qpf.sel_out_var_root_path
 
         # Parse base lctlibe path
         lctlib_reader = LctlibReader(lctlib_root_path)
@@ -99,7 +96,7 @@ class Test_Post_Process_Test_Bed(unittest.TestCase):
 
         t1 = perf_counter()
 
-        quincy_binary_path = os.path.join(self.QUINCY_ROOT_PATH, "x86_64-gfortran", "bin", "qs.bin")
+        quincy_binary_path = self.qpf.binary_path
 
         p = subprocess.Popen(quincy_binary_path,
                                 cwd=self.setup_root_path)

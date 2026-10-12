@@ -14,6 +14,7 @@ Three groups:
                                     climate_forcing/conversion/build_era5land_monthly.py.
   Test_ForcingDatasets_OnDisk       the same checks on the real products.
                                     Datasets that aren't on disk are skipped.
+                                    Only runs if FORCING_TEST_ON_DISK=1 is set.
 
 The on-disk tests are configured with environment variables so they can be
 pointed at any dataset, resolution, region or set of sites:
@@ -29,6 +30,7 @@ pointed at any dataset, resolution, region or set of sites:
   FORCING_DRIVER_DATA    root folder instead of the default driver_data
 
 Run:  python -m unittest tests.consistency.test_forcing_checks -v
+      FORCING_TEST_ON_DISK=1 python -m unittest tests.consistency.test_forcing_checks -v
 """
 import os
 import sys
@@ -263,6 +265,8 @@ def _env_list(name, default, sep=","):
     return [s.strip() for s in raw.split(sep) if s.strip()]
 
 
+@unittest.skipUnless(os.environ.get("FORCING_TEST_ON_DISK") == "1",
+                     "on-disk forcing checks are opt-in, set FORCING_TEST_ON_DISK=1")
 class Test_ForcingDatasets_OnDisk(unittest.TestCase):
     """The generic checks on the real products (each dataset that exists)."""
 
