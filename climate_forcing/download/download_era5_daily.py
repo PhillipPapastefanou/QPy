@@ -116,7 +116,11 @@ def download_chunk(client, daily_statistic: str, variables: list[str], start_yea
 
     raw_path.parent.mkdir(parents=True, exist_ok=True)
     LOG.info(f"    submitting CDS request ({daily_statistic}, {variables}) for {start_year}-{end_year}...")
-    client.retrieve(DATASET_ID, request).download(str(raw_path))
+    # Download to a temp name so an interrupted transfer is never mistaken
+    # for a finished file by the exists() check above on a rerun.
+    part_path = raw_path.with_name(raw_path.name + ".part")
+    client.retrieve(DATASET_ID, request).download(str(part_path))
+    part_path.rename(raw_path)
     return raw_path
 
 

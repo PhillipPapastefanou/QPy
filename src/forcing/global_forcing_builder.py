@@ -70,7 +70,20 @@ class MetSourceConfig:
 ERA5_MET = MetSourceConfig(
     name="era5",
     dir="/Net/Groups/BSI/work_scratch/ppapastefanou/driver_data/era5/monthly/0.5deg",
-    variables=["t_air", "q_air", "press_srf", "precip_total", "wind_air",
+    # t_air_min/t_air_max replace the mean t_air here (2026-09-11, at user's
+    # request) so this file directly carries what monthly_to_daily_forcing's
+    # weather generator needs (MonthlyForcingRecord has no mean-t_air field
+    # at all, only tmin/tmax). NOTE: era5_t_air_{min,max}_*_monthly.nc don't
+    # exist yet as of this change -- ERA5 only has a genuine daily tmax/tmin
+    # product (download_era5_daily.py --groups tmax tmin), still downloading
+    # (see climate_forcing/logs/slurm-era5-tmintmax-*.log). Rebuilding this
+    # zarr with real ERA5 min/max needs that download to finish AND a
+    # derive_era5_tmin_tmax_monthly.py-style script (mirroring
+    # derive_gldas_tmin_tmax.py) to aggregate daily -> monthly mean-of-
+    # extremes into era5_t_air_{min,max}_*_monthly.nc first -- neither
+    # exists yet, so build_global_forcing_era5.py will FileNotFoundError
+    # until then.
+    variables=["t_air_min", "t_air_max", "q_air", "press_srf", "precip_total", "wind_air",
                "cloud_cover", "swvis_srf_down", "lw_srf_down"],
     lat_name="latitude",
     lon_name="longitude",
@@ -89,8 +102,16 @@ ERA5_MET = MetSourceConfig(
 GLDAS_MET = MetSourceConfig(
     name="gldas",
     dir="/Net/Groups/BSI/work_scratch/ppapastefanou/driver_data/gldas/monthly/0.5deg",
-    # "snow" is not written as its own output variable - see combine_vars.
-    variables=["t_air", "q_air", "press_srf", "rain", "wind_air",
+    # t_air_min/t_air_max replace the mean t_air here (2026-09-11, at user's
+    # request) so this file directly carries what monthly_to_daily_forcing's
+    # weather generator needs (MonthlyForcingRecord has no mean-t_air field
+    # at all, only tmin/tmax). Sourced from
+    # climate_forcing/conversion/derive_gldas_tmin_tmax.py's
+    # gldas_t_air_{min,max}_derived_*_monthly.nc (mean-of-daily-extremes from
+    # GLDAS's raw 3-hourly Tair_f_inst -- see that script's own docstring for
+    # the approximation this involves). "snow" is not written as its own
+    # output variable - see combine_vars.
+    variables=["t_air_min", "t_air_max", "q_air", "press_srf", "rain", "wind_air",
                "swvis_srf_down", "lw_srf_down"],
     lat_name="lat",
     lon_name="lon",
@@ -110,7 +131,7 @@ GLDAS_MET = MetSourceConfig(
 TERRACLIMATE_MET = MetSourceConfig(
     name="terraclimate",
     dir="/Net/Groups/BSI/work_scratch/ppapastefanou/driver_data/terraclimate/monthly/0.5deg",
-    # No lw_srf_down or cloud_cover - TerraClimate doesn't report either at
+    # No native lw_srf_down or cloud_cover - TerraClimate doesn't report either at
     # all (native variables are limited to tmax/tmin/ppt/srad/vap/ws plus
     # some derived indices like PDSI/AET that aren't meteorological
     # forcing). t_air/rain/press_srf/q_air are not native TerraClimate
@@ -120,8 +141,51 @@ TERRACLIMATE_MET = MetSourceConfig(
     # already carry the right units on disk (K, mm/day, Pa, kg/kg) so no
     # unit_override is needed for them here beyond the same q_air/press_srf
     # entries ERA5_MET already uses.
-    variables=["t_air", "q_air", "rain", "wind_air", "swvis_srf_down"],
+    # t_air_min/t_air_max replace the mean t_air here (2026-09-11, at user's
+    # request) so this file directly carries what monthly_to_daily_forcing's
+    # weather generator needs (MonthlyForcingRecord has no mean-t_air field
+    # at all, only tmin/tmax) -- native tmax/tmin coarsened straight to K,
+    # same coarsen_terraclimate_to_0.5deg.py output as everything else here.
+    # lw_srf_down (2026-10-11) is not native either: derived from TerraClimate's
+    # own tmin/tmax, q_air, shortwave and elevation by
+    # conversion/derive_terraclimate_longwave.py (Prata clear-sky +
+    # Crawford-Duchon clouds; ~+3 W m-2 bias, 14 W m-2 rmse vs ERA5).
+    variables=["t_air_min", "t_air_max", "q_air", "rain", "wind_air", "swvis_srf_down", "lw_srf_down"],
     static_variables=["press_srf"],  # no time dimension -- see MetSourceConfig.static_variables
+    unit_override={
+        "q_air": (1000.0, "g kg-1"),      # kg/kg -> g/kg
+        "press_srf": (0.01, "hPa"),        # Pa -> hPa
+    },
+)
+ERA5LAND_MET = MetSourceConfig(
+    name="era5land",
+    # 0.5deg by default; build_global_forcing_era5land.py --res 0.25deg points
+    # at the 0.25deg files. Built by climate_forcing/conversion/
+    # build_era5land_monthly.py: land-only (NaN over ocean already), cell-
+    # centred grid, Tmin/Tmax instead of mean temperature, longwave from ERA5.
+    dir="/Net/Groups/BSI/work_scratch/ppapastefanou/driver_data/era5_land/monthly/0.5deg",
+    variables=["t_air_min", "t_air_max", "q_air", "press_srf", "precip_total", "wind_air",
+               "swvis_srf_down", "lw_srf_down"],
+    lat_name="lat",
+    lon_name="lon",
+    unit_override={
+        "q_air": (1000.0, "g kg-1"),      # kg/kg -> g/kg
+        "press_srf": (0.01, "hPa"),        # Pa -> hPa
+    },
+)
+
+CRUJRA_MET = MetSourceConfig(
+    name="crujra",
+    # CRU-JRA v2.5 only (v3.0's precipitation lacks the CRU TS bias adjustment),
+    # converted to QUINCY names/units by climate_forcing/conversion/
+    # build_crujra_monthly.py: native Tmin/Tmax, precipitation in mm/day, wind
+    # as the monthly mean of 6-hourly speed. Land-only (NaN over ocean), 0.5deg
+    # cells, 1901-2023.
+    dir="/Net/Groups/BSI/work_scratch/ppapastefanou/driver_data/crujra/monthly/0.5deg_quincy",
+    variables=["t_air_min", "t_air_max", "q_air", "press_srf", "precip_total", "wind_air",
+               "swvis_srf_down", "lw_srf_down"],
+    lat_name="lat",
+    lon_name="lon",
     unit_override={
         "q_air": (1000.0, "g kg-1"),      # kg/kg -> g/kg
         "press_srf": (0.01, "hPa"),        # Pa -> hPa

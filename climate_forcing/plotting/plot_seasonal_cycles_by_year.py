@@ -37,7 +37,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 DRIVER_ROOT = Path("/Net/Groups/BSI/work_scratch/ppapastefanou/driver_data")
-OUT_DIR = Path(__file__).parent.parent  # climate_forcing/ toolkit root
+OUT_DIR = Path(__file__).parent.parent / "output" / "site_comparison"
 
 YEARS = [2000, 2010, 2020, 2024]
 
@@ -179,6 +179,7 @@ def plot_year(year: int, era5, terra, gldas, crujra):
                  fontsize=12, y=1.01)
     fig.tight_layout(rect=[0, 0.04, 1, 0.98])
     out_png = OUT_DIR / f"seasonal_cycles_9sites_{year}.png"
+    OUT_DIR.mkdir(parents=True, exist_ok=True)
     fig.savefig(out_png, dpi=150, bbox_inches="tight")
     plt.close(fig)
     print(f"Wrote {out_png}")

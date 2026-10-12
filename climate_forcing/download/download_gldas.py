@@ -61,6 +61,7 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
+import gc
 import sys
 import time
 from pathlib import Path
@@ -274,6 +275,17 @@ def process_daily(start_year: int, end_year: int, out_dir: Path, raw_dir: Path, 
         year_ds.close()
         yearly_files.append(year_cache)
         LOG.info(f"  year {year} done, cached to {year_cache}")
+
+        # Confirmed live 2026-09-09: memory grew across loop iterations even
+        # though day_parts/year_ds go out of scope each year (OOM'd at 35GB+
+        # on year 2 despite year 1 peaking around 22GB, same 48G cap). The
+        # per-day dask task graphs (open_mfdataset) form reference cycles
+        # that plain refcounting can't free -- only Python's cyclic GC does,
+        # and it doesn't run often enough on its own here. Force a collection
+        # between years so each year starts from a clean baseline instead of
+        # accumulating the previous year's uncollected graph objects.
+        del day_parts, year_ds
+        gc.collect()
 
     if not yearly_files:
         LOG.warning("No daily data produced, nothing to write.")

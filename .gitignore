@@ -17,3 +17,7 @@ science/phillip/output
 local
 examples/post_process/julia/multi/plots
 examples/post_process/julia/single/plots
+climate_forcing/emulator/models/**/analysis/
+climate_forcing/emulator/logs/
+climate_forcing/logs/
+climate_forcing/output/

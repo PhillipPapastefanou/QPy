@@ -22,6 +22,7 @@ module purge
 #module -q load openmpi4 netcdf
 ml gnu12/12.2.0 mpich/3.4.3-ofi
 ml netcdf/4.9.0
+ml hwloc/2.7.0
 
 ml all/Miniconda3
 
@@ -71,6 +72,7 @@ module purge
 #module -q load openmpi4 netcdf
 ml gnu12/12.2.0 mpich/3.4.3-ofi
 ml netcdf/4.9.0
+ml hwloc/2.7.0
 
 ml all/Miniconda3
 

@@ -50,7 +50,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 DRIVER_ROOT = Path("/Net/Groups/BSI/work_scratch/ppapastefanou/driver_data")
-OUT_PNG = Path(__file__).parent.parent / "seasonal_cycles_9sites.png"  # climate_forcing/ toolkit root, not analysis/
+OUT_PNG = Path(__file__).parent.parent / "output" / "site_comparison" / "seasonal_cycles_9sites.png"
 
 # name, continent, biome, lon, lat
 LOCATIONS = [
@@ -189,6 +189,7 @@ def main():
                  "(note: differing baseline periods per dataset -- see legend)",
                  fontsize=12, y=1.01)
     fig.tight_layout(rect=[0, 0.04, 1, 0.98])
+    OUT_PNG.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(OUT_PNG, dpi=150, bbox_inches="tight")
     print(f"Wrote {OUT_PNG}")
 

@@ -109,20 +109,42 @@ QUINCY met variable except a native rain/snow split.
 climate_forcing/
 ├── README.md                        (this file)
 ├── requirements.txt
+├── NOTES_*.md                       dated working notes (status, open steps)
 ├── common.py                        shared chunking / aggregation / derivation helpers
-│                                     (imported by both download/ and conversion/ below)
+│                                     (imported by the scripts in the folders below)
+├── write_data_readmes.py            writes the README.md files in driver_data/
 ├── download/                         fetch raw source data from each provider → monthly
 │   ├── download_crujra.py            CEDA CRU-JRA v3.0 (or v2.5) → monthly (primary)
 │   ├── download_gswp3_w5e5.py        ISIMIP3a GSWP3-W5E5, point-based → monthly
 │   ├── download_era5_monthly.py      CDS ERA5 monthly means (native monthly)
 │   ├── download_era5_daily.py        CDS ERA5 daily statistics (incl. real tmax/tmin)
+│   ├── download_era5land_monthly_cds.py CDS ERA5-Land monthly means
 │   ├── download_wfde5_monthly.py     CDS WFDE5 → monthly
 │   ├── download_terraclimate_monthly.py TerraClimate, no auth, native monthly
 │   ├── download_gldas.py             NASA GES DISC GLDAS Noah v2.1 → monthly (0.25/0.5deg) + daily (0.25deg)
+│   ├── *.sbatch                      Slurm wrappers (retrying long CDS downloads)
 │   └── download_mswx.py              not written yet -- blocked on Drive access, see §8
-├── conversion/                       reprocess already-downloaded raw caches, no network I/O
-│   └── build_daily_aggregates.py     CRU-JRA 6-hourly → daily (TerraClimate: not applicable, see §9)
-└── analysis/                         9-site seasonal-cycle comparison plots (see repo)
+├── conversion/                       reprocess already-downloaded data, no network I/O
+│   ├── build_daily_aggregates.py     CRU-JRA 6-hourly → daily (TerraClimate: not applicable, see §9)
+│   ├── build_crujra_monthly.py, build_era5land_monthly.py, build_era5_tmintmax_monthly.py,
+│   │   derive_gldas_tmin_tmax.py, derive_terraclimate_*.py, coarsen_*.py
+│   ├── build_static_inputs.py        static soil/lithology/P file (driver_data/static/)
+│   ├── build_pft_map.py              adds QUINCY PFT maps to that file
+│   └── *.sbatch                      Slurm wrappers
+├── emulator/                         monthly forcing emulator (train, evaluate, predict)
+│   ├── train_emulator.py, evaluate_maps.py, emulator_predict.py, export_site_monthly.py, ...
+│   ├── viewer.html                   browser viewer (?dataset=era|gldas|...)
+│   └── models/                       trained weights: <dataset>/, experiments/, backups/
+├── checks/                           consistency checks of built data
+│   ├── forcing_checks.py             forcing files/stores (unit tests: QPy/tests/consistency/)
+│   └── check_static_inputs.py        static file tests + overview maps
+├── plotting/                         maps and site comparisons (output/ and driver_data/static/<res>/plots/)
+│   ├── plot_forcing_maps.py, plot_site_cycles.py (+ .sbatch), plot_seasonal_cycles*.py
+│   └── plot_static_inputs.py, plot_pft_maps.py
+├── gwgen/                            monthly → daily weather generator work (LPJ-GUESS GWGEN)
+│   ├── bench/                        C++ benchmark / port check harness
+│   └── quincy/                       Hainich QUINCY runs with generated daily forcing
+├── logs/, output/                    Slurm logs and plots (not in git)
 ```
 
 `download/` and `conversion/` are a deliberate split: everything in
@@ -152,7 +174,9 @@ Run every script from inside its own folder (e.g. `cd download && python
 download_era5_monthly.py ...`, or `cd conversion && python
 build_daily_aggregates.py ...`) -- each one adds `climate_forcing/` (its
 parent directory) to `sys.path` before importing the shared `common.py`,
-so it works regardless of which of the two folders it's run from. All of
+so it works from any of the script folders (download/, conversion/,
+checks/, plotting/); keep new scripts exactly one folder below
+`climate_forcing/` for that reason. All of
 them still default `--out-dir` to the shared `driver_data/<dataset>/`
 locations regardless of where the script itself lives.
 

@@ -18,13 +18,26 @@ Usage:
         --gldas /path/to/gldas_global_forcing_0.5deg_2000-2025.zarr \\
         --year 2020 --output-dir climate_forcing
 
-Plots the variables common to ERA5/GLDAS 1:1 (t_air, q_air, press_srf,
-wind_air, swvis_srf_down, lw_srf_down), plus precip_total - compared as
-ERA5's precip_total against GLDAS's "rain" output variable, which the
-build pipeline already sums from GLDAS's separate rain+snow to match
-QUINCY's "rain" convention of total precipitation (see GLDAS_MET.combine_vars
-in global_forcing_builder.py). ERA5's cloud_cover has no GLDAS equivalent
-at all, so is skipped.
+Plots the variables common to ERA5/GLDAS 1:1 (q_air, press_srf, wind_air,
+swvis_srf_down, lw_srf_down), plus precip_total - compared as ERA5's
+precip_total against GLDAS's "rain" output variable, which the build
+pipeline already sums from GLDAS's separate rain+snow to match QUINCY's
+"rain" convention of total precipitation (see GLDAS_MET.combine_vars in
+global_forcing_builder.py). ERA5's cloud_cover has no GLDAS equivalent at
+all, so is skipped.
+
+t_air_min/t_air_max are also a plain 1:1 zarr read for ERA5/GLDAS
+(2026-09-11): the global_forcing zarr stores used to carry only a mean
+t_air (what the neural-net climate emulator predicts), but that was
+replaced with t_air_min/t_air_max in all three MetSourceConfigs (see
+global_forcing_builder.py) so the WASM daily-forcing generator
+(monthly_to_daily_forcing.cpp's MonthlyForcingRecord) has what it actually
+needs -- it has no mean-t_air field at all, only tmin/tmax. ERA5's zarr
+doesn't have real t_air_min/t_air_max yet as of this change (its daily
+tmax/tmin pull via download_era5_daily.py is still running, and there's no
+derive_era5_tmin_tmax_monthly.py-equivalent to aggregate it to monthly
+yet) -- plot_variable() shows "no data" for ERA5 in that case rather than
+failing.
 
 TerraClimate has no downwelling longwave at all (not measured by that
 product -- see download_terraclimate_monthly.py). All other TerraClimate
@@ -84,34 +97,32 @@ SITES = [
     ("Alice Springs, Australia", "Australia - Arid/desert", -23.70, 133.88),
 ]
 
-COMMON_VARIABLES = ["t_air", "q_air", "press_srf", "wind_air", "swvis_srf_down", "lw_srf_down"]
+COMMON_VARIABLES = ["q_air", "press_srf", "wind_air", "swvis_srf_down", "lw_srf_down"]
+MIN_MAX_LABELS = ["t_air_min", "t_air_max"]
 
 # (label, era5_var, gldas_vars-to-sum) - a plain 1:1 match for most
 # variables. GLDAS's "rain" output already equals its rain+snow summed
 # (done in the build pipeline, see GLDAS_MET.combine_vars), so precip_total
-# is also a plain 1:1 match here.
-VAR_SPECS = [(v, v, [v]) for v in COMMON_VARIABLES] + [("precip_total", "precip_total", ["rain"])]
-
-# t_air_min/t_air_max: unlike every other variable here, neither ERA5 nor
-# GLDAS has an entry in its global_forcing zarr for these (the zarr only
-# carries what the neural-net climate emulator predicts, i.e. monthly-mean
-# t_air, not tmin/tmax -- see PORT_NOTES_CLIMATE_EMULATOR.md in the QUINCY
-# C++ port for why that gap exists and how it's derived here instead).
-# era5_var/gldas_vars are None as a sentinel: plot_variable() reads these
-# two straight from the derived files below (era5_derived_site_series /
-# gldas_derived_site_series) rather than through a zarr group.
-MIN_MAX_LABELS = ["t_air_min", "t_air_max"]
-MIN_MAX_VAR_SPECS = [(label, None, None) for label in MIN_MAX_LABELS]
+# is also a plain 1:1 match here. t_air_min/t_air_max are a plain 1:1 match
+# too (2026-09-11): they replaced the mean-only t_air that the
+# global_forcing zarr stores used to carry (see global_forcing_builder.py's
+# MetSourceConfig docstrings -- the emulator/WASM daily-forcing generator
+# needs tmin/tmax, not a mean), so ERA5/GLDAS read them straight from the
+# zarr like every other variable here now, no special-casing needed.
+VAR_SPECS = ([(v, v, [v]) for v in COMMON_VARIABLES]
+             + [("precip_total", "precip_total", ["rain"])]
+             + [(label, label, [label]) for label in MIN_MAX_LABELS])
 
 COLORS = {"ERA5": "tab:blue", "GLDAS": "tab:orange", "CRU-JRA": "tab:green", "TerraClimate": "tab:purple"}
 
 DRIVER_ROOT = Path("/Net/Groups/BSI/work_scratch/ppapastefanou/driver_data")
 # Final, 0.5deg-coarsened TerraClimate only (see module docstring) -- not the
-# native 4km monthly/4km/ files.
+# native 4km monthly/4km/ files. TerraClimate has no global_forcing zarr
+# entry in main()'s point-lookup path (unlike ERA5/GLDAS), so it's always
+# read directly from these NetCDF files regardless of what its own
+# global_forcing zarr carries.
 TERRACLIMATE_DIR = DRIVER_ROOT / "terraclimate" / "monthly" / "0.5deg"
 CRUJRA_DIR = DRIVER_ROOT / "crujra" / "monthly" / "0.5deg"
-GLDAS_DIR = DRIVER_ROOT / "gldas" / "monthly" / "0.5deg"
-ERA5_DAILY_DIR = DRIVER_ROOT / "era5" / "daily" / "0.5deg"
 
 # label -> (native variable, native file glob, unit-conversion fn or None).
 # All already at 0.5deg (coarsen_terraclimate_to_0.5deg.py); lw_srf_down
@@ -119,7 +130,6 @@ ERA5_DAILY_DIR = DRIVER_ROOT / "era5" / "daily" / "0.5deg"
 # has no time dimension (static, elevation-derived) -- terraclimate_site_series()
 # broadcasts it across all 12 months.
 TERRACLIMATE_VARS = {
-    "t_air": ("t_air", "terraclimate_t_air_*_monthly.nc", None),  # already K
     "q_air": ("q_air", "terraclimate_q_air_*_monthly.nc", lambda v: v * 1000.0),  # kg/kg -> g/kg
     "press_srf": ("press_srf", "terraclimate_press_srf_*_monthly.nc", lambda v: v * 0.01),  # Pa -> hPa
     "wind_air": ("wind_air", "terraclimate_wind_air_*_monthly.nc", None),  # already m/s
@@ -129,35 +139,12 @@ TERRACLIMATE_VARS = {
     "t_air_max": ("t_air_max", "terraclimate_t_air_max_*_monthly.nc", None),  # already K
 }
 
-# GLDAS has no native tmin/tmax either; these come from
-# climate_forcing/conversion/derive_gldas_tmin_tmax.py's local reprocessing
-# of GLDAS's already-downloaded raw 3-hourly Tair_f_inst (approximate: 8
-# synoptic samples/day, not a true continuous-record extreme -- see that
-# script's own docstring). Already K, matching ERA5/GLDAS/CRU-JRA t_air.
-GLDAS_DERIVED_VARS = {
-    "t_air_min": ("t_air_min", "gldas_t_air_min_derived_*_monthly.nc", None),
-    "t_air_max": ("t_air_max", "gldas_t_air_max_derived_*_monthly.nc", None),
-}
-
-# ERA5 has no tmin/tmax in the global_forcing zarr either (same reason as
-# GLDAS above), but unlike GLDAS a real daily product exists via CDS's
-# server-side daily-statistics service (download/download_era5_daily.py
-# --groups tmax tmin) -- genuinely daily (one row/day), so read directly and
-# resample to monthly mean-of-daily-max/min here, matching the
-# mean-of-extremes convention CRU-JRA/TerraClimate's own tmin/tmax already
-# use. Already K (ERA5 t2m is Kelvin).
-ERA5_DERIVED_VARS = {
-    "t_air_min": ("t_air_min", "era5_t_air_min_*_daily.nc"),
-    "t_air_max": ("t_air_max", "era5_t_air_max_*_daily.nc"),
-}
-
 # label -> (native variable, native file glob, unit-conversion fn or None);
-# uses v2.5, not v3.0 -- see docstring. t_air (native "tmp") is a plain
-# read, no conversion (CRU-JRA temperature is already Kelvin, matching
-# ERA5/GLDAS). wind_air is handled specially below (needs ugrd+vgrd
-# combined, not a single file).
+# uses v2.5, not v3.0 -- see docstring. wind_air is handled specially below
+# (needs ugrd+vgrd combined, not a single file). CRU-JRA has no
+# global_forcing zarr entry in main()'s point-lookup path at all -- always
+# read directly from these NetCDF files.
 CRUJRA_VARS = {
-    "t_air": ("tmp", "crujra_v2.5_tmp_*_monthly.nc", None),  # already K
     "q_air": ("spfh", "crujra_v2.5_spfh_*_monthly.nc", lambda v: v * 1000.0),  # kg/kg -> g/kg
     "press_srf": ("pres", "crujra_v2.5_pres_*_monthly.nc", lambda v: v * 0.01),  # Pa -> hPa
     "swvis_srf_down": ("dswrf", "crujra_v2.5_dswrf_*_monthly.nc", None),  # already W/m2
@@ -219,7 +206,10 @@ def terraclimate_site_series(label: str, lat: float, lon: float, year: int):
     try:
         da = ds[var].sel(lon=lon, lat=lat, method="nearest")
         if "time" in da.dims:
-            da = da.sel(time=str(year))
+            try:
+                da = da.sel(time=str(year))
+            except KeyError:
+                return None  # year outside this file's coverage
             if da.sizes.get("time", 0) != 12:
                 return None
             vals = da.values.astype("float64")
@@ -244,8 +234,11 @@ def crujra_wind_series(lat: float, lon: float, year: int):
         return None
     ds_u, ds_v = xr.open_dataset(f_u), xr.open_dataset(f_v)
     try:
-        u = ds_u["ugrd"].sel(lon=lon, lat=lat, method="nearest").sel(time=str(year))
-        v = ds_v["vgrd"].sel(lon=lon, lat=lat, method="nearest").sel(time=str(year))
+        try:
+            u = ds_u["ugrd"].sel(lon=lon, lat=lat, method="nearest").sel(time=str(year))
+            v = ds_v["vgrd"].sel(lon=lon, lat=lat, method="nearest").sel(time=str(year))
+        except KeyError:
+            return None  # year outside this file's coverage
         if u.sizes.get("time", 0) != 12 or v.sizes.get("time", 0) != 12:
             return None
         speed = np.sqrt(u.values ** 2 + v.values ** 2)
@@ -266,7 +259,10 @@ def crujra_site_series(label: str, lat: float, lon: float, year: int):
         return None
     ds = xr.open_dataset(f)
     try:
-        da = ds[var].sel(lon=lon, lat=lat, method="nearest").sel(time=str(year))
+        try:
+            da = ds[var].sel(lon=lon, lat=lat, method="nearest").sel(time=str(year))
+        except KeyError:
+            return None  # year outside this file's coverage
         if da.sizes.get("time", 0) != 12:
             return None
         vals = da.values.astype("float64")
@@ -279,49 +275,15 @@ def crujra_site_series(label: str, lat: float, lon: float, year: int):
     return vals
 
 
-def gldas_derived_site_series(label: str, lat: float, lon: float, year: int):
-    if label not in GLDAS_DERIVED_VARS:
-        return None
-    var, pattern = GLDAS_DERIVED_VARS[label]
-    f = _latest_matching_file(GLDAS_DIR, pattern)
-    if f is None:
-        return None
-    ds = xr.open_dataset(f)
-    try:
-        da = ds[var].sel(lon=lon, lat=lat, method="nearest").sel(time=str(year))
-        if da.sizes.get("time", 0) != 12:
-            return None
-        vals = da.values.astype("float64")
-    finally:
-        ds.close()
-    return vals
-
-
-def era5_derived_site_series(label: str, lat: float, lon: float, year: int):
-    if label not in ERA5_DERIVED_VARS:
-        return None
-    var, pattern = ERA5_DERIVED_VARS[label]
-    f = _latest_matching_file(ERA5_DAILY_DIR, pattern)
-    if f is None:
-        return None
-    ds = xr.open_dataset(f)
-    try:
-        lon_coord = lon
-        if float(ds["lon"].max()) > 180.0:  # 0-360 grid convention
-            lon_coord = lon % 360.0
-        da = ds[var].sel(lon=lon_coord, lat=lat, method="nearest").sel(time=str(year))
-        monthly = da.resample(time="MS").mean()
-        if monthly.sizes.get("time", 0) != 12:
-            return None
-        vals = monthly.values.astype("float64")
-    finally:
-        ds.close()
-    return vals
-
-
 def plot_variable(era5_group, gldas_group, era5_months, gldas_months, label, era5_var, gldas_vars, year, out_path):
-    is_min_max = era5_var is None  # sentinel set by MIN_MAX_VAR_SPECS -- see its own comment
-    units = "K" if is_min_max else era5_group[era5_var].attrs.get("units", "")
+    try:
+        units = era5_group[era5_var].attrs.get("units", "")
+    except KeyError:
+        # Expected for t_air_min/t_air_max until ERA5's global_forcing zarr
+        # is rebuilt with real min/max (needs download_era5_daily.py's
+        # --groups tmax tmin pull to finish first -- see
+        # global_forcing_builder.py's ERA5_MET docstring).
+        units = "K" if label in MIN_MAX_LABELS else ""
     fig, axes = plt.subplots(3, 3, figsize=(16, 12))
     fig.suptitle(f"{label} [{units}] across ERA5 / GLDAS / TerraClimate / CRU-JRA v2.5, 9 sites -- year {year}\n"
                  f"(single calendar year, not a climatological average)",
@@ -329,31 +291,20 @@ def plot_variable(era5_group, gldas_group, era5_months, gldas_months, label, era
 
     months = np.arange(1, 13)
     for ax, (name, region, lat, lon) in zip(axes.flat, SITES):
-        if is_min_max:
-            era5_vals = era5_derived_site_series(label, lat, lon, year)
-            if era5_vals is not None and not np.all(np.isnan(era5_vals)):
-                ax.plot(months, era5_vals, label="ERA5", color=COLORS["ERA5"])
-            else:
-                ax.text(0.5, 0.12, f"ERA5: no {label} data for {year}",
-                        transform=ax.transAxes, ha="center", va="bottom", fontsize=7, color="gray")
-
-            gldas_vals = gldas_derived_site_series(label, lat, lon, year)
-            if gldas_vals is not None and not np.all(np.isnan(gldas_vals)):
-                ax.plot(months, gldas_vals, label="GLDAS", color=COLORS["GLDAS"])
-            else:
-                ax.text(0.5, 0.06, f"GLDAS: no {label} data for {year}",
-                        transform=ax.transAxes, ha="center", va="bottom", fontsize=7, color="gray")
-        else:
+        try:
             era5_vals = site_series(era5_group, era5_var, lat, lon, era5_months)
             ax.plot(months, era5_vals, label="ERA5", color=COLORS["ERA5"])
+        except KeyError:
+            ax.text(0.5, 0.12, f"ERA5: no {label} data for {year}",
+                    transform=ax.transAxes, ha="center", va="bottom", fontsize=7, color="gray")
 
-            try:
-                gldas_vals = site_series_sum(gldas_group, gldas_vars, lat, lon, gldas_months)
-                if np.all(np.isnan(gldas_vals)):
-                    raise ValueError("all-NaN (ocean/no-data in GLDAS's land-only grid)")
-                ax.plot(months, gldas_vals, label="GLDAS", color=COLORS["GLDAS"])
-            except (KeyError, ValueError):
-                pass
+        try:
+            gldas_vals = site_series_sum(gldas_group, gldas_vars, lat, lon, gldas_months)
+            if np.all(np.isnan(gldas_vals)):
+                raise ValueError("all-NaN (ocean/no-data in GLDAS's land-only grid)")
+            ax.plot(months, gldas_vals, label="GLDAS", color=COLORS["GLDAS"])
+        except (KeyError, ValueError):
+            pass
 
         terra_vals = terraclimate_site_series(label, lat, lon, year)
         if terra_vals is not None and not np.all(np.isnan(terra_vals)):
@@ -383,7 +334,7 @@ def parse_args():
     p.add_argument("--gldas", required=True, help="GLDAS global forcing .zarr path")
     p.add_argument("--year", type=int, default=2020)
     p.add_argument("--output-dir", required=True)
-    all_labels = [l for l, _, _ in VAR_SPECS] + MIN_MAX_LABELS
+    all_labels = [l for l, _, _ in VAR_SPECS]
     p.add_argument("--variables", nargs="+", default=None,
                     help="Labels to plot (default: all of " + ", ".join(all_labels) + ")")
     return p.parse_args()
@@ -397,7 +348,7 @@ def main():
     era5_months = year_month_index(era5_group, args.year)
     gldas_months = year_month_index(gldas_group, args.year)
 
-    specs_by_label = {label: (era5_var, gldas_vars) for label, era5_var, gldas_vars in VAR_SPECS + MIN_MAX_VAR_SPECS}
+    specs_by_label = {label: (era5_var, gldas_vars) for label, era5_var, gldas_vars in VAR_SPECS}
     labels = args.variables or list(specs_by_label)
 
     os.makedirs(args.output_dir, exist_ok=True)

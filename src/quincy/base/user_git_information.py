@@ -45,15 +45,19 @@ class UserGitInformation:
                         config[key] = value
         except FileNotFoundError:
             print(f"Error: File not found at {quincy_standard_comp_opts}")
-            
-        self.compiler_str = config['COMP']
-        
+
+        # config stays {} if the file above was missing or mid-rewrite (e.g.
+        # an interrupted `make`, which deletes/regenerates this file) --
+        # fall back to the standard build dir name instead of crashing on a
+        # KeyError, since the actual compiled binary is untouched by that.
+        self.compiler_str = config.get('COMP', 'x86_64-gfortran')
+
         if "gfortran" in self.compiler_str:
             self.compiler_short_str = "gfortran"
         else: 
             self.compiler_short_str = self.compiler_str    
         
-        fc_str = config['F_C']
+        fc_str = config.get('F_C', '__QUINCY_WITH_NETCDF__')
         
         if "__QUINCY_WITH_NETCDF__" in fc_str:
             self.compiled_with_netcdf = "TRUE"

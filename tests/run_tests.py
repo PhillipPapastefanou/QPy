@@ -10,6 +10,8 @@ from runs.test_packages import TestRequiredPackages
 from runs.test_find_quincy import TestQuincyPathsExist
 from runs.test_testbed import Test_Test_Bed
 from consistency.test_config_consistency import Test_ConfigConsistency
+from consistency.test_forcing_checks import (Test_ForcingChecks_Synthetic, Test_Era5LandBuild_Functions,
+                                              Test_ForcingDatasets_OnDisk)
 #from post_process.test_post_test_bed import Test_Post_Process_Test_Bed
 
 if __name__ == '__main__':

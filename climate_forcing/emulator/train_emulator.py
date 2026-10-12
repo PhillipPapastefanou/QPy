@@ -67,8 +67,11 @@ from sklearn.utils.extmath import randomized_svd
 # a variable entirely (main() silently drops any canonical name not present in
 # --input, rather than erroring, so K_MODES_OVERRIDE/LOG1P_VARS/etc. below stay
 # a single shared config across every dataset regardless of which subset it has).
+# t_air_min/t_air_max replace the mean t_air (2026-09-11, matching
+# global_forcing_builder.py): the weather generator's MonthlyForcingRecord has
+# only tmin/tmax, no mean-t_air field.
 VARIABLES = [
-    "t_air", "q_air", "press_srf", "wind_air",
+    "t_air_min", "t_air_max", "q_air", "press_srf", "wind_air",
     "cloud_cover", "swvis_srf_down", "lw_srf_down", "nhx_srf_down", "noy_srf_down",
     "precip_total",
 ]
@@ -159,10 +162,16 @@ class Emulator(nn.Module):
     off the same trunk output - see module docstring for why."""
 
     def __init__(self, n_fourier, n_out, precip_width, grid_shape=(GRID_LAT, GRID_LON, GRID_CHANNELS),
-                 hidden=(128, 128), precip_head_hidden=256):
+                 hidden=(128, 128), precip_head_hidden=256, precip_grid_shape=None):
         super().__init__()
         self.grid_h, self.grid_w, self.grid_c = grid_shape
         self.grid = nn.Parameter(torch.empty(*grid_shape).uniform_(-0.01, 0.01))
+        # optional second feature grid read only by the precip head (experimental,
+        # --precip-grid-deg): precip's patchy pattern gets its own local capacity
+        # without competing with the smooth variables for the shared grid's channels
+        self.pgrid = None if precip_grid_shape is None else \
+            nn.Parameter(torch.empty(*precip_grid_shape).uniform_(-0.01, 0.01))
+        pgrid_c = 0 if precip_grid_shape is None else precip_grid_shape[2]
 
         dims = [n_fourier + self.grid_c] + list(hidden)
         trunk_layers = []
@@ -174,14 +183,15 @@ class Emulator(nn.Module):
         shared_width = n_out - precip_width
         self.shared_head = nn.Linear(dims[-1], shared_width)
         self.precip_head = nn.Sequential(
-            nn.Linear(dims[-1], precip_head_hidden), nn.Tanh(),
+            nn.Linear(dims[-1] + pgrid_c, precip_head_hidden), nn.Tanh(),
             nn.Linear(precip_head_hidden, precip_width),
         )
 
-    def sample_grid(self, lon_deg, lat_deg):
+    def sample_grid(self, lon_deg, lat_deg, g=None):
         """Bilinear lookup, circular in longitude, clamped at the poles.
         Mirrored exactly by sampleGrid() in viewer.html."""
-        H, W = self.grid_h, self.grid_w
+        g = self.grid if g is None else g
+        H, W = g.shape[0], g.shape[1]
         lon = torch.remainder(lon_deg, 360.0)
         x = lon / 360.0 * W
         y = (90.0 - lat_deg) / 180.0 * (H - 1)
@@ -194,7 +204,6 @@ class Emulator(nn.Module):
         fx = (x - torch.floor(x)).unsqueeze(-1)
         fy = (y - y0.float()).unsqueeze(-1)
 
-        g = self.grid
         top = g[y0, x0] * (1 - fx) + g[y0, x1] * fx
         bot = g[y1, x0] * (1 - fx) + g[y1, x1] * fx
         return top * (1 - fy) + bot * fy
@@ -204,7 +213,9 @@ class Emulator(nn.Module):
         gfeat = self.sample_grid(lon_deg, lat_deg)
         trunk_out = self.trunk(torch.cat([feats, gfeat], dim=1))
         shared_out = self.shared_head(trunk_out)
-        precip_out = self.precip_head(trunk_out)
+        precip_in = trunk_out if self.pgrid is None else \
+            torch.cat([trunk_out, self.sample_grid(lon_deg, lat_deg, self.pgrid)], dim=1)
+        precip_out = self.precip_head(precip_in)
         return torch.cat([shared_out, precip_out], dim=1)
 
 
@@ -301,7 +312,23 @@ def main():
     ap.add_argument("--source-label", default=None,
                      help="Data source name recorded in weights.json and shown by viewer.html, e.g. ERA5 "
                           "(default: derived from --input's filename, e.g. era5_global_forcing_....zarr -> ERA5)")
+    # experiment switches (defaults reproduce the production configuration)
+    # "variance" is the default since 2026-10-11: on ERA5 it raised held-out precip R2 0.774 -> 0.832
+    # (pressure 0.966 -> 0.983, N deposition 0.942 -> 0.978) at identical size; "standardized" is the
+    # previous behaviour, kept for comparison
+    ap.add_argument("--loss-weighting", choices=["standardized", "variance"], default="variance",
+                     help="standardized: every output column scaled to unit std (each SVD mode weighs the "
+                          "same); variance: one scale per variable so the loss equals the reconstruction "
+                          "error of the series (modes weighted by the variance they carry)")
+    ap.add_argument("--k-precip", type=int, default=None, help="SVD modes for precip_total")
+    ap.add_argument("--grid-deg", type=float, default=1.0, help="shared feature grid spacing (deg)")
+    ap.add_argument("--grid-channels", type=int, default=GRID_CHANNELS)
+    ap.add_argument("--precip-grid-deg", type=float, default=0.0,
+                     help="spacing of a dedicated precip feature grid (0 = none)")
+    ap.add_argument("--precip-grid-channels", type=int, default=32)
     args = ap.parse_args()
+    if args.k_precip:
+        K_MODES_OVERRIDE["precip_total"] = args.k_precip
     source_label = args.source_label or os.path.basename(args.input.rstrip("/")).split("_")[0].upper()
 
     t0 = time.time()
@@ -311,8 +338,14 @@ def main():
     ds = ds.rename({src: canon for src, canon in VAR_ALIASES.items()
                      if src in ds.data_vars and canon not in ds.data_vars})
 
-    variables = [v for v in VARIABLES if v in ds.data_vars]
-    missing = [v for v in VARIABLES if v not in ds.data_vars]
+    wanted = list(VARIABLES)
+    if "t_air_min" not in ds.data_vars and "t_air_max" not in ds.data_vars and "t_air" in ds.data_vars:
+        # stores without Tmin/Tmax (ERA5 so far) keep their mean temperature rather
+        # than losing temperature altogether
+        wanted = ["t_air"] + [v for v in wanted if v not in ("t_air_min", "t_air_max")]
+        print("note: no t_air_min/t_air_max in the store - training on mean t_air instead")
+    variables = [v for v in wanted if v in ds.data_vars]
+    missing = [v for v in wanted if v not in ds.data_vars]
     if missing:
         print(f"note: {args.input} has no {missing} - training on {variables} instead")
 
@@ -338,7 +371,7 @@ def main():
     print(f"grid: {len(lat)} lat x {len(lon)} lon, {n_time} months, start {time_start}")
 
     # this is a land-ecosystem forcing file (QUINCY): ocean cells have been
-    # stripped to NaN in the met variables (t_air's static NaN pattern is the
+    # stripped to NaN in the met variables (t_air_min's static NaN pattern is the
     # reference - the two deposition variables still cover ocean too, but we
     # train everything on the same land-only point set for a single shared model).
     land_mask_flat = (~np.isnan(ds[variables[0]].isel(time=0).values)).ravel()[::args.sample_stride]
@@ -403,6 +436,14 @@ def main():
         mean = block.mean(axis=0)
         std = block.std(axis=0)
         std[std < 1e-8] = 1.0
+        if args.loss_weighting == "variance":
+            # one scale for the whole block: with orthonormal basis rows, the squared
+            # series error per month is dlevel^2 + sum_j dloading_j^2 / n_time, so
+            # scaling the loadings by sqrt(n_time) more than the level and summing the
+            # block's squared errors gives exactly the reconstruction MSE / total variance
+            total_sd = np.sqrt(std[0] ** 2 + (std[1:] ** 2).sum() / n_time)
+            std = np.full_like(std, total_sd)
+            std[1:] *= np.sqrt(n_time)
         out_mean.append(mean)
         out_std.append(std)
 
@@ -466,10 +507,17 @@ def main():
                   f"series_rmse=[{s['min_series_rmse']:.3g} .. {s['max_series_rmse']:.3g}]")
 
     precip_width = k_for(variables[-1]) + 1
-    model = Emulator(n_fourier, Y_scaled.shape[1], precip_width, hidden=(192, 192, 192)).to(device)
+    grid_shape = (int(round(180 / args.grid_deg)) + 1, int(round(360 / args.grid_deg)), args.grid_channels)
+    pgrid_shape = None if not args.precip_grid_deg else \
+        (int(round(180 / args.precip_grid_deg)) + 1, int(round(360 / args.precip_grid_deg)),
+         args.precip_grid_channels)
+    model = Emulator(n_fourier, Y_scaled.shape[1], precip_width, grid_shape=grid_shape,
+                     hidden=(192, 192, 192), precip_grid_shape=pgrid_shape).to(device)
     n_params = sum(p.numel() for p in model.parameters())
     precip_head_params = sum(p.numel() for p in model.precip_head.parameters())
-    print(f"model: {n_params:,} params ({model.grid.numel():,} in the feature grid, "
+    print(f"model: {n_params:,} params = {n_params * 4 / 2**20:.1f} MB float32 / "
+          f"{n_params * 2 / 2**20:.1f} MB float16 ({model.grid.numel():,} in the feature grid, "
+          f"{0 if model.pgrid is None else model.pgrid.numel():,} in the precip grid, "
           f"{precip_head_params:,} in {variables[-1]}'s dedicated head)")
     opt = torch.optim.Adam(model.parameters(), lr=1e-3, weight_decay=1e-5)
 
@@ -482,7 +530,12 @@ def main():
         for var in variables:
             start, width = block_slices[var]
             p, t = pred[:, start:start + width], target[:, start:start + width]
-            block_loss = F.smooth_l1_loss(p, t) if var in HUBER_VARS else F.mse_loss(p, t)
+            if args.loss_weighting == "variance":
+                elem = F.smooth_l1_loss(p, t, reduction="none", beta=0.1) if var in HUBER_VARS \
+                    else (p - t) ** 2
+                block_loss = elem.mean(0).sum()
+            else:
+                block_loss = F.smooth_l1_loss(p, t) if var in HUBER_VARS else F.mse_loss(p, t)
             w = LOSS_WEIGHT_OVERRIDE.get(var, 1.0)
             total = total + w * block_loss
             total_weight += w
@@ -559,9 +612,18 @@ def main():
     lat_test = lat_flat[test_idx]
     eval_summary = score_against(pred_test, test_truth)
     print_scores(eval_summary, "held-out test")
+    # same model with every parameter rounded to float16 (what a half-precision
+    # weights.bin would give)
+    fp32_state = {k: v.detach().clone() for k, v in model.state_dict().items()}
+    with torch.no_grad():
+        for prm in model.parameters():
+            prm.copy_(prm.half().float())
+    eval_fp16 = score_against(predict(features[test_idx]) * out_std + out_mean, test_truth)
+    print_scores(eval_fp16, "held-out test, parameters rounded to float16")
+    model.load_state_dict(fp32_state)
 
     plot_pos = np.random.default_rng(1).choice(len(test_idx), size=min(4, len(test_idx)), replace=False)
-    plot_vars = [v for v in ("t_air", "precip_total") if v in variables]
+    plot_vars = [v for v in ("t_air", "t_air_min", "t_air_max", "precip_total") if v in variables]
     plot_samples = {}
     for var in plot_vars:
         start, width = block_slices[var]
@@ -601,7 +663,9 @@ def main():
 
     eval_path = os.path.join(os.path.dirname(args.output) or ".", "eval_summary.json")
     with open(eval_path, "w") as f:
-        json.dump({"n_test_points": int(len(test_idx)), "per_variable": eval_summary}, f, indent=2)
+        json.dump({"n_test_points": int(len(test_idx)), "per_variable": eval_summary,
+                   "per_variable_fp16_params": eval_fp16, "config": vars(args),
+                   "n_params": int(n_params)}, f, indent=2)
     print(f"wrote {eval_path}")
 
     # binary payload: a flat float32 blob in a fixed order (grid, trunk layers'
@@ -634,6 +698,7 @@ def main():
 
     for var in variables:
         payload_vars[var]["basis_shape"] = add_array(basis_np[var])
+    precip_grid_shape = None if model.pgrid is None else add_array(model.pgrid.detach().cpu().numpy())
 
     bin_path = os.path.splitext(args.output)[0] + ".bin"
     with open(bin_path, "wb") as f:
@@ -649,6 +714,7 @@ def main():
             "n_lon_harm": N_LON_HARM,
             "n_lat_harm": N_LAT_HARM,
             "grid_shape": grid_shape,
+            "precip_grid_shape": precip_grid_shape,
             "bin_file": os.path.basename(bin_path),
         },
         "output_scaler": {

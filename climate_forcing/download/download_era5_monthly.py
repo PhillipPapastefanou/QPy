@@ -19,8 +19,9 @@ checked 2026-09-05). Dataset id: reanalysis-era5-single-levels-monthly-means.
 Variables requested: 2m_temperature, 2m_dewpoint_temperature,
 surface_pressure, total_precipitation, 10m_u_component_of_wind,
 10m_v_component_of_wind, surface_solar_radiation_downwards,
-surface_thermal_radiation_downwards, total_cloud_cover.
-total_cloud_cover (fraction, 0-1) isn't one of QUINCY's forcing columns,
+surface_thermal_radiation_downwards, total_cloud_cover, 10m_wind_speed.
+10m_wind_speed is the source of wind_air (see the WIND FIX note in
+write_outputs). total_cloud_cover (fraction, 0-1) isn't one of QUINCY's forcing columns,
 but is confirmed available in this product (tested live 2026-09-05) and
 kept as a cross-check on the radiation fields. NOTE: unlike a genuinely
 unsupported variable name (which CDS rejects outright), a variable that's
@@ -92,7 +93,7 @@ CDS_VARIABLES = [
     "2m_temperature", "2m_dewpoint_temperature", "surface_pressure",
     "total_precipitation", "10m_u_component_of_wind", "10m_v_component_of_wind",
     "surface_solar_radiation_downwards", "surface_thermal_radiation_downwards",
-    "total_cloud_cover",
+    "total_cloud_cover", "10m_wind_speed",
 ]
 
 
@@ -104,14 +105,15 @@ def get_client():
     return cdsapi.Client()
 
 
-def download_chunk(client, start_year: int, end_year: int, area, grid, raw_path: Path) -> Path:
+def download_chunk(client, start_year: int, end_year: int, area, grid, raw_path: Path,
+                   variables: list[str] = CDS_VARIABLES) -> Path:
     if raw_path.exists():
         LOG.info(f"  already have chunk {raw_path.name}, skipping request")
         return raw_path
 
     request = {
         "product_type": ["monthly_averaged_reanalysis"],
-        "variable": CDS_VARIABLES,
+        "variable": variables,
         "year": [str(y) for y in range(start_year, end_year + 1)],
         "month": [f"{m:02d}" for m in range(1, 13)],
         "time": ["00:00"],
@@ -198,10 +200,23 @@ def write_outputs(ds: xr.Dataset, out_dir: Path, start_year: int, end_year: int,
             write_monthly_netcdf(flux, out_dir / f"era5_{dst}_{start_year}-{end_year}{tag}_monthly.nc", dst)
             LOG.info(f"  wrote {dst} (converted J/m2/day -> W/m2)")
 
-    if {"u10", "v10"}.issubset(ds.data_vars):
+    # WIND FIX (2026-10-11): monthly-mean u10/v10 partly cancel whenever the
+    # wind direction varies within the month, so |mean vector| is NOT the mean
+    # wind speed -- over land it came out ~40% low against ERA5-Land, GLDAS and
+    # TerraClimate (forcing_checks.py reference comparison). 10m_wind_speed
+    # (si10) is the monthly mean of the hourly speed itself; use it, and keep
+    # the component-derived speed only as a labelled fallback.
+    wind_out = out_dir / f"era5_wind_air_{start_year}-{end_year}{tag}_monthly.nc"
+    if "si10" in ds.data_vars:
+        speed = ds["si10"]
+        speed.attrs.update(long_name="10m wind speed (monthly mean of hourly speed, si10)", units="m s-1")
+        write_monthly_netcdf(speed, wind_out, "wind_air")
+        LOG.info("  wrote wind_air (from 10m_wind_speed)")
+    elif {"u10", "v10"}.issubset(ds.data_vars):
         speed = wind_speed_from_components(ds["u10"], ds["v10"])
-        write_monthly_netcdf(speed, out_dir / f"era5_wind_air_{start_year}-{end_year}{tag}_monthly.nc", "wind_air")
-        LOG.info("  wrote wind_air (derived from u10/v10)")
+        speed.attrs["long_name"] = "speed of the monthly-mean 10m wind vector (underestimates mean wind speed)"
+        write_monthly_netcdf(speed, wind_out, "wind_air")
+        LOG.warning("  wrote wind_air from monthly-mean u10/v10 -- biased low, request 10m_wind_speed instead")
 
     if {"d2m", "sp"}.issubset(ds.data_vars):
         q = specific_humidity_from_dewpoint(ds["d2m"], ds["sp"])
@@ -225,6 +240,10 @@ def main() -> None:
     parser.add_argument("--out-dir", type=Path, default=DEFAULT_OUT_DIR,
                          help=f"default: {DEFAULT_OUT_DIR}")
     parser.add_argument("--raw-dir", type=Path, default=None)
+    parser.add_argument("--variables", nargs="+", default=CDS_VARIABLES,
+                         help="subset of CDS variable names to request (default: all); only the "
+                              "outputs derivable from them are written, e.g. --variables "
+                              "10m_wind_speed rewrites just wind_air")
     args = parser.parse_args()
 
     raw_dir = args.raw_dir or (args.out_dir / "raw")
@@ -248,8 +267,9 @@ def main() -> None:
     datasets = []
     for i, (c_start, c_end) in enumerate(chunks, 1):
         LOG.info(f"Chunk {i}/{len(chunks)}: {c_start}-{c_end}")
-        raw_path = raw_dir / f"era5_monthly_means_{c_start}-{c_end}{grid_tag}.nc"
-        download_chunk(client, c_start, c_end, args.area, args.grid, raw_path)
+        var_tag = "" if args.variables == CDS_VARIABLES else "_" + "-".join(args.variables)
+        raw_path = raw_dir / f"era5_monthly_means_{c_start}-{c_end}{grid_tag}{var_tag}.nc"
+        download_chunk(client, c_start, c_end, args.area, args.grid, raw_path, args.variables)
         datasets.append(_open_raw(raw_path))
 
     LOG.info("Concatenating all chunks and writing final outputs...")

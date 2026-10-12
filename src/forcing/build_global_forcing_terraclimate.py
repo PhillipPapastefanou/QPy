@@ -12,10 +12,10 @@ reads the coarsened product under driver_data/terraclimate/monthly/0.5deg/,
 not the native-resolution files under monthly/4km/. See that script's
 docstring for the coarsening/unit-conversion details.
 
-TerraClimate does not report longwave radiation or cloud cover at all, so
-TERRACLIMATE_MET's variable list (global_forcing_builder.py) omits both --
-the output file simply has no lw_srf_down variable, rather than a
-fabricated one.
+TerraClimate does not report longwave radiation or cloud cover at all.
+Cloud cover is omitted; lw_srf_down is derived from TerraClimate's own
+temperature, humidity and shortwave by
+climate_forcing/conversion/derive_terraclimate_longwave.py (run that first).
 
 See build_global_forcing_gldas.py for the GLDAS equivalent -- all three
 share the same pipeline (global_forcing_builder.py) and only swap out
