@@ -49,7 +49,8 @@ def GenerateSlurmScriptArrayBased(ntasks,
                                   ram_in_gb = 300,
                                   ntasksmax = 256,
                                   partition = 'work',
-                                  python = "python"):  
+                                  python = "python",
+                                  script = "run_quincy_array.py"):  
     
       
     script_content = f"""#!/bin/bash
@@ -102,7 +103,7 @@ exec 1>>"$log" 2>>"$err"
 
 export FI_PROVIDER=tcp
 
-{python} run_quincy_array.py "{path}" "${{SLURM_ARRAY_TASK_ID}}" "{quincy_binary}" "{ntasks}"
+{python} {script} "{path}" "${{SLURM_ARRAY_TASK_ID}}" "{quincy_binary}" "{ntasks}"
 """
     with open(os.path.join(path, 'submit.sh'), 'w') as f:
         f.write(script_content)

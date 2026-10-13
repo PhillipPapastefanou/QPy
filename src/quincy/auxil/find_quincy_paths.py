@@ -14,16 +14,16 @@ class QuincyPathFinder:
     """Locates the QUINCY source directory.
     """
 
+    @classmethod
+    def from_root(cls, quincy_root_path):
+        """Paths of a given QUINCY directory, without searching for one."""
+        finder = cls.__new__(cls)
+        finder._reset()
+        finder._set_root(quincy_root_path)
+        return finder
+
     def __init__(self):
-        self.found_quincy = False
-        self.quincy_root_path = None
-        self.namelist_root_path = None
-        self.lctlib_root_path = None
-        self.sel_out_var_root_path = None
-        self.namelist_paths = []
-        self.lctlib_paths = []
-        self.sel_out_var_paths = []
-        self.binary_path = None
+        self._reset()
 
         # 1. Environment variable
         env_path = os.environ.get("QUINCY")
@@ -42,6 +42,20 @@ class QuincyPathFinder:
                 return
             print(f"Saved QUINCY dir {cached_path} does not exist anymore. Searching again...")
 
+        self._search_work_scratch()
+
+    def _reset(self):
+        self.found_quincy = False
+        self.quincy_root_path = None
+        self.namelist_root_path = None
+        self.lctlib_root_path = None
+        self.sel_out_var_root_path = None
+        self.namelist_paths = []
+        self.lctlib_paths = []
+        self.sel_out_var_paths = []
+        self.binary_path = None
+
+    def _search_work_scratch(self):
         # 3. Search the work_scratch directory if we are on the cluster
         if not os.path.isdir(WORK_SCRATCH_DIR):
             print("You seem to be not on the BGC cluster as the cluster dirs are unavailable")

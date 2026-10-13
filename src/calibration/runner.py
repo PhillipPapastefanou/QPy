@@ -1,64 +1,43 @@
 """Wraps QPy's namelist/lctlib/paramlist machinery and QUINCY's run
 executable so the rest of the calibration package only has to deal with
-"here is a (n_ensemble, n_params) array, go run it and hand back run
-directories and success flags".
+"here is a (n_members, n_params) array, go run and score it".
 
 Reuses the same building blocks as the hand-written scripts under
 science/phillip/DE-Hai/runscripts/ (Quincy_Setup, Quincy_Multi_Run,
 EnvironmentalInputSite, ApplyDefaultSiteLevel) instead of re-implementing
 namelist/lctlib handling.
 """
-import glob
+import json
 import os
-import shutil
 import subprocess
+import sys
 import time
 from copy import deepcopy
 from multiprocessing import Pool
 
 import numpy as np
+import pandas as pd
 
 from src.quincy.IO.NamelistReader import NamelistReader
 from src.quincy.IO.LctlibReader import LctlibReader
 from src.quincy.base.PFTTypes import PftQuincy
 from src.quincy.base.Paramlist import Paramlist
 from src.quincy.base.EnvironmentalInputTypes import ForcingDataset
-from src.quincy.base.NamelistTypes import ForcingMode, GsBetaType, OutputIntervalFlux, OutputIntervalPool
+from src.quincy.base.NamelistTypes import (ForcingMode, GsBetaType, OutputIntervalFlux, OutputIntervalPool,
+                                          VegBnfScheme, LeafStoichomScheme, SbBnfScheme)
 from src.quincy.base.EnvironmentalInput import EnvironmentalInputSite
 from src.quincy.base.user_git_information import UserGitInformation
 from src.quincy.run_scripts.default import ApplyDefaultSiteLevel
 from src.quincy.run_scripts.submit import GenerateSlurmScriptArrayBased
 from src.quincy.auxil.find_quincy_paths import QuincyPathFinder
 from src.sens.base import Quincy_Setup, Quincy_Multi_Run
-
-
-def _has_nc_output(run_dir):
-    """QUINCY writes its *.nc output files directly into its working
-    directory (cwd) -- it does NOT create its own nested "output/"
-    subfolder. (Existing QPy scripts create a directory *called* "output"
-    themselves, one level above the individual run folders, to hold one
-    subfolder per ensemble member -- that is a convention of the calling
-    script, not something QUINCY itself produces inside a run folder.)"""
-    return len(glob.glob(os.path.join(run_dir, "*.nc"))) > 0
+from src.calibration import member_task
 
 
 def _run_one_local(args):
-    """Module-level so multiprocessing can pickle it cheaply (just a binary
-    path + a run dir) instead of pickling the whole QuincyModelRunner
-    (namelist/lctlib objects) into every worker task."""
-    quincy_binary, run_dir = args
-    try:
-        p = subprocess.Popen([quincy_binary], cwd=run_dir,
-                              stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
-        _, stderr = p.communicate()
-        ok = (p.returncode == 0) and _has_nc_output(run_dir)
-        if not ok and stderr:
-            with open(os.path.join(run_dir, "quincy_stderr.log"), "wb") as f:
-                f.write(stderr)
-        return ok
-    except Exception as exc:
-        print(f"[LAVENDAR] run failed in {run_dir}: {exc}")
-        return False
+    """Module-level so multiprocessing can pickle it cheaply."""
+    round_dir, member, quincy_binary, total_runs = args
+    return member_task.run_member(round_dir, member, quincy_binary, total_runs)
 
 
 class QuincyModelRunner:
@@ -66,17 +45,17 @@ class QuincyModelRunner:
         self.config = config
 
         if config.quincy_root:
-            self.quincy_root = config.quincy_root
+            self.paths = QuincyPathFinder.from_root(config.quincy_root)
         else:
-            finder = QuincyPathFinder()
-            if not finder.found_quincy:
+            self.paths = QuincyPathFinder()
+            if not self.paths.found_quincy:
                 raise RuntimeError(
                     "Could not locate a QUINCY installation. Set 'quincy_root' in the "
                     "calibration config, or export the QUINCY environment variable."
                 )
-            self.quincy_root = finder.quincy_root_path
+        self.quincy_root = self.paths.quincy_root_path
 
-        self.quincy_binary = os.path.join(self.quincy_root, "x86_64-gfortran", "bin", "qs.bin")
+        self.quincy_binary = self.paths.binary_path
         if not os.path.isfile(self.quincy_binary):
             raise RuntimeError(f"QUINCY binary not found at {self.quincy_binary}. Compile QUINCY first.")
 
@@ -89,8 +68,8 @@ class QuincyModelRunner:
         cfg = self.config
         sim = cfg.simulation
 
-        namelist_root_path = os.path.join(self.quincy_root, "contrib", "namelist", "qs.namelist")
-        lctlib_root_path = os.path.join(self.quincy_root, "data", "lctlib_quincy_nlct14.def")
+        namelist_root_path = self.paths.namelist_root_path
+        lctlib_root_path = self.paths.lctlib_root_path
 
         namelist_base = NamelistReader(namelist_root_path).parse()
 
@@ -102,8 +81,7 @@ class QuincyModelRunner:
 
         ApplyDefaultSiteLevel(namelist=namelist_base)
 
-        namelist_base.base_ctl.netcdf_output_var_list.value = os.path.join(
-            self.quincy_root, "data", "basic_output_variables.txt")
+        namelist_base.base_ctl.netcdf_output_var_list.value = self.paths.sel_out_var_root_path
 
         namelist_base.base_ctl.output_start_first_day_year.value = sim.output_start_first_day_year
         namelist_base.base_ctl.output_end_last_day_year.value = sim.output_end_last_day_year
@@ -129,6 +107,16 @@ class QuincyModelRunner:
         namelist_base.lnd_phyd_nml.use_hydaulic_failure_mort.value = sim.use_hydraulic_failure_mort
         if sim.use_plant_hydraulics:
             namelist_base.lnd_q_assimi_nml.gs_beta_type.value = GsBetaType.PLANT
+
+        if sim.c_only:
+            # Same settings as the "C only" block of the DE-Hai runscripts (e.g. 72_...)
+            namelist_base.lnd_veg_nml.veg_bnf_scheme.value = VegBnfScheme.UNLIMITED
+            namelist_base.lnd_veg_nml.leaf_stoichom_scheme.value = LeafStoichomScheme.FIXED
+            namelist_base.lnd_sb_nml.flag_sb_prescribe_po4.value = True
+            namelist_base.lnd_sb_nml.sb_bnf_scheme.value = SbBnfScheme.UNLIMITED
+            namelist_base.base_ctl.flag_slow_sb_pool_spinup_accelerator.value = False
+
+        namelist_base.lnd_veg_nml.flag_dynamic_roots.value = sim.dynamic_roots
 
         if sim.soil_sand is not None:
             namelist_base.jsb_sse_nml.qs_soil_sand.value = sim.soil_sand
@@ -192,42 +180,44 @@ class QuincyModelRunner:
     # ------------------------------------------------------------------
     # Ensemble dispatch
     # ------------------------------------------------------------------
-    def run_ensemble(self, members: np.ndarray, iter_dir: str):
-        """Write out one QUINCY setup per ensemble member under
-        iter_dir/output/<i>, run them all, and report which ones finished
-        successfully (returncode 0 and produced output)."""
-        output_root = os.path.join(iter_dir, "output")
-        multi_run = Quincy_Multi_Run(iter_dir)
-        run_dirs = []
+    def run_round(self, members: np.ndarray, round_dir: str):
+        """Write one QUINCY setup per member (natural units, one row each)
+        under round_dir/output/<i>, run and score them all, and return one
+        row per member with ok/reason and rmse/nmse/n per metric."""
+        multi_run = Quincy_Multi_Run(round_dir)
         for i, param_vector in enumerate(members):
-            out_dir = os.path.join(output_root, str(i))
-            setup = self._make_setup(param_vector, out_dir)
-            multi_run.add_setup(setup)
-            run_dirs.append(out_dir)
-
+            multi_run.add_setup(self._make_setup(param_vector, os.path.join(round_dir, "output", str(i))))
         multi_run.generate_files()
+        member_task.write_task_file(round_dir, self.config.metrics, self.config.keep_run_outputs,
+                                    keep_netcdf=self.config.keep_best_outputs_fraction > 0)
 
         if self.config.run_mode == "local":
-            success = self._run_local(run_dirs)
+            self._run_local(round_dir, len(members))
         elif self.config.run_mode == "slurm_array":
-            success = self._run_slurm_array(iter_dir, run_dirs)
+            self._run_slurm_array(round_dir, len(members))
         else:
             raise ValueError(f"Unknown run_mode '{self.config.run_mode}'")
 
-        return run_dirs, success
+        rows = []
+        for i in range(len(members)):
+            path = member_task.result_path(round_dir, i)
+            if os.path.isfile(path):
+                with open(path) as f:
+                    rows.append(json.load(f))
+            else:
+                rows.append({"member": i, "ok": False, "reason": "no result written (task killed?)"})
+        return pd.DataFrame(rows)
 
-    def _run_local(self, run_dirs):
-        n_parallel = max(1, min(self.config.n_parallel, len(run_dirs)))
-        tasks = [(self.quincy_binary, rd) for rd in run_dirs]
+    def _run_local(self, round_dir, n):
+        n_parallel = max(1, min(self.config.n_parallel, n))
+        tasks = [(round_dir, i, self.quincy_binary, n) for i in range(n)]
         with Pool(processes=n_parallel) as pool:
-            success = pool.map(_run_one_local, tasks)
-        return success
+            pool.map(_run_one_local, tasks)
 
-    def _run_slurm_array(self, iter_dir, run_dirs):
-        n = len(run_dirs)
+    def _run_slurm_array(self, round_dir, n):
         # submit.py's generated script does f'{path}wd.txt' with no separator,
         # so `path` must carry a trailing slash.
-        path_with_sep = iter_dir if iter_dir.endswith(os.sep) else iter_dir + os.sep
+        path_with_sep = round_dir if round_dir.endswith(os.sep) else round_dir + os.sep
 
         GenerateSlurmScriptArrayBased(
             # --array=0-{ntasks} is *inclusive* on both ends, and wd.txt has
@@ -238,20 +228,13 @@ class QuincyModelRunner:
             ntasksmax=max(1, min(self.config.n_parallel, n)),
             ram_in_gb=self.config.slurm_ram_in_gb,
             partition=self.config.slurm_partition,
+            # The task scores its own output, so it needs QPy's environment
+            python=sys.executable,
+            script=os.path.abspath(member_task.__file__),
         )
 
-        this_dir = os.path.dirname(os.path.abspath(__file__))
-        qpy_root = os.path.abspath(os.path.join(this_dir, os.pardir, os.pardir, os.pardir, os.pardir))
-        run_array_script = os.path.join(qpy_root, "src", "quincy", "run_scripts", "run_quincy_array.py")
-        if not os.path.isfile(run_array_script):
-            raise RuntimeError(f"Could not find run_quincy_array.py at {run_array_script}")
-        shutil.copyfile(run_array_script, os.path.join(iter_dir, "run_quincy_array.py"))
-
         time.sleep(1.0)
-        scriptpath = os.path.join(iter_dir, "submit.sh")
-        # --wait blocks until every array task has finished, so the
-        # calibration loop can synchronously move on to extracting metrics.
-        p = subprocess.Popen(f"/usr/bin/sbatch --wait {scriptpath}", shell=True, cwd=iter_dir)
+        scriptpath = os.path.join(round_dir, "submit.sh")
+        # --wait blocks until every array task has finished
+        p = subprocess.Popen(f"/usr/bin/sbatch --wait {scriptpath}", shell=True, cwd=round_dir)
         p.communicate()
-
-        return [_has_nc_output(rd) for rd in run_dirs]

@@ -3,12 +3,17 @@ import numpy
 from datetime import datetime
 from src.quincy.base.Namelist import Namelist
 from src.quincy.base.NamelistTypes import NamelistItem
+from src.quincy.auxil.check_namelist import assert_valid_namelist
 
 class NamelistWriter:
     def __init__(self, namelist : Namelist):
         self.namelist  = namelist
 
-    def export(self, filename):
+    def export(self, filename, check=True):
+        # Settings QUINCY would refuse (or that don't work together) stop here
+        if check:
+            assert_valid_namelist(self.namelist, name=filename)
+
         self.lines = []
         t_string = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
         self.iadd_comment("Instruction file generate with QPy generator.", False)

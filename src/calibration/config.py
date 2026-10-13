@@ -1,5 +1,4 @@
-"""User-facing configuration for the LAVENDAR-style QUINCY plant-hydraulics
-calibration tool.
+"""User-facing configuration for the QUINCY calibration tool.
 
 A user writes a plain Python config script (same style as the existing QPy
 runscripts) that builds a CalibrationConfig describing:
@@ -7,17 +6,18 @@ runscripts) that builds a CalibrationConfig describing:
   - which plant-hydraulic parameters to calibrate and their physically
     plausible ranges,
   - which observations to evaluate the model against (one or more metrics),
-  - how large an ensemble to run and how many refinement iterations to allow.
+  - how many members to run per round and how many rounds to allow.
 
-Everything else (namelist/lctlib plumbing, ensemble sampling, the
-4D-En-Var solve, parallel dispatch) is handled by the rest of this package.
-See config_example.py for a fully worked example.
+Everything else (namelist/lctlib plumbing, sampling, shrinking the parameter
+ranges between rounds, parallel dispatch, plots) is handled by the rest of
+this package. See science/phillip/adaptive_calibration/config_example.py for
+a fully worked example.
 """
 import importlib.util
 import math
 import os
 from dataclasses import dataclass, field
-from typing import Optional, List
+from typing import Optional, List, Tuple
 
 
 @dataclass
@@ -45,12 +45,10 @@ class ParameterSpec:
     # hand-tuned DE-Hai sweep scripts, which sample it as
     # log10(root_scale) themselves for exactly this reason), a uniform
     # linear sample over [min, max] wastes almost all of the ensemble on the
-    # large end of the range and barely explores the small end -- and the
-    # Gaussian posterior draw used on later iterations doesn't make sense on
-    # a multiplicative quantity either. scale="log" makes the LHS sampling,
-    # the ensemble perturbation matrix, and the posterior draw all happen in
-    # log10 space internally; min/max/nominal are still given (and reported
-    # back, e.g. in posterior_parameters.py) in the parameter's normal,
+    # large end of the range and barely explores the small end. scale="log"
+    # makes the sampling and the shrinking of the range between rounds happen
+    # in log10 space internally; min/max/nominal are still given (and reported
+    # back, e.g. in best_parameters.py) in the parameter's normal,
     # natural units -- the log/linear(10**x) conversion is invisible outside
     # this class. Requires min (or nominal, if calibrate=False) to be > 0.
     scale: str = "linear"
@@ -85,8 +83,8 @@ class ParameterSpec:
                 )
 
     def to_internal(self, value: float) -> float:
-        """Natural units -> the space the ensemble machinery actually
-        samples/perturbs in (log10 for scale=='log', unchanged otherwise)."""
+        """Natural units -> the space the parameter is sampled in
+        (log10 for scale=='log', unchanged otherwise)."""
         return math.log10(value) if self.scale == "log" else value
 
     def from_internal(self, value: float) -> float:
@@ -119,35 +117,59 @@ class MetricSpec:
     obs_file: Optional[str] = None
     obs_column: Optional[str] = None
     obs_index_col: str = "date"
-    # Observation-error standard deviation, either as an absolute value (same
-    # units as the variable) or as a fraction of |obs|. Exactly one is required.
+    # What the metric does in the calibration:
+    # "objective": the search tries to fit it as well as possible (its RMSE
+    #   enters the score). For densely observed variables (psi_stem, sap flow).
+    # "constraint": a ballpark check. Every observation must lie within
+    #   +-tolerance of the model; members that pass all constraints are ranked
+    #   ahead of all others, but the metric does not pull the fit any further.
+    #   For sparse observations (a few psi_leaf dates) or plausibility ranges.
+    # Default: "constraint" for target_min/target_max, "objective" otherwise.
+    role: Optional[str] = None
+    # constraint only: allowed |model - obs| per observation, in the variable's
+    # units (for target_min/target_max: half the range, set automatically).
+    tolerance: Optional[float] = None
+    # constraint only: fraction of the observations that must be within the
+    # tolerance, e.g. 5/6 to allow one outlier date.
+    min_within_fraction: float = 1.0
+    # Optional error you would accept (absolute, or relative to the mean |obs|),
+    # for objectives. Used by the search if there is no obs_spread_columns
+    # (score="reference") or always (score="sigma"); if given,
+    # the verdict and accepted_parameters.csv check the RMSE against it.
     sigma: Optional[float] = None
     relative_sigma: Optional[float] = None
-    # If true, both model and obs are divided by max(|obs|) before comparison
-    # (useful for comparing shapes, e.g. sap-flow indices without absolute calibration).
-    normalize: bool = False
+    # Optional: two columns of obs_file holding quantiles of the observations
+    # across replicates (e.g. trees), and which quantiles they are. Their
+    # spread gives the natural variability of the observations, which the
+    # verdict compares the RMSE with, e.g. ("FAG_025", "FAG_075") and (0.25, 0.75).
+    obs_spread_columns: Optional[Tuple[str, str]] = None
+    obs_spread_quantiles: Tuple[float, float] = (0.25, 0.75)
     # If true, negative observation values are clipped to 0 before use --
     # matching the convention the existing DE-Hai analysis scripts
     # (post_process_complete_single.py, EGU_plot_base.py, T24_plot_output.py)
     # already apply to sap-flow J0.5 (a physically non-negative quantity
     # whose sensor readings dip slightly below 0 from noise, e.g. at night).
     clip_negative_obs_to_zero: bool = False
+    # Hours added to the observation timestamps, to correct a time offset
+    # between logger and model time. E.g. DE-Hai sap flow needs +2 (see
+    # science/phillip/DE-Hai/input/sapflow/sapflow_2024-2025_timefix.ipynb,
+    # which made Sapflow2023-2024_offset.csv for the Julia analysis).
+    obs_time_shift_hours: float = 0.0
     # Multiply the model's raw value by this factor before any comparison
-    # (merge/normalize/RMSE) -- for a unit conversion and/or an empirically
-    # chosen correction factor. E.g. DE-Hai's sap-flow analysis
+    # -- for a unit conversion and/or an empirically chosen correction factor.
+    # E.g. DE-Hai's sap-flow analysis
     # (src/postprocessing/julia/core/qcomparer_2023.jl,
     # calculate_mod_obs_rmse_2023) compares QUINCY's *_per_sap_area_avg
     # outputs against observed sap-flow flux density at x1000 (unit
     # conversion) times a candidate correction factor (1, 0.5, 0.25, or 2 --
-    # 'stem_flow_rmse_05' is the model_scale=1000*0.5=500 case), rather than
-    # normalizing both series by their own max.
+    # 'stem_flow_rmse_05' is the model_scale=1000*0.5=500 case).
     model_scale: float = 1.0
     # --- Mode 2: a soft plausibility range instead of real data (set target_min/target_max) ---
     # Use this when you don't have observations for a variable but still know,
     # from domain knowledge, roughly what range it should stay in -- e.g. "midday
-    # leaf water potential should be between -2.5 and -0.3 MPa". This is folded
-    # into the same 4D-En-Var cost function as a pseudo-observation centred on
-    # the range's midpoint, so it nudges the fit away from physically
+    # leaf water potential should be between -2.5 and -0.3 MPa". This is scored
+    # like a real metric against a pseudo-observation centred on the range's
+    # midpoint, so it nudges the fit away from physically
     # implausible parameter combinations even when GPP/ET alone can't rule
     # them out (equifinality). Requires both target_min and target_max.
     target_min: Optional[float] = None
@@ -170,8 +192,20 @@ class MetricSpec:
     # values, so you may want to loosen target_min/target_max accordingly.
     hour_start: Optional[int] = None
     hour_end: Optional[int] = None
-    # Extra scalar weight (>0) controlling how strongly this metric pulls the
-    # calibration; internally folded into the observation-error variance.
+    # Range metrics only: restrict to these months (1-12), e.g. [8] for
+    # August, and/or to the years year_start..year_end (inclusive).
+    months: Optional[List[int]] = None
+    year_start: Optional[int] = None
+    year_end: Optional[int] = None
+    # Range metrics only: instead of every model value, check one aggregate
+    # ("mean", "min" or "max") per aggregate_period ("year": one value per
+    # year of the selected months/hours; "all": one value over the whole
+    # selection). E.g. months=[8], aggregate="mean": every year's August mean
+    # must lie in [target_min, target_max] (min_within_fraction of the years).
+    aggregate: Optional[str] = None
+    aggregate_period: str = "year"
+    # objective only: the metric's ratio is multiplied by this in the score,
+    # weight 2 = the metric has to be twice as close to its reference.
     weight: float = 1.0
 
     def __post_init__(self):
@@ -192,8 +226,11 @@ class MetricSpec:
         if is_obs:
             if self.obs_column is None:
                 raise ValueError(f"Metric '{self.name}': obs_file requires obs_column")
-            if self.sigma is None and self.relative_sigma is None:
-                raise ValueError(f"Metric '{self.name}': must set either 'sigma' or 'relative_sigma'")
+            if (self.months, self.year_start, self.year_end, self.aggregate) != (None,) * 4:
+                raise ValueError(f"Metric '{self.name}': months/year_start/year_end/aggregate are only "
+                                 "for target_min/target_max metrics")
+            if self.sigma is not None and self.relative_sigma is not None:
+                raise ValueError(f"Metric '{self.name}': set 'sigma' or 'relative_sigma', not both")
         else:
             if self.target_min is None or self.target_max is None:
                 raise ValueError(f"Metric '{self.name}': range constraint requires both target_min and target_max")
@@ -205,8 +242,12 @@ class MetricSpec:
                 raise ValueError(f"Metric '{self.name}': range_confidence_sigma must be > 0")
             if (self.hour_start is None) != (self.hour_end is None):
                 raise ValueError(f"Metric '{self.name}': set both hour_start and hour_end, or neither")
-            if self.normalize:
-                raise ValueError(f"Metric '{self.name}': normalize is not meaningful for a range constraint")
+            if self.months is not None and not all(1 <= mo <= 12 for mo in self.months):
+                raise ValueError(f"Metric '{self.name}': months must be between 1 and 12")
+            if self.aggregate not in (None, "mean", "min", "max"):
+                raise ValueError(f"Metric '{self.name}': aggregate must be 'mean', 'min' or 'max'")
+            if self.aggregate_period not in ("year", "all"):
+                raise ValueError(f"Metric '{self.name}': aggregate_period must be 'year' or 'all'")
             if self.clip_negative_obs_to_zero:
                 raise ValueError(
                     f"Metric '{self.name}': clip_negative_obs_to_zero applies to real observations, "
@@ -220,6 +261,24 @@ class MetricSpec:
             # through exactly the same obs_column/sigma fields as a real metric.
             self.obs_column = _RANGE_TARGET_COLUMN
             self.sigma = (self.target_max - self.target_min) / (2.0 * self.range_confidence_sigma)
+            if self.tolerance is None:
+                self.tolerance = 0.5 * (self.target_max - self.target_min)
+
+        if self.role is None:
+            self.role = "objective" if is_obs else "constraint"
+        if self.role not in ("objective", "constraint"):
+            raise ValueError(f"Metric '{self.name}': role must be 'objective' or 'constraint'")
+        if self.role == "constraint" and (self.tolerance is None or self.tolerance <= 0):
+            raise ValueError(f"Metric '{self.name}': a constraint needs a tolerance > 0 "
+                             "(allowed |model - obs| per observation)")
+        if not 0 < self.min_within_fraction <= 1:
+            raise ValueError(f"Metric '{self.name}': min_within_fraction must be in (0, 1]")
+        if self.obs_spread_columns is not None:
+            if not is_obs:
+                raise ValueError(f"Metric '{self.name}': obs_spread_columns needs an obs_file")
+            q_lo, q_hi = self.obs_spread_quantiles
+            if not 0 < q_lo < q_hi < 1:
+                raise ValueError(f"Metric '{self.name}': obs_spread_quantiles must satisfy 0 < low < high < 1")
 
         if self.weight <= 0:
             raise ValueError(f"Metric '{self.name}': weight must be > 0")
@@ -233,20 +292,44 @@ class MetricSpec:
 
 @dataclass
 class EnsembleSpec:
+    # Members run per round (also the SLURM array size).
     size: int = 150
-    max_iterations: int = 4
-    convergence_tol: float = 0.02
+    # Round 0 samples the full parameter ranges; every later round samples
+    # around the best members found so far.
+    max_rounds: int = 3
+    # The best fraction of a round's size, out of all members run so far
+    # ("elite"), defines the next round's sampling distribution and the
+    # elite band in the plots.
+    elite_fraction: float = 0.1
+    # The next round samples a multivariate normal fitted to the elite (mean
+    # and covariance, in log space for scale="log"). Its spread is inflated by
+    # this factor, so the region around the elite is still explored.
+    inflation: float = 1.2
+    # A parameter's spread shrinks at most to this fraction of its previous
+    # spread per round, so the search can't collapse onto a few lucky members.
+    min_spread_fraction: float = 0.25
+    # Fraction of every later round still sampled over the full original
+    # ranges, as a check that the search didn't miss a better region.
+    explore_fraction: float = 0.1
+    # Stop early when the mean score of the elite improved by less than this
+    # (relative) in the last round.
+    min_improvement: float = 0.01
     seed: int = 42
-    # Inflation factor (>=1) applied to the posterior spread before drawing the
-    # next iteration's ensemble, to guard against premature ensemble collapse
-    # (see Sect. 4.1 of Pinnington et al. 2020).
-    inflation: float = 1.15
-    # Run the eq.-28 gradient correctness check once, on the first iteration,
-    # and save a diagnostic plot (mirrors Fig. 1 of the paper).
-    run_gradient_check: bool = True
-    # Minimum fraction of ensemble members that must finish successfully;
+    # Minimum fraction of a round's members that must finish successfully;
     # below this the run aborts with guidance to narrow parameter ranges.
     min_success_fraction: float = 0.3
+
+    def __post_init__(self):
+        if not 0 < self.elite_fraction < 1:
+            raise ValueError("EnsembleSpec: elite_fraction must be between 0 and 1")
+        if not 0 < self.min_spread_fraction <= 1:
+            raise ValueError("EnsembleSpec: min_spread_fraction must be in (0, 1]")
+        if self.inflation < 1:
+            raise ValueError("EnsembleSpec: inflation must be >= 1")
+        if not 0 <= self.explore_fraction < 1:
+            raise ValueError("EnsembleSpec: explore_fraction must be in [0, 1)")
+        if self.max_rounds < 1:
+            raise ValueError("EnsembleSpec: max_rounds must be >= 1")
 
 
 @dataclass
@@ -289,15 +372,16 @@ class SimulationSpec:
     # Only used when output_interval == "fluxnet_timestep": the trailing
     # calendar-year window (within transient_start_year ..
     # transient_start_year+simulation_length_years-1) that gets switched to
-    # half-hourly output. QUINCY computes the *leading*, ordinary daily
-    # output window's length as simulation_length_years - (fluxnet_forc_last_yr
-    # - fluxnet_forc_start_yr + 1); this must stay positive; if this leading
-    # window collapses to zero, the switch to timestep output does not
-    # trigger at all.
+    # half-hourly output.
     fluxnet_forc_start_yr: Optional[int] = None
     fluxnet_forc_last_yr: Optional[int] = None
     use_plant_hydraulics: bool = True
     use_hydraulic_failure_mort: bool = False
+    # Carbon-only setup as in the hand-tuned DE-Hai sweeps: unlimited N fixation
+    # (vegetation and soil), fixed leaf stoichiometry and prescribed soil PO4
+    c_only: bool = False
+    # Roots across soil layers: dynamic over time (True) or fixed after init (False)
+    dynamic_roots: bool = True
     # QUINCY's standard FLUXNET3 site-list forcing files stop around 2012 for
     # most sites. If your observations are more recent (e.g. 2020s sap-flow
     # or psi_stem campaigns), point this at a site-specific extended forcing
@@ -338,16 +422,8 @@ class SimulationSpec:
                     "output_interval == 'fluxnet_timestep' requires both fluxnet_forc_start_yr "
                     "and fluxnet_forc_last_yr (the trailing sub-window to switch to half-hourly output)."
                 )
-            fluxnet_window = self.fluxnet_forc_last_yr - self.fluxnet_forc_start_yr + 1
-            leading_window = self.simulation_length_years - fluxnet_window
-            if leading_window <= 0:
-                raise ValueError(
-                    f"fluxnet_forc_start_yr/fluxnet_forc_last_yr span {fluxnet_window} year(s), "
-                    f"which leaves no leading window before it inside a "
-                    f"{self.simulation_length_years}-year transient run (QUINCY only switches to "
-                    "timestep output after a non-empty ordinary-output lead-in). Lengthen "
-                    "simulation_length_years or shorten the fluxnet window."
-                )
+            if self.fluxnet_forc_last_yr < self.fluxnet_forc_start_yr:
+                raise ValueError("fluxnet_forc_last_yr must be >= fluxnet_forc_start_yr")
 
 
 @dataclass
@@ -373,22 +449,52 @@ class CalibrationConfig:
     # Optional explicit path to a QUINCY checkout; if omitted, QuincyPathFinder
     # is used (QUINCY env var, cached local/paths.json, or auto-discovery).
     quincy_root: Optional[str] = None
-    # If false (default), each member's NetCDF output is deleted right after
-    # its metrics have been extracted, to keep disk usage bounded across
-    # many ensembles x iterations.
+    # If false (default), each member deletes its NetCDF output right after
+    # its metrics have been computed (inside the SLURM task). The model
+    # values at the observation timestamps are always kept for the plots.
     keep_run_outputs: bool = False
-    # If True, and output_root already has a checkpoint from a previous run
-    # (written after every non-final iteration), continue from there instead
-    # of starting a fresh iteration 0 -- i.e. a second/third round after
-    # raising ensemble.max_iterations, without re-running the already-done
-    # (expensive) iterations. If no checkpoint is found, this is a no-op and
-    # a fresh run starts as normal. See "Second and third rounds" in README.
+    # Keep the complete NetCDF output of the best this fraction of every
+    # round (e.g. 0.2), for later analysis; the rest is deleted when the round
+    # has been scored. Listed in round_XX/kept_outputs.csv.
+    keep_best_outputs_fraction: float = 0.0
+    # If True, rounds that already finished in output_root are loaded instead
+    # of run again, e.g. to add a round after raising ensemble.max_rounds.
     resume: bool = False
+    # How the objectives of a member combine into one score (lower is better).
+    # Each objective's RMSE is divided by a reference:
+    # "reference": the spread of the observations (obs_spread_columns) if
+    #   given, else its sigma, else the best RMSE any member reached.
+    # "sigma": the metric's sigma.
+    # For these two, a ratio below 1 is as good as the data can tell and counts
+    # as 1; the score is the mean of weight * ratio over the objectives, so 1
+    # means every objective is within its reference.
+    # "relative": the best RMSE any member reached for that metric so far; the
+    #   score is the largest weight * ratio, so 1.2 means every objective is
+    #   within 20% of its best achievable fit.
+    # Members that fail a constraint are always ranked behind those that pass.
+    score: str = "reference"
+    # results.csv files of earlier calibrations with the same setup (site,
+    # forcing, fixed parameters, metrics). Their successful members inside the
+    # current ranges are rescored and count for the elite, so round 0 samples
+    # around them instead of the full ranges.
+    previous_results: List[str] = field(default_factory=list)
 
     def __post_init__(self):
         self.output_root = os.path.abspath(self.output_root)
         if self.run_mode not in ("local", "slurm_array"):
             raise ValueError(f"run_mode must be 'local' or 'slurm_array', got {self.run_mode!r}")
+        if not 0 <= self.keep_best_outputs_fraction <= 1:
+            raise ValueError("keep_best_outputs_fraction must be between 0 and 1")
+        if self.score not in ("reference", "sigma", "relative"):
+            raise ValueError(f"score must be 'reference', 'sigma' or 'relative', got {self.score!r}")
+        objectives = [m for m in self.metrics if m.role == "objective"]
+        if not objectives:
+            raise ValueError("At least one metric must have role='objective'.")
+        if self.score == "sigma":
+            missing = [m.name for m in objectives if m.sigma is None and m.relative_sigma is None]
+            if missing:
+                raise ValueError(f"score='sigma' needs sigma or relative_sigma for: {', '.join(missing)}")
+        self.previous_results = [os.path.abspath(p) for p in self.previous_results]
         if not any(p.calibrate for p in self.parameters):
             raise ValueError("At least one parameter must have calibrate=True (all of them are fixed).")
         for m in self.metrics:
@@ -407,7 +513,7 @@ class CalibrationConfig:
         module-level variable named `config`, exactly like any other QPy
         runscript builds up a Quincy_Setup."""
         path = os.path.abspath(path)
-        spec = importlib.util.spec_from_file_location("qpy_calibrate_user_config", path)
+        spec = importlib.util.spec_from_file_location("calibration_user_config", path)
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
         if not hasattr(module, "config"):

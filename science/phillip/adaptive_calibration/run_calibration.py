@@ -1,15 +1,13 @@
 #!/usr/bin/env python3
-"""CLI entry point for the LAVENDAR-style QUINCY plant-hydraulics calibration
-tool.
+"""Calibrate QUINCY parameters against observations in several rounds.
 
 Usage:
     python run_calibration.py my_site_config.py
 
 See config_example.py for the config format (a plain Python script, same
-style as the existing QPy runscripts) and README.md for the method and a
-worked example. This can be expensive: with the example config it launches
-ensemble.size (e.g. 150) full transient QUINCY runs per iteration, for up to
-ensemble.max_iterations iterations.
+style as the existing QPy runscripts) and README.md for the method. The code
+lives in src/calibration. This can be expensive: every round runs
+ensemble.size full transient QUINCY runs, for up to ensemble.max_rounds rounds.
 """
 import argparse
 import os
@@ -18,10 +16,9 @@ import sys
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 QPY_ROOT = os.path.abspath(os.path.join(THIS_DIR, os.pardir, os.pardir, os.pardir))
 sys.path.append(QPY_ROOT)
-sys.path.append(THIS_DIR)
 
-from qpy_calibrate.calibrate import run_calibration
-from qpy_calibrate.config import CalibrationConfig
+from src.calibration.calibrate import run_calibration
+from src.calibration.config import CalibrationConfig
 
 
 def main():

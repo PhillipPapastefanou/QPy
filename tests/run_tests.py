@@ -6,6 +6,7 @@ sys.path.append(os.path.join(THIS_DIR, os.pardir))
 import unittest
 
 from parsing.test_quincy_files_parsing import Test_QuincyFilesParsing
+from parsing.test_namelist_checks import Test_NamelistChecks
 from runs.test_packages import TestRequiredPackages
 from runs.test_find_quincy import TestQuincyPathsExist
 from runs.test_testbed import Test_Test_Bed

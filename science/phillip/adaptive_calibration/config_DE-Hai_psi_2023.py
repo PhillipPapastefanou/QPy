@@ -1,28 +1,22 @@
-# LAVENDAR calibration config for DE-Hai, evaluated against 2023 psi_stem,
+# Calibration config for DE-Hai, evaluated against 2023 psi_stem,
 # sap flow, and psi_leaf (midday) observations. Sub-daily model output
 # covers 2023-2024 (2024 included for plotting, even though the metrics
 # below are the 2023 obs files).
 #
-# Parameter space and forcing file reproduced from the most recent hand-tuned
-# sensitivity sweep for this site:
+# Parameter space, forcing file and model setup (C only, fixed roots) taken from
+# the most recent hand-tuned sensitivity sweep for this site:
 # science/phillip/DE-Hai/runscripts/2023_HAI_runscripts/72_run_transient_3days_new_mort_new_phen_fix.py
-# Every parameter that sweep varied (min != max) is calibrated here with the
-# same range; every one it held constant (min == max, or hardcoded outside
-# the sampled set) is fixed here via calibrate=False instead, so the
-# ensemble spends its effort only on the parameters that actually move.
+# Every parameter that sweep varied (min != max) is calibrated here, with the
+# k_latosa range deliberately widened; every one it held constant is
+# fixed here via calibrate=False instead.
 #
 # Run with:  python run_calibration.py config_DE-Hai_psi_2023.py
 #
-# IMPORTANT: run_mode="slurm_array" is required at this ensemble size (512).
-# It dispatches through GenerateSlurmScriptArrayBased, which loads the
-# gnu12/mpich/netcdf module stack QUINCY's binary needs on every array task
-# -- the same mechanism 72_run_transient_3days_new_mort_new_phen_fix.py's own
-# sbatch submission relies on. Local multiprocessing has no such guarantee
-# (it just inherits whatever modules happen to already be loaded in the
-# calling shell) and also isn't practical at 512-way parallelism on a single
-# 64-core node.
+# run_mode="slurm_array" is required at this ensemble size (512): every
+# member is one SLURM array task that loads the module stack QUINCY needs,
+# runs the model and computes its own metrics.
 
-from qpy_calibrate.config import (
+from src.calibration.config import (
     CalibrationConfig,
     EnsembleSpec,
     MetricSpec,
@@ -34,7 +28,7 @@ simulation = SimulationSpec(
     forcing_dataset="FLUXNET3",
     spinup_start_year=1901,
     spinup_end_year=1930,
-    spinup_years=30,
+    spinup_years=300,  # as in the 72_... sweep
     transient_start_year=1901,
     simulation_length_years=124,  # 1901 .. 2024
     output_start_first_day_year=1,
@@ -53,6 +47,9 @@ simulation = SimulationSpec(
     forcing_file_override="/Net/Groups/BSI/work_scratch/ppapastefanou/data/Fluxnet_detail/QUINCY_DE-Hai_1901_2024.dat",
     use_plant_hydraulics=True,
     use_hydraulic_failure_mort=True,
+    # C-only setup and fixed roots, as in the 72_... sweep
+    c_only=True,
+    dynamic_roots=False,
     # Fixed soil texture from the 72_... sweep (sand=0.25, silt=0.38 ->
     # clay=0.37), rather than whatever EnvironmentalInputSite resolves by
     # default for the site.
@@ -60,13 +57,16 @@ simulation = SimulationSpec(
     soil_silt=0.38,
 )
 
+# Up to 5 rounds of 512, from scratch (round 0 samples the full ranges); it
+# stops earlier once the elite improves by less than 1% per round. A round
+# takes ~1 h whatever its size, as all members run at once; the elite (best
+# 52 members of all runs so far) is large enough to fit the 12-parameter
+# distribution.
 ensemble = EnsembleSpec(
     size=512,
-    max_iterations=4,
-    convergence_tol=0.02,
+    max_rounds=5,
+    elite_fraction=0.1,
     seed=42,
-    inflation=1.15,
-    run_gradient_check=True,
     min_success_fraction=0.3,
 )
 
@@ -76,7 +76,7 @@ parameters = [
     ParameterSpec(name="gamma_stem_max", min=70, max=200),
     ParameterSpec(name="psi50_stem_tlp", min=-2.5, max=-2.3),
     ParameterSpec(name="gamma_leaf", min=0.03, max=0.04),
-    ParameterSpec(name="k_latosa", min=3000, max=8000),
+    ParameterSpec(name="k_latosa", min=2000, max=8000),
     ParameterSpec(name="g1_medlyn", min=3.5, max=4.2),
     ParameterSpec(name="g0", min=0.002, max=0.003),
     ParameterSpec(name="g_res", min=0.0003, max=0.0006),
@@ -105,6 +105,15 @@ parameters = [
 ]
 
 # --- Metrics: 2023 psi_stem, sap flow, and psi_leaf (midday) ---
+# psi_stem and sap flow are objectives: the search scores a member by the
+# worse of their RMSEs relative to the spread between trees (score="reference"),
+# so no weighting between them is needed and neither is pushed below the
+# precision of the data.
+# psi_leaf (6 dates) is a ballpark constraint: 5 of 6 dates within +-0.5 MPa.
+# The quantile columns give the spread between trees (used by the search and
+# the verdict); sigma = the acceptance thresholds of the 72_... analysis
+# (DE-Hai/post/julia/multi/qs_hydro_selector_23_indexes.jl), only used to
+# judge the fit (verdict, accepted_parameters.csv).
 metrics = [
     MetricSpec(
         name="psi_stem",
@@ -112,8 +121,9 @@ metrics = [
         variable="psi_stem_avg",
         obs_file="/Net/Groups/BSI/work_scratch/ppapastefanou/data/Fluxnet_detail/eval_processed/PsiStem2023.csv",
         obs_column="FAG",
-        sigma=0.3,
-        weight=1.0,
+        sigma=0.115,
+        obs_spread_columns=("FAG_025", "FAG_075"),
+        obs_spread_quantiles=(0.25, 0.75),
     ),
     MetricSpec(
         name="sapflow",
@@ -128,9 +138,14 @@ metrics = [
         model_scale=500.0,  # 1000 * 0.5
         obs_file="/Net/Groups/BSI/work_scratch/ppapastefanou/data/Fluxnet_detail/eval_processed/Sapflow2023.csv",
         obs_column="J0.5",
-        relative_sigma=0.25,
-        weight=0.5,
+        sigma=6.85,
+        obs_spread_columns=("J0.25", "J0.75"),
+        obs_spread_quantiles=(0.25, 0.75),
         clip_negative_obs_to_zero=True,
+        # The logger time is 2 h behind model time; same correction as
+        # Sapflow2023-2024_offset.csv used by the Julia analysis
+        # (DE-Hai/input/sapflow/sapflow_2024-2025_timefix.ipynb)
+        obs_time_shift_hours=2.0,
     ),
     MetricSpec(
         name="psi_leaf",
@@ -138,14 +153,17 @@ metrics = [
         variable="psi_leaf_avg",
         obs_file="/Net/Groups/BSI/work_scratch/ppapastefanou/data/Fluxnet_detail/eval_processed/psi_leaf_midday_2023_2024_avg.csv",
         obs_column="psi_leaf_midday_avg",
-        sigma=0.3,
-        weight=1.0,
+        role="constraint",
+        tolerance=0.5,
+        # One outlier date allowed: on 2023-09-18 every run of the earlier
+        # calibration was 0.7-1.4 MPa too wet (a model issue, not a parameter one)
+        min_within_fraction=5 / 6,
     ),
 ]
 
 config = CalibrationConfig(
     site="DE-Hai",
-    output_root="/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/lavendar_calibration/DE-Hai_psi_2023",
+    output_root="/Net/Groups/BSI/scratch/ppapastefanou/simulations/QPy/adaptive_calibration/DE-Hai_psi_2023_rounds_v3",
     run_mode="slurm_array",
     n_parallel=512,
     simulation=simulation,
@@ -153,5 +171,14 @@ config = CalibrationConfig(
     parameters=parameters,
     metrics=metrics,
     keep_run_outputs=False,
+    # Complete output of the best 20% of every round, for later analysis
+    # (round_XX/output/<member>, listed in round_XX/kept_outputs.csv)
+    keep_best_outputs_fraction=0.2,
     resume=True,
+    # Objectives scored by RMSE / spread between trees (obs_spread_columns
+    # above): the search improves psi_stem as far as possible while keeping
+    # sap flow within the variability of the observations
+    score="reference",
+    # No previous_results: the earlier calibrations scored sap flow without
+    # the +2 h time correction, so their RMSEs don't apply.
 )
